@@ -20,16 +20,27 @@ const GS = {
   tvData: new Float32Array(64 * 4), tvN: 0, tvCur: -1, tvAim: new Float32Array(3), tvFov: 0.3, pl: new Float64Array(2),
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
-  paintIdx: 0, carIdx: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false,
+  paintIdx: 0, carIdx: 0, carBest: new Float64Array(2), _bestCar: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false,
 };
+// Cronômetro: LAP[0] instante (s de simulação) em que a volta atual começou, [1] última volta, [2] melhor volta, [3] 1 = cronômetro correndo
+const LAP = new Float64Array(4);
+function carSyncLapBest(ci) {
+  const cur = GS._bestCar;
+  if (cur !== ci) {
+    GS.carBest[cur] = LAP[2];
+    GS._bestCar = ci;
+    LAP[2] = GS.carBest[ci];
+  } else {
+    GS.carBest[ci] = LAP[2];
+  }
+}
 function carSyncActive(forceUno) {
   const ci = forceUno ? 0 : (GS.carIdx ? 1 : 0), C = carObj();
   if (C.select) C.select(ci);
   if (typeof vehicleApplySpec === 'function') vehicleApplySpec(ci);
+  carSyncLapBest(ci);
   return ci;
 }
-// Cronômetro: LAP[0] instante (s de simulação) em que a volta atual começou, [1] última volta, [2] melhor volta, [3] 1 = cronômetro correndo
-const LAP = new Float64Array(4);
 // Controle (Gamepad API): PADV[0] gatilho direito, [1] gatilho esquerdo, [2] analógico esquerdo já com zona morta e curva. Preenchido por padPoll.
 const PADV = new Float64Array(3);
 const KEYMAP = { KeyW: K_W, ArrowUp: K_W, KeyS: K_S, ArrowDown: K_S, KeyA: K_A, ArrowLeft: K_A, KeyD: K_D, ArrowRight: K_D, Space: K_SPACE, KeyC: K_C, KeyR: K_R, KeyV: K_V, KeyE: K_HORN };
@@ -133,7 +144,7 @@ function gameWarmup() {
     }
   }
   if (typeof GH !== 'undefined') GH.warm = false;
-  GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; LAP[2] = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
+  GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; LAP[2] = 0; GS.carBest.fill(0); GS._bestCar = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
 }
 // Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas cinco câmeras (com fumaça e marcas),
 // para o driver compilar todas as variantes de pipeline e carregar todas as texturas agora, e não no meio da volta.
@@ -200,11 +211,15 @@ function padMerge(k) {
 function lapCross() {
   const V = VEH;
   if (V.laps > GS.lapMax) {
+    if (!GS.replayOn && !GS.poseOn) {
+      const ci = GS.carIdx ? 1 : 0;
+      if (GS._bestCar !== ci) carSyncLapBest(ci);
+    }
     const st = V.vx * PHYS_DT, fr = st > 1e-6 ? V.s / st : 0, t = V.time - (fr < 0 ? 0 : fr > 1 ? 1 : fr) * PHYS_DT;
     if (LAP[3] === 1) {
       const lt = t - LAP[0], rec = !GS.replayOn && (LAP[2] === 0 || lt < LAP[2]);
       LAP[1] = lt;
-      if (rec) { LAP[2] = lt; GS.lapNew = true; }
+      if (rec) { LAP[2] = lt; GS.carBest[GS._bestCar] = lt; GS.lapNew = true; }
       if (typeof ghLapCross === 'function') ghLapCross(lt, rec);
     } else if (typeof ghRestart === 'function') {
       ghRestart();

@@ -144,7 +144,7 @@ function ghFillSplits(arr, n, lt) {
 
 function ghLapCross(lt, isRecord) {
   ghSyncSlot();
-  if (!GH.warm && !GS.replayOn && !GS.ai && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (LAP[2] === 0 || lt <= LAP[2] + 1e-6)) {
+  if (!GH.warm && !GS.replayOn && !GS.ai && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (GH.bestTime === 0 || lt <= GH.bestTime + 1e-6)) {
     GH.bestSplit.set(GH.curSplit);
     ghFillSplits(GH.bestSplit, TRK.N, lt);
     GH.hasSplit = true;

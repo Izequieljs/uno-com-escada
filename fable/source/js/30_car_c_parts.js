@@ -299,12 +299,13 @@ const CGLYPH = {
   '-': [[[0.1, 0.48], [0.5, 0.48]]], '.': [[[0.14, 0.02], [0.14, 0.1]]], ' ': [],
 };
 const CADV = { I: 0.45, i: 0.3, l: 0.3, M: 1.12, W: 1.15, L: 0.85, '-': 0.6, '.': 0.32, ' ': 0.5, 1: 0.7, e: 0.82 };
-function carText(g, txt, x, y, h, lw, skew) {
+function carText(g, txt, x, y, h, lw, skew, advLw) {
   g.lineWidth = lw; g.lineCap = 'round'; g.lineJoin = 'round';
+  const alw = advLw === undefined ? lw : advLw;
   for (const ch of txt) {
     const gl = CGLYPH[ch];
     if (gl) for (const st of gl) { g.beginPath(); st.forEach((p, i) => { const px = x + (p[0] + (skew || 0) * p[1]) * h * 0.72, py = y - p[1] * h; i ? g.lineTo(px, py) : g.moveTo(px, py); }); g.stroke(); }
-    x += (CADV[ch] || 1.0) * h * 0.72 + lw * 0.6;
+    x += (CADV[ch] || 1.0) * h * 0.72 + alw * 0.6;
   }
   return x;
 }
@@ -350,9 +351,9 @@ function carAtlas() {
   g.strokeStyle = '#e4e8ec'; g.lineWidth = 11; g.lineCap = 'round'; g.lineJoin = 'round';
   g.beginPath(); g.moveTo(596, 256); g.lineTo(620, 304); g.lineTo(644, 256); g.stroke();
   g.beginPath(); g.moveTo(576, 274); g.lineTo(599, 349); g.lineTo(620, 315); g.lineTo(641, 349); g.lineTo(664, 274); g.stroke();
-  g.strokeStyle = '#15171b'; const gx = carText(g, 'GOL ', 536, 480, 62, 16, 0.18); carText(g, '1.8', gx + 6, 480, 62, 16, 0.18);
-  g.strokeStyle = '#e2e6eb'; const gx2 = carText(g, 'GOL ', 536, 480, 62, 9.5, 0.18);
-  g.strokeStyle = '#d42c1d'; carText(g, '1.8', gx2 + 6, 480, 62, 10.5, 0.18);
+  g.strokeStyle = '#15171b'; const gx = carText(g, 'GOL ', 536, 480, 62, 16, 0.18, 16); carText(g, '1.8', gx + 6, 480, 62, 16, 0.18, 16);
+  g.strokeStyle = '#e2e6eb'; const gx2 = carText(g, 'GOL ', 536, 480, 62, 9.5, 0.18, 16);
+  g.strokeStyle = '#d42c1d'; carText(g, '1.8', gx2 + 6, 480, 62, 10.5, 0.18, 16);
   const im = g.getImageData(0, 0, W, H);
   const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 6 });
   G.dev.queue.writeTexture({ texture: tex }, im.data, { bytesPerRow: W * 4 }, [W, H]);

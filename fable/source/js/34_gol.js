@@ -1,7 +1,7 @@
 // VW Gol Quadrado AP 1.8 (1991–1994 CL/GL/GTi "chinesinha"): carroceria em cunha, vigia ~42°, aerofólios,
 // lanternas horizontais tricolores, grade frisada com emblema VW, borzeguim lateral, painel satélite, volante 4 botões e rodas Orbital.
 const GOL = {
-  XF: 1.882, XR: -1.798,
+  XF: 1.888, XR: -1.815,
   YS: 0.195,
   AXF: 1.179, AXR: -1.179, WR: 0.281,
   TH_S: Math.sin(17.5 * PI / 180), TH_C: Math.cos(17.5 * PI / 180),
@@ -288,7 +288,7 @@ function golBuildBody(mb, gl) {
     rim: 0.004,
   });
   mb.mat(CM.LENS, 1).color(0.75, 0.03, 0.02);
-  golSub(mb, 0.0025, -1.68, -1.80, 0.12, 0.95, 0.007, {
+  golSub(mb, 0.0025, -1.68, -1.815, 0.12, 0.95, 0.007, {
     field: (u, v, P) => golTailLamp(P) - 0.003,
     uv: (u, v, P) => { _guv[0] = sat((P[2] - GT_GOL.z0) / (0.748 - GT_GOL.z0)); _guv[1] = sat((P[1] - GT_GOL.y0) / (GT_GOL.y1 - GT_GOL.y0)); return _guv; },
     rim: 0.003,
@@ -495,17 +495,16 @@ function golBuildParts(mb) {
   mb.mat(CM.CHROME, 1).color(0.86, 0.88, 0.90);
   for (const ez of [-0.425, -0.485]) mb.tube([[-1.56, 0.272, ez], [-1.72, 0.270, ez], [-1.865, 0.268, ez]], 0.017, 10);
 
-  // emblema VW cromado central na grade dianteira (aro 3D + decalque VW nítido)
+  // emblema VW cromado central na grade dianteira (aro 3D + decalque VW nítido à frente do tampão)
   {
     const y = GL_GOL.lY, x = golTopX(0, y, false), xu = golTopX(0, y + 0.02, false), sl = (xu - x) / 0.02, l = Math.hypot(1, sl);
     const B = m4basis(m4(), 0, 0, -1, sl / l, 1 / l, 0, 1 / l, -sl / l, 0, x + 0.003, y, 0);
     mb.mat(CM.CHROME, 2).color(0.92, 0.93, 0.95); mb.push(B);
     mb.push(m4rotX(m4(), PI / 2)); mb.cyl(0, -0.006, 0, 0.044, 0.005, 0.044, 24, true, true); mb.pop();
-    mb.pop();
-    const reg = CAT.vw, w = 0.074, h = 0.074, nx = 1 / l, ny = -sl / l;
-    const bx = x + 0.003 + nx * 0.0065, by = y + ny * 0.0065;
+    const reg = CAT.vw, hw = 0.040, hh = 0.040, zd = 0.0068;
     mb.mat(CM.DECAL, 1).color(1, 1, 1);
-    mb.quad(bx, by - h / 2, w / 2, bx, by - h / 2, -w / 2, bx + sl * h, by + h / 2, -w / 2, bx + sl * h, by + h / 2, w / 2, reg[0], reg[3], reg[2], reg[1]);
+    mb.quad(-hw, -hh, zd, hw, -hh, zd, hw, hh, zd, -hw, hh, zd, reg[0], reg[3], reg[2], reg[1]);
+    mb.pop();
   }
 
   // placas dianteira/traseira e emblemas traseiros (VW + GOL 1.8)
@@ -614,10 +613,10 @@ function golBuildSteer(mb) {
   mb.rbox(-0.016, 0.02, -0.11, 0.02, 0.028, 0.14, 0.006, 1);
   mb.rbox(-0.016, -0.095, 0.055, 0.02, 0.15, 0.028, 0.006, 1);
   mb.rbox(-0.016, -0.095, -0.055, 0.02, 0.15, 0.028, 0.006, 1);
-  // 4 botões de buzina característicos na face do miolo
+  // 4 botões de buzina característicos na face voltada para o motorista (+X local)
   mb.mat(CM.INTERIOR, 2).color(0.065, 0.067, 0.072);
   for (const sy of [0.022, -0.032]) for (const sz of [-0.048, 0.048]) {
-    mb.rbox(-0.048, sy, sz, 0.012, 0.038, 0.052, 0.005, 1);
+    mb.rbox(-0.003, sy, sz, 0.010, 0.038, 0.052, 0.005, 1);
   }
   const t0 = m4translate(m4(), 0.31, 0.855, -0.355), t1 = m4rotZ(m4(), 156 * PI / 180);
   return m4mul(m4(), t0, t1);
