@@ -220,7 +220,7 @@ function lapCross() {
     }
     const st = V.vx * PHYS_DT, fr = st > 1e-6 ? V.s / st : 0, t = V.time - (fr < 0 ? 0 : fr > 1 ? 1 : fr) * PHYS_DT;
     if (LAP[3] === 1) {
-      const lt = t - LAP[0], rec = !GS.replayOn && (LAP[2] === 0 || lt < LAP[2]);
+      const lt = t - LAP[0], rec = !GS.replayOn && !GS.raceMode && (LAP[2] === 0 || lt < LAP[2]);
       LAP[1] = lt;
       if (rec) { LAP[2] = lt; GS.carBest[GS._bestCar] = lt; GS.lapNew = true; }
       if (typeof ghLapCross === 'function') ghLapCross(lt, rec);

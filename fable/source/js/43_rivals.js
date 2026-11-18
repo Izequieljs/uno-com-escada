@@ -281,7 +281,9 @@ function rivStep() {
     const ax = (rv.speed - prevSpd) / dt;
     const vLatTgt = clamp((tgtD - rv.d) * 2.4, -4.8, 4.8);
     rv.vLat += (vLatTgt - rv.vLat) * 0.15;
-    rv.d = clamp(rv.d + rv.vLat * dt, -hwLim, hwLim);
+    const bLimL = trkAt(TRK.barL, i0, f) - 0.9;
+    const bLimR = trkAt(TRK.barR, i0, f) - 0.9;
+    rv.d = clamp(rv.d + rv.vLat * dt, -bLimL, bLimR);
 
     const curv = trkAt(TRK.k, i0, f);
     const arcK = clamp(1 - rv.d * curv, 0.55, 1.6);
