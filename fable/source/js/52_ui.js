@@ -39,12 +39,18 @@ function uiSetBtn(btn, on) {
   const pl = btn.hasAttribute && btn.hasAttribute('data-track');
   btn.className = sw ? (on ? 'sw on' : 'sw') : pl ? (on ? 'pill on' : 'pill') : (on ? 'on' : '');
 }
+function uiCarIdx(v) {
+  const n = typeof VEH_SPECS !== 'undefined' ? VEH_SPECS.length : 5;
+  return clamp(+v | 0, 0, n - 1);
+}
+const UI_CAR_TIT = ['Uno com escada', 'Gol Quadrado', 'DeLorean BTTF', 'Mini-Bólido MK', 'Top Gear 2 GT'];
+const UI_CAR_SUB = ['Fiat Uno Mille EP 1996', 'VW Gol AP 1.8 1993', 'DeLorean DMC-12 1981', 'Mini-Bólido estilo Mario Kart', 'Supercarro estilo Top Gear 2'];
 function uiSavePrefs(overrideTrackIdx) {
   try {
     const ti = overrideTrackIdx !== undefined ? (overrideTrackIdx ? 1 : 0) : (typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0);
     localStorage.setItem('uno-prefs-v1', JSON.stringify({
       raceMode: typeof GS !== 'undefined' && !!GS.raceMode,
-      carIdx: typeof GS !== 'undefined' && GS.carIdx ? 1 : 0,
+      carIdx: typeof GS !== 'undefined' ? uiCarIdx(GS.carIdx) : 0,
       paintIdx: typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0,
       envIdx: typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0,
       trackIdx: ti,
@@ -90,14 +96,14 @@ function uiRenderMed() {
   UI.med.innerHTML = html;
 }
 function uiSyncCfg() {
-  const ci = typeof GS !== 'undefined' && GS.carIdx ? 1 : 0;
+  const ci = typeof GS !== 'undefined' ? uiCarIdx(GS.carIdx) : 0;
   const pi = typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0;
   const ei = typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0;
   const ti = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
   const trkSub = typeof TRK !== 'undefined' && TRK.sub ? TRK.sub : 'Circuito da Serra · 1,64 km';
   const rm = typeof GS !== 'undefined' && !!GS.raceMode;
-  if (UI.tit) UI.tit.textContent = ci ? 'Gol Quadrado' : 'Uno com escada';
-  if (UI.sub) UI.sub.textContent = (ci ? 'VW Gol AP 1.8 1993' : 'Fiat Uno Mille EP 1996') + ' · ' + trkSub;
+  if (UI.tit) UI.tit.textContent = UI_CAR_TIT[ci];
+  if (UI.sub) UI.sub.textContent = UI_CAR_SUB[ci] + ' · ' + trkSub;
   let sawTrack = false;
   if (UI.cfg && UI.cfg.querySelectorAll) {
     const btns = UI.cfg.querySelectorAll('button');
@@ -165,7 +171,7 @@ function uiBindCfg() {
       const dc = b.getAttribute ? b.getAttribute('data-car') : null;
       if (dc !== null) {
         b.onclick = () => {
-          const next = +dc === 1 ? 1 : 0;
+          const next = uiCarIdx(+dc);
           if (typeof GS !== 'undefined' && 'carIdx' in GS && GS.carIdx !== next) {
             GS.carIdx = next;
             if (typeof carSyncActive === 'function') carSyncActive(false);
@@ -220,20 +226,15 @@ function uiInit() {
   UI.b0 = $('b0'); UI.b1 = $('b1');
   hudInit(); uiWarmup();
   try {
-    const pfx0 = typeof ghStoragePrefix === 'function' ? ghStoragePrefix(0) : 'uno';
-    const pfx1 = typeof ghStoragePrefix === 'function' ? ghStoragePrefix(1) : 'gol';
-    const b0 = +localStorage.getItem(pfx0 + '-melhor');
-    if (b0 > 20 && b0 < 600) {
-      if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[0] = b0;
-      if (typeof GS === 'undefined' || !GS.carIdx) LAP[2] = b0;
+    for (let ci = 0; ci < 5; ci++) {
+      const pfx = typeof ghStoragePrefix === 'function' ? ghStoragePrefix(ci) : 'uno';
+      const bt = +localStorage.getItem(pfx + '-melhor');
+      if (bt > 20 && bt < 600) {
+        if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[ci] = bt;
+        if (typeof GS !== 'undefined' ? uiCarIdx(GS.carIdx) === ci : ci === 0) LAP[2] = bt;
+      }
+      if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem(pfx + '-ta-v1'), bt, ci);
     }
-    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem(pfx0 + '-ta-v1'), b0, 0);
-    const b1 = +localStorage.getItem(pfx1 + '-melhor');
-    if (b1 > 20 && b1 < 600) {
-      if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[1] = b1;
-      if (typeof GS !== 'undefined' && GS.carIdx === 1) LAP[2] = b1;
-    }
-    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem(pfx1 + '-ta-v1'), b1, 1);
   } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
   try {
     const raw = localStorage.getItem('uno-prefs-v1');
@@ -241,7 +242,7 @@ function uiInit() {
       const pr = JSON.parse(raw);
       if (pr && typeof pr === 'object' && typeof GS !== 'undefined') {
         if (typeof pr.raceMode === 'boolean' && 'raceMode' in GS) GS.raceMode = pr.raceMode;
-        if (typeof pr.carIdx === 'number' && 'carIdx' in GS) GS.carIdx = pr.carIdx === 1 ? 1 : 0;
+        if (typeof pr.carIdx === 'number' && 'carIdx' in GS) GS.carIdx = uiCarIdx(pr.carIdx);
         if (typeof pr.paintIdx === 'number' && typeof PAINTS !== 'undefined' && PAINTS.length) {
           const pn = PAINTS.length;
           GS.paintIdx = ((pr.paintIdx | 0) % pn + pn) % pn;
@@ -255,7 +256,7 @@ function uiInit() {
           }
           if (typeof gameRestart === 'function') gameRestart();
         } else if (typeof carSyncLapBest === 'function') {
-          carSyncLapBest(GS.carIdx ? 1 : 0);
+          carSyncLapBest(uiCarIdx(GS.carIdx));
         }
       }
     }
@@ -315,8 +316,8 @@ function uiKey(e) {
   else if (c.length === 6 && c.startsWith('Digit') && c[5] >= '1' && c[5] <= '6') uiPose(+c[5] - 1);
 }
 function raceEnd() {
-  const ci = typeof GS !== 'undefined' && GS.carIdx ? 1 : 0;
-  const carName = typeof VEH_SPECS !== 'undefined' && VEH_SPECS[ci] ? VEH_SPECS[ci].name : (ci ? 'Gol Quadrado AP 1.8' : 'Uno Mille EP');
+  const ci = typeof GS !== 'undefined' ? uiCarIdx(GS.carIdx) : 0;
+  const carName = typeof VEH_SPECS !== 'undefined' && VEH_SPECS[ci] ? VEH_SPECS[ci].name : UI_CAR_TIT[ci];
   const laps = typeof RACE_LAPS !== 'undefined' ? RACE_LAPS : 3;
   let rows = '';
   for (let k = 0; k < 4; k++) {

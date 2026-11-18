@@ -1,10 +1,12 @@
-// Rivais na pista (Modo Corrida de 3 voltas): 3 carros de IA usando CAR.models[0..1],
+// Rivais na pista (Modo Corrida de 3 voltas): 3 carros de IA com qualquer modelo de CAR.models[0..4] (a escalação varia com o carro do jogador),
 // seguem AI.line/AI.vt com desvio para ultrapassagem, colisão elástica 2D e classificação contínua.
 // Nenhuma alocação em rivStep() ou rivPose().
 const RIV_N = 3;
 const RACE_LAPS = 3;
-const RIV_CAP_H = 0.95;
-const RIV_CAP_R = 0.85;
+const RIV_NAMES = ['Uno da Firma', 'Gol Vermelho', 'DeLorean Prata', 'Mini-Bólido Azul', 'Top Gear 2 GT'];
+const RIV_PAINT = [1, 5, 3, 0, 2];
+const RIV_URBAN = [1, 0, 2, 3], RIV_URBAN_PACE = [1.0, 0.975, 0.95];   // jogador de Uno/Gol: rivais de ritmo equilibrado
+const RIV_FAST = [4, 2, 3, 1], RIV_FAST_PACE = [1.02, 1.0, 0.98];     // jogador de DeLorean/Mini-Bólido/Top Gear 2: rivais mais fortes
 
 function rivMakeCar(idx, nome, modelIdx, paintIdx, pace, gridS, gridD) {
   return {
@@ -12,7 +14,7 @@ function rivMakeCar(idx, nome, modelIdx, paintIdx, pace, gridS, gridD) {
     activeModel: 0, bodyKind: modelIdx, wheelR: 0.281,
     hubs: [[1.181, 0.281, -0.67], [1.181, 0.281, 0.67], [-1.181, 0.281, -0.65], [-1.181, 0.281, 0.65]],
     slotBody: 0, slotWheel: [0, 0, 0, 0],
-    items: [], glassItems: [], vis: false,
+    items: [], glassItems: [], modelItems: [], modelGlassItems: [], capH: 0.9, capR: 0.8, capOx: 0, vis: false,
     s: 0, d: 0, lastS: 0, laps: 0, prog: 0, hint: -1,
     x: 0, y: 0, z: 0, yaw: 0, speed: 0, vLat: 0,
     gPitch: 0, gRoll: 0, roll: 0, pitch: 0, steer: 0, brake: 0,
@@ -39,18 +41,63 @@ const RIV = {
   ],
   _rp: new Float64Array(5),
   _rq: new Float64Array(12),
-  _col: new Float64Array(8),
+  _col: new Float64Array(12),
   _podId: new Int32Array(4),
   _podT: new Float64Array(4),
   _g: m4(), _b: m4(), _t: m4(), _t2: m4(), _w: m4(),
 };
 
+// liga só as malhas do modelo ativo do rival (e só com a corrida visível)
+function rivApplyOn(rv) {
+  for (let k = 0; k < rv.modelItems.length; k++) {
+    const its = rv.modelItems[k], on = RIV.vis && k === rv.activeModel;
+    for (let j = 0; j < its.length; j++) its[j].on = on;
+  }
+}
+
 function rivSetVis(vis) {
-  const v = !!vis;
-  RIV.vis = v;
-  for (let i = 0; i < RIV_N; i++) {
-    const its = RIV.cars[i].items;
-    for (let j = 0; j < its.length; j++) its[j].on = v;
+  RIV.vis = !!vis;
+  for (let i = 0; i < RIV_N; i++) rivApplyOn(RIV.cars[i]);
+}
+
+// cápsula de colisão pelas dimensões reais do modelo: raio = meia-largura, comprimento = frente + traseira, centro deslocado do CG
+function rivSetCap(rv) {
+  const S = VEH_SPECS[clamp(rv.modelIdx | 0, 0, VEH_SPECS.length - 1)];
+  rv.capR = S.halfW;
+  rv.capH = Math.max(0.05, (S.front + S.rear) * 0.5 - S.halfW);
+  rv.capOx = (S.front - S.rear) * 0.5;
+}
+
+function rivSetModel(rv, mIdx) {
+  const n = rv.modelItems.length, m = n ? clamp(mIdx | 0, 0, n - 1) : mIdx;
+  rv.modelIdx = m;
+  rivSetCap(rv);
+  if (!n) { rv.bodyKind = m; return; }
+  const M = CAR.models[m];
+  rv.activeModel = m;
+  rv.items = rv.modelItems[m];
+  rv.glassItems = rv.modelGlassItems[m];
+  rv.bodyKind = M.bodyKind !== undefined ? M.bodyKind : m;
+  rv.wheelR = M.wheelR || 0.281;
+  if (M.hubs) rv.hubs = M.hubs;
+  rivApplyOn(rv);
+  if (typeof carApplyPaint === 'function') carApplyPaint(rv.slotBody, rv.paintIdx, rv.bodyKind);
+}
+
+// escalação: 3 rivais distintos do carro do jogador; urbano (0/1) enfrenta ritmo equilibrado, especial (2..4) enfrenta os rápidos
+function rivLineup() {
+  const ci = typeof GS !== 'undefined' ? clamp(GS.carIdx | 0, 0, VEH_SPECS.length - 1) : 0;
+  const lst = ci < 2 ? RIV_URBAN : RIV_FAST, pc = ci < 2 ? RIV_URBAN_PACE : RIV_FAST_PACE;
+  let n = 0;
+  for (let k = 0; k < lst.length && n < RIV_N; k++) {
+    if (lst[k] === ci) continue;
+    const rv = RIV.cars[n], m = lst[k];
+    rv.paintIdx = RIV_PAINT[m];
+    rv.nome = RIV_NAMES[m];
+    rv.pace = pc[n];
+    rivSetModel(rv, m);
+    if (typeof HUD !== 'undefined' && typeof hudPaintHex === 'function') HUD.rivCol[n] = hudPaintHex(rv.paintIdx);
+    n++;
   }
 }
 
@@ -59,35 +106,36 @@ function rivRenderInit() {
   RIV._init = true;
   for (let i = 0; i < RIV_N; i++) {
     const rv = RIV.cars[i];
-    const mIdx = rv.modelIdx === 1 && CAR.models[1] ? 1 : 0;
-    const M = CAR.models[mIdx];
-    rv.activeModel = mIdx;
-    rv.bodyKind = M.bodyKind !== undefined ? M.bodyKind : mIdx;
-    rv.wheelR = M.wheelR || 0.281;
-    if (M.hubs) rv.hubs = M.hubs;
     rv.slotBody = objSlot();
     for (let w = 0; w < 4; w++) rv.slotWheel[w] = objSlot();
-    rv.items.length = 0;
-    rv.glassItems.length = 0;
-    const pushItem = (it, isGlass) => {
-      if (!it) return;
-      it.on = false;
-      rv.items.push(it);
-      if (isGlass) rv.glassItems.push(it);
-    };
-    if (M.bodyMesh) pushItem(CAR.set.add(M.bodyMesh, rv.slotBody, 3), false);
-    if (M.driverMesh) pushItem(CAR.set.add(M.driverMesh, rv.slotBody, 3), false);
-    if (M.glassMesh && CAR.glass) pushItem(CAR.glass.add_(M.glassMesh, rv.slotBody), true);
-    if (M.wheelMesh) {
-      for (let w = 0; w < 4; w++) {
-        pushItem(CAR.set.add(M.wheelMesh, rv.slotWheel[w], 3), false);
-        if (M.wheelBlurMesh) pushItem(CAR.set.add(M.wheelBlurMesh, rv.slotWheel[w], 1), false);
+    rv.modelItems.length = 0;
+    rv.modelGlassItems.length = 0;
+    // mesmos 5 slots do rival com as malhas de todos os modelos; rivSetModel liga só o escolhido
+    for (let m = 0; m < CAR.models.length; m++) {
+      const M = CAR.models[m], its = [], gls = [];
+      const pushItem = (it, isGlass) => {
+        if (!it) return;
+        it.on = false;
+        its.push(it);
+        if (isGlass) gls.push(it);
+      };
+      if (M.bodyMesh) pushItem(CAR.set.add(M.bodyMesh, rv.slotBody, 3), false);
+      if (M.driverMesh) pushItem(CAR.set.add(M.driverMesh, rv.slotBody, 3), false);
+      if (M.glassMesh && CAR.glass) pushItem(CAR.glass.add_(M.glassMesh, rv.slotBody), true);
+      if (M.wheelMesh) {
+        for (let w = 0; w < 4; w++) {
+          pushItem(CAR.set.add(M.wheelMesh, rv.slotWheel[w], 3), false);
+          if (M.wheelBlurMesh) pushItem(CAR.set.add(M.wheelBlurMesh, rv.slotWheel[w], 1), false);
+        }
       }
+      rv.modelItems.push(its);
+      rv.modelGlassItems.push(gls);
     }
-    if (typeof carApplyPaint === 'function') carApplyPaint(rv.slotBody, rv.paintIdx, rv.bodyKind);
+    rivSetModel(rv, rv.modelIdx);
   }
   RIV.vis = false;
 }
+
 
 function rivRestart() {
   const L = TRK.L, N = TRK.N, ds = TRK.ds;
@@ -99,6 +147,7 @@ function rivRestart() {
   RIV.finishCount = 0;
   RIV.finishOrder.fill(0);
   RIV.finishTime.fill(0);
+  rivLineup();
   for (let i = 0; i < RIV_N; i++) {
     const rv = RIV.cars[i];
     rv.s = L > 0 ? ((L + rv.gridS) % L + L) % L : 0;
@@ -142,13 +191,13 @@ function rivRestart() {
 function rivCapTest() {
   const C = RIV._col;
   const ax = C[0], az = C[1], ay = C[2], bx = C[3], bz = C[4], by = C[5];
-  const h2 = RIV_CAP_H * 2;
-  const d1x = Math.cos(ay) * h2, d1z = Math.sin(ay) * h2;
-  const d2x = Math.cos(by) * h2, d2z = Math.sin(by) * h2;
+  const hA = C[8] * 2, hB = C[10] * 2;
+  const d1x = Math.cos(ay) * hA, d1z = Math.sin(ay) * hA;
+  const d2x = Math.cos(by) * hB, d2z = Math.sin(by) * hB;
   const p1x = ax - d1x * 0.5, p1z = az - d1z * 0.5;
   const p2x = bx - d2x * 0.5, p2z = bz - d2z * 0.5;
   const rx = p1x - p2x, rz = p1z - p2z;
-  const a = h2 * h2, e = h2 * h2;
+  const a = hA * hA, e = hB * hB;
   const b = d1x * d2x + d1z * d2z;
   const c = d1x * rx + d1z * rz;
   const f = d2x * rx + d2z * rz;
@@ -172,7 +221,7 @@ function rivCapTest() {
   const c2x = p2x + d2x * t, c2z = p2z + d2z * t;
   let dx = c1x - c2x, dz = c1z - c2z;
   const dist = Math.hypot(dx, dz);
-  const minD = RIV_CAP_R * 2;
+  const minD = C[9] + C[11];
   if (dist >= minD) { C[0] = 0; return; }
   if (dist > 1e-6) {
     dx /= dist; dz /= dist;
@@ -213,7 +262,7 @@ function rivStep() {
   const playerProg = (V.laps - 1) * L + V.s;
   const gripF = (typeof ENV !== 'undefined' && !GS.replayOn && !GS.poseOn) ? Math.sqrt(ENV.grip) : 1;
   const hwLim = TRK.hw - 1.05;
-  const pOx = -(P.L * 0.5 - P.a);
+  const pOx = (P.front - P.rear) * 0.5, pH = Math.max(0.05, (P.front + P.rear) * 0.5 - P.halfW);
   const pCy = Math.cos(V.yaw), pSy = Math.sin(V.yaw);
   const pSpeed = Math.hypot(V.vx, V.vy);
 
@@ -324,8 +373,9 @@ function rivStep() {
     const a = RIV.cars[i];
     for (let j = i + 1; j < RIV_N; j++) {
       const b = RIV.cars[j];
-      C[0] = a.x; C[1] = a.z; C[2] = a.yaw;
-      C[3] = b.x; C[4] = b.z; C[5] = b.yaw;
+      C[0] = a.x + Math.cos(a.yaw) * a.capOx; C[1] = a.z + Math.sin(a.yaw) * a.capOx; C[2] = a.yaw;
+      C[3] = b.x + Math.cos(b.yaw) * b.capOx; C[4] = b.z + Math.sin(b.yaw) * b.capOx; C[5] = b.yaw;
+      C[8] = a.capH; C[9] = a.capR; C[10] = b.capH; C[11] = b.capR;
       rivCapTest();
       const pen = C[0];
       if (pen > 0) {
@@ -353,7 +403,8 @@ function rivStep() {
   for (let i = 0; i < RIV_N; i++) {
     const rv = RIV.cars[i];
     C[0] = pcx; C[1] = pcz; C[2] = V.yaw;
-    C[3] = rv.x; C[4] = rv.z; C[5] = rv.yaw;
+    C[3] = rv.x + Math.cos(rv.yaw) * rv.capOx; C[4] = rv.z + Math.sin(rv.yaw) * rv.capOx; C[5] = rv.yaw;
+    C[8] = pH; C[9] = P.halfW; C[10] = rv.capH; C[11] = rv.capR;
     rivCapTest();
     const pen = C[0];
     if (pen > 0) {
@@ -491,6 +542,9 @@ function rivPose() {
     bp[1] = 0;
     bp[2] = lights;
     bp[3] = 0;
+    // DeLorean rival: fluxo na reta em alta (mesma regra do jogador, sem suavização)
+    bp[9] = (rv.modelIdx === 2 && rv.hint >= 0 && Math.abs(rv.steer) < 0.085 && Math.abs(TRK.k[rv.hint]) < 0.011 && rv.speed > 35) ? sat((rv.speed - 35) / 4.3) : 0;
+    bp[11] = 0;
     if (typeof carApplyPaint === 'function') carApplyPaint(sb, rv.paintIdx, rv.bodyKind);
 
     m4inv(T, B);
