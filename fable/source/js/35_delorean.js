@@ -198,7 +198,7 @@ const DT_DMC = { z0: 0.33, z1: 0.75, y0: 0.575, y1: 0.715 };
 function dmcTailLamp(P) {
   return Math.max(
     dmcRRect(P[2] - (DT_DMC.z0 + DT_DMC.z1) * 0.5, P[1] - (DT_DMC.y0 + DT_DMC.y1) * 0.5, (DT_DMC.z1 - DT_DMC.z0) * 0.5, (DT_DMC.y1 - DT_DMC.y0) * 0.5, 0.006),
-    P[0] - (-2.00)
+    P[0] - (-1.95)
   );
 }
 const DSEAM = { door: null };
@@ -240,6 +240,7 @@ function deloreanBuildBody(mb, gl) {
       f = Math.min(f, dmcWindshield(P));
       if (P[0] > 1.82) f = Math.min(f, dmcHeadlight(P), dmcGrille(P));
     }
+    if (P[0] < -1.95) f = Math.min(f, dmcTailLamp(P));
     f = Math.min(f, Math.max(DMC.AXF - P[0], P[1] - 0.540), Math.max(P[0] - DMC.AXR, P[1] - 0.545));
     return -f;
   };
@@ -278,17 +279,34 @@ function deloreanBuildBody(mb, gl) {
     rim: 0.004,
   });
 
-  // Lanternas traseiras quadriculadas icônicas (faixa superior âmbar, centro vermelho, ré interna)
-  mb.mat(CM.PLASTIC).color(0.016, 0.016, 0.018);
-  mb.box(-2.025, 0.645, 0.54, 0.026, 0.160, 0.44);
-  mb.mat(CM.LENS, 1).color(0.75, 0.03, 0.02);
-  mb.quad(
-    -2.040, DT_DMC.y0, DT_DMC.z0,
-    -2.040, DT_DMC.y0, DT_DMC.z1,
-    -2.040, DT_DMC.y1, DT_DMC.z1,
-    -2.040, DT_DMC.y1, DT_DMC.z0,
-    0, 0, 1, 1
-  );
+  // Lanternas traseiras quadriculadas icônicas (faixa superior âmbar, centro vermelho, ré interna), salientes à pele traseira
+  {
+    const { z0, z1, y0, y1 } = DT_DMC;
+    mb.mat(CM.PLASTIC).color(0.016, 0.016, 0.018);
+    mb.box(-2.012, (y0 + y1) * 0.5, (z0 + z1) * 0.5, 0.044, y1 - y0 + 0.022, z1 - z0 + 0.024);
+    mb.patch((u, v, o) => {
+      const z = lerp(z0 - 0.012, z1 + 0.012, u), y = lerp(y0 - 0.011, y1 + 0.011, v);
+      o[0] = dmcTopX(z, y, true) - 0.004; o[1] = y; o[2] = z;
+    }, 0, 1, 0, 1, { nu: 8, nv: 4, flip: false, uv: plainUV });
+    mb.mat(CM.LENS, 1).color(0.75, 0.03, 0.02);
+    mb.patch((u, v, o) => {
+      const z = lerp(z0, z1, u), y = lerp(y0, y1, v);
+      o[0] = dmcTopX(z, y, true) - 0.007; o[1] = y; o[2] = z;
+    }, 0, 1, 0, 1, { nu: 10, nv: 6, flip: false, uv: (u, v) => { _duv[0] = u; _duv[1] = v; return _duv; } });
+    // Grade preta divisória clássica do DeLorean acompanhando a curvatura da lente
+    mb.mat(CM.PLASTIC).color(0.015, 0.015, 0.017);
+    for (const gy of [0.622, 0.668]) {
+      for (let k = 0; k < 4; k++) {
+        const za = lerp(z0, z1, k / 4), zb = lerp(z0, z1, (k + 1) / 4);
+        const zm = (za + zb) * 0.5, xL = dmcTopX(zm, gy, true) - 0.0085;
+        mb.box(xL, gy, zm, 0.006, 0.007, (zb - za) + 0.002);
+      }
+    }
+    for (const gz of [0.47, 0.61]) {
+      const xb = dmcTopX(gz, y0, true) - 0.0085, xt = dmcTopX(gz, y1, true) - 0.0085;
+      mb.quad(xb, y0, gz - 0.004, xb, y0, gz + 0.004, xt, y1, gz + 0.004, xt, y1, gz - 0.004);
+    }
+  }
 
   // Friso lateral preto entre as caixas de roda e saia da soleira
   mb.mat(CM.PLASTIC).color(0.022, 0.022, 0.025);
@@ -436,19 +454,19 @@ function deloreanBuildParts(mb, fb) {
   mb.mat(18, 0).color(0.28, 0.76, 1.0);
   mb.rbox(-1.55, 0.92, 0.46, 0.18, 0.025, 0.08, 0.005, 1);
 
-  // Grandes dutos/extratores traseiros BTTF (cooling vents) inclinados para trás/baixo
+  // Grandes dutos/extratores traseiros BTTF (cooling vents) inclinados para trás/cima sobre o deck traseiro (acima das lanternas)
   {
     mb.mat(CM.STEEL, 1).color(0.16, 0.17, 0.19);
     const cz = 0.44, hw = 0.135;
-    mb.push(m4translate(m4(), -1.78, 0.74, cz)); mb.push(m4rotZ(m4(), -0.18));
-    mb.box(0, 0, 0, 0.62, 0.165, hw * 2);
+    mb.push(m4translate(m4(), -1.78, 0.86, cz)); mb.push(m4rotZ(m4(), -0.15));
+    mb.box(0, 0, 0, 0.62, 0.150, hw * 2);
     mb.mat(CM.ALU).color(0.46, 0.48, 0.52);
-    mb.box(-0.29, 0.075, 0, 0.05, 0.018, hw * 2 + 0.02);
-    mb.box(-0.29, -0.075, 0, 0.05, 0.018, hw * 2 + 0.02);
-    mb.box(-0.29, 0, hw, 0.05, 0.165, 0.018);
-    mb.box(-0.29, 0, -hw, 0.05, 0.165, 0.018);
+    mb.box(-0.29, 0.068, 0, 0.05, 0.018, hw * 2 + 0.02);
+    mb.box(-0.29, -0.068, 0, 0.05, 0.018, hw * 2 + 0.02);
+    mb.box(-0.29, 0, hw, 0.05, 0.150, 0.018);
+    mb.box(-0.29, 0, -hw, 0.05, 0.150, 0.018);
     mb.mat(CM.GRILLE).color(0.008, 0.008, 0.01);
-    mb.quad(-0.312, -0.068, hw - 0.01, -0.312, -0.068, -hw + 0.01, -0.312, 0.068, -hw + 0.01, -0.312, 0.068, hw - 0.01);
+    mb.quad(-0.312, -0.062, -hw + 0.01, -0.312, -0.062, hw - 0.01, -0.312, 0.062, hw - 0.01, -0.312, 0.062, -hw + 0.01);
     mb.pop(); mb.pop();
   }
 
@@ -505,11 +523,16 @@ function deloreanBuildParts(mb, fb) {
   mb.mat(CM.STRAP).color(0.75, 0.12, 0.08);
   mb.rbox(-1.35, 1.04, 0, 0.04, 0.08, 0.06, 0.008, 1);
 
-  // Placa OUTATIME na traseira + emblema DMC na grade dianteira
-  mb.mat(CM.DECAL).color(1, 1, 1);
+  // Placa OUTATIME saliente à superfície traseira + moldura preta + emblema DMC na grade dianteira
   {
+    const yb = 0.585, yt = 0.708;
+    const xbP = dmcTopX(0, yb, true) - 0.008, xtP = dmcTopX(0, yt, true) - 0.008;
+    mb.mat(CM.PLASTIC).color(0.016, 0.016, 0.018);
+    mb.quad(xbP + 0.002, yb - 0.008, -0.198, xbP + 0.002, yb - 0.008, 0.198, xtP + 0.002, yt + 0.008, 0.198, xtP + 0.002, yt + 0.008, -0.198);
+    mb.box(-2.032, (yb + yt) * 0.5, 0, 0.044, yt - yb + 0.014, 0.396);
+    mb.mat(CM.DECAL).color(1, 1, 1);
     const reg = CAT.outatime;
-    mb.quad(-2.055, 0.585, -0.19, -2.055, 0.585, 0.19, -2.055, 0.708, 0.19, -2.055, 0.708, -0.19, reg[0], reg[3], reg[2], reg[1]);
+    mb.quad(xbP, yb, -0.19, xbP, yb, 0.19, xtP, yt, 0.19, xtP, yt, -0.19, reg[0], reg[3], reg[2], reg[1]);
   }
   mb.mat(CM.DECAL, 1).color(1, 1, 1);
   {
@@ -554,8 +577,8 @@ function deloreanBuildParts(mb, fb) {
   if (typeof carAddExhaustFlame === 'function') {
     carAddExhaustFlame(fxTarget, -2.11, 0.27, -0.50, -1, 0, 0.62, 0.048);
     carAddExhaustFlame(fxTarget, -2.11, 0.27,  0.50, -1, 0, 0.62, 0.048);
-    carAddExhaustFlame(fxTarget, -2.08, 0.68, -0.44, -0.98, -0.18, 0.56, 0.056);
-    carAddExhaustFlame(fxTarget, -2.08, 0.68,  0.44, -0.98, -0.18, 0.56, 0.056);
+    carAddExhaustFlame(fxTarget, -2.089, 0.907, -0.44, -0.989, 0.149, 0.56, 0.056);
+    carAddExhaustFlame(fxTarget, -2.089, 0.907,  0.44, -0.989, 0.149, 0.56, 0.056);
   }
   const addArcRibbon = (pts, hw) => {
     fxTarget.mat(18, 1).color(0.45, 0.92, 1.0);
@@ -582,8 +605,8 @@ function deloreanBuildParts(mb, fb) {
   addArcRibbon([[2.04, 0.67, -0.55], [1.66, 0.73, -0.44], [1.22, 0.77, -0.52], [0.80, 0.82, -0.46]], 0.048);
   addArcRibbon([[2.04, 0.67,  0.55], [1.66, 0.73,  0.44], [1.22, 0.77,  0.52], [0.80, 0.82,  0.46]], 0.048);
   addArcRibbon([[0.05, 1.18, -0.60], [-0.26, 1.19, -0.20], [-0.28, 1.19, 0.20], [-0.55, 1.18, 0.60]], 0.050);
-  addArcRibbon([[-1.52, 0.90, -0.56], [-1.78, 0.84, -0.46], [-2.06, 0.74, -0.44]], 0.048);
-  addArcRibbon([[-1.52, 0.90,  0.56], [-1.78, 0.84,  0.46], [-2.06, 0.74,  0.44]], 0.048);
+  addArcRibbon([[-1.52, 0.91, -0.54], [-1.78, 0.95, -0.44], [-2.08, 0.98, -0.44]], 0.048);
+  addArcRibbon([[-1.52, 0.91,  0.54], [-1.78, 0.95,  0.44], [-2.08, 0.98,  0.44]], 0.048);
 }
 
 // Piloto proporcionado ao cockpit baixo (capacete abaixo do teto de 1,14 m)
@@ -692,7 +715,7 @@ function deloreanBuildModel() {
     wheelBlurMesh: wb.upload(),
     steerMesh: s.upload(),
     steerMat,
-    hubs: [[DMC.AXF, DMC.WR, -0.785], [DMC.AXF, DMC.WR, 0.785], [DMC.AXR, DMC.WR, -0.795], [DMC.AXR, DMC.WR, 0.795]],
+    hubs: [[DMC.AXF, DMC.WR, -0.755], [DMC.AXF, DMC.WR, 0.755], [DMC.AXR, DMC.WR, -0.765], [DMC.AXR, DMC.WR, 0.765]],
     wheelR: DMC.WR,
     eyePos: [-0.04, 0.99, -0.355],
     bodyKind: 2,
@@ -700,8 +723,8 @@ function deloreanBuildModel() {
     exhausts: [
       [-2.11, 0.27, -0.50, -1, 0, 0.95],
       [-2.11, 0.27, 0.50, -1, 0, 0.95],
-      [-2.08, 0.68, -0.44, -0.98, -0.18, 0.85],
-      [-2.08, 0.68, 0.44, -0.98, -0.18, 0.85],
+      [-2.089, 0.907, -0.44, -0.989, 0.149, 0.85],
+      [-2.089, 0.907, 0.44, -0.989, 0.149, 0.85],
     ],
     tris,
   };
