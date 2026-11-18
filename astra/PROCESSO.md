@@ -17,6 +17,8 @@ O teste levou **6 h 49 min de trabalho do agente**, com **19 rodadas** e custo e
 
 A versão jogável recebeu uma correção de compatibilidade na etapa que desenha a sombra do carro. O WebKit podia rejeitar essa etapa e deixar a pista preta. [HTML atualizado](index.html) · [Relato do erro no WebKit](https://bugs.webkit.org/show_bug.cgi?id=319980)
 
+As coordenadas dos dígitos das placas de frenagem agora são constantes explícitas no shader. A alteração evita uma falha de compilação do Naga ao gerar HLSL. [Relato do erro no Naga](https://github.com/gfx-rs/wgpu/issues/7793)
+
 ## Tempo de GPU
 
 Na volta roteirizada de 60 s, duas medições independentes no MacBook Pro M4 Max a 2560×1440 deram médias de GPU de **6,87 ms** e **7,02 ms**, com 8 e 6 dos 3.600 quadros acima de 16,7 ms, respectivamente. A terceira medição deu 12,61 ms de média e 860 quadros acima do limite, sem causa identificada. O pedido fixava média de até 11 ms e nenhum quadro acima de 16,7 ms.

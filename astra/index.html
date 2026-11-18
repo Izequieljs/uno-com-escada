@@ -1036,10 +1036,11 @@ const worldMaterialsWGSL = /* wgsl */`
      dst=abs(length(max(edge,vec2f(0.)))+min(max(edge.x,edge.y),0.)-.211)-.067;
    }else{
      // Smooth optical outlines for the DIN-style '5' and the flag of the '1'.
-     let five=array<vec2f,15>(vec2f(.218,.427),vec2f(-.171,.427),vec2f(-.197,.027),vec2f(-.094,.093),
+     // Explicit constants avoid Naga folding these arrays during override resolution.
+     const five=array<vec2f,15>(vec2f(.218,.427),vec2f(-.171,.427),vec2f(-.197,.027),vec2f(-.094,.093),
        vec2f(.008,.114),vec2f(.106,.102),vec2f(.183,.053),vec2f(.225,-.026),vec2f(.236,-.143),
        vec2f(.223,-.273),vec2f(.181,-.363),vec2f(.107,-.421),vec2f(.008,-.441),vec2f(-.108,-.420),vec2f(-.210,-.343));
-     let one=array<vec2f,3>(vec2f(-.177,.262),vec2f(.035,.428),vec2f(.035,-.445));
+     const one=array<vec2f,3>(vec2f(-.177,.262),vec2f(.035,.428),vec2f(.035,-.445));
      var prev=select(five[0],one[0],digit==1);
      let steps=select(15,3,digit==1);
      for(var k=1;k<steps;k++){
