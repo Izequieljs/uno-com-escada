@@ -2,12 +2,22 @@
 // poses, teclas de ferramenta e leitura do controle. Nas ferramentas de trabalho/ (captura, poses, teste, medição) nada
 // disto é ligado: sem menu, sem painel, sem som.
 const ST = { INICIO: 0, JOGO: 1, PAUSA: 2, BENCH: 3, FITA: 4, RESULT: 5, POSE: 6 };
-const UI = { st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, b0: null, b1: null, bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false };
+const UI = { st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, med: null, b0: null, b1: null, bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false };
+const MED_UI = [
+  { nome: 'Firma', tempo: '0:53,50', cor: '#4be3ff', sym: '★' },
+  { nome: 'Ouro',  tempo: '0:56,00', cor: '#ffd23f', sym: '●' },
+  { nome: 'Prata', tempo: '1:00,00', cor: '#cfd6de', sym: '●' },
+  { nome: 'Bronze', tempo: '1:06,00', cor: '#cd7f32', sym: '●' },
+];
 const $ = id => document.getElementById(id);
 function uiInit() {
-  UI.el = $('ui'); UI.tag = $('tag'); UI.res = $('res'); UI.b0 = $('b0'); UI.b1 = $('b1');
+  UI.el = $('ui'); UI.tag = $('tag'); UI.res = $('res'); UI.med = $('med'); UI.b0 = $('b0'); UI.b1 = $('b1');
   hudInit(); uiWarmup();
-  try { const b = +localStorage.getItem('uno-melhor'); if (b > 20 && b < 600) LAP[2] = b; } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
+  try {
+    const b = +localStorage.getItem('uno-melhor');
+    if (b > 20 && b < 600) LAP[2] = b;
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('uno-ta-v1'), LAP[2]);
+  } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
   UI.b0.onclick = () => { if (UI.st === ST.INICIO) { sndStart(); uiSet(ST.JOGO); } else uiResume(); };
   UI.b1.onclick = () => benchStart();
   addEventListener('keydown', uiKey);
@@ -23,6 +33,18 @@ function uiSet(st) {
   UI.b0.textContent = st === ST.INICIO ? 'Começar' : st === ST.RESULT ? 'Voltar a dirigir' : 'Continuar';
   UI.b1.style.display = st === ST.INICIO ? 'none' : ''; UI.b1.textContent = st === ST.RESULT ? 'Repetir benchmark' : 'Benchmark';
   UI.res.style.display = st === ST.RESULT ? 'block' : 'none';
+  if (menu && UI.med) {
+    const cs = LAP[2] > 0 ? Math.round(LAP[2] * 100) : 0;
+    const m = typeof medalOf === 'function' ? medalOf(cs) : -1;
+    let html = '';
+    for (let i = 0; i < MED_UI.length; i++) {
+      const d = MED_UI[i], hit = i === m;
+      if (i > 0) html += ' · ';
+      html += '<span' + (hit ? ' class="on" data-hit="1" style="color:' + d.cor + '"' : ' style="opacity:.78"') + '>' +
+        '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + d.tempo + '</span>';
+    }
+    UI.med.innerHTML = html;
+  }
   UI.tag.textContent = st === ST.BENCH ? 'Benchmark: volta roteirizada de 60 s · Esc cancela' : st === ST.FITA ? 'Volta roteirizada · R assume o volante · Esc menu' : st === ST.POSE ? 'Pose ' + (UI.pose + 1) + ' · ' + POSES[UI.pose].nome + ' · 1 a 6 trocam · Esc volta a dirigir' : '';
   UI.tag.style.display = UI.tag.textContent ? 'block' : 'none';
   hudShow(st === ST.JOGO || st === ST.FITA || (st === ST.PAUSA && UI.back !== ST.BENCH));
@@ -43,6 +65,7 @@ function uiKey(e) {
   const c = e.code, st = UI.st;
   if (c === 'KeyM') { sndMute(!SND.mute); return; }
   if (c === 'KeyH') { UI.stats = !UI.stats; hudStats(UI.stats); if (st !== ST.BENCH) perfAttach(UI.stats, 12); return; }
+  if (c === 'KeyG') { if (typeof ghToggle === 'function') ghToggle(); return; }
   if (st === ST.INICIO) return;                                   // na tela de início só o botão começa o jogo (e o som)
   if (c === 'Escape') { if (st === ST.JOGO || st === ST.FITA || st === ST.BENCH) uiPause(); else uiResume(); e.preventDefault(); }
   else if (c === 'KeyB') benchStart();
@@ -105,15 +128,19 @@ function padMenu(edge) {
 // levaria dezenas de segundos de jogo para otimizá-las — rodando até lá no interpretador, que aloca a cada conta.
 // (A parte do som que lê a simulação, sndControl, é aquecida junto com a física em gameWarmup.)
 function uiWarmup() {
-  const H = HUD, g = H.g, t = H.t, s = H.s, sc = document.createElement('canvas'); sc.width = sc.height = 4; const x = sc.getContext('2d'), V = H.V, rt3 = RT[3];
-  const po = PERF.on; UI.warm = true; H.g = H.t = H.s = x; PERF.on = true;
+  const H = HUD, g = H.g, t = H.t, s = H.s, m = H.m, sc = document.createElement('canvas'); sc.width = sc.height = 4; const x = sc.getContext('2d'), V = H.V, rt3 = RT[3];
+  const po = PERF.on; UI.warm = true; H.g = H.t = H.s = H.m = x; PERF.on = true;
   for (let i = 0; i < 6000; i++) {
     PADB[0] = i % 97 === 0 ? -1 : (i * 7919) & 0xffff; PADR[0] = (i % 50) / 49; PADR[1] = (i % 31) / 60; PADR[2] = Math.sin(i * 0.7); padApply();
     if (i % 2) continue;
-    V[0] = (i * 7) % 2100; V[1] = (i * 13) % 7400; V[2] = i % 6; V[3] = (i * 331) % 70000; V[4] = i % 5 ? (i * 17) % 9000 : -1; V[5] = i % 3 ? (i * 19) % 9000 : -1; hudDraw(); hudRead();
+    const j = i >> 1, dc = j % 6;
+    V[0] = (i * 7) % 2100; V[1] = (i * 13) % 7400; V[2] = j % 6; V[3] = (i * 331) % 70000; V[4] = i % 5 ? (i * 17) % 9000 : -1; V[5] = i % 3 ? (i * 19) % 9000 : -1;
+    V[6] = dc === 0 ? -999999 : dc === 1 ? 0 : dc === 2 ? -245 : dc === 3 ? 245 : dc === 4 ? -1234 : 1234;
+    V[7] = (j % 5) - 1; V[8] = 10 + (j % 80); V[9] = 10 + (j % 60); V[10] = j & 63; V[11] = j & 1; V[12] = 15 + (j % 70); V[13] = 15 + (j % 50);
+    hudDraw(); hudRead();
     RT[3] = 300 + i % 300; PERF.live[0] = i % 4 ? i % 40 : 0; hudStatsFrame();
   }
-  H.g = g; H.t = t; H.s = s; H.K.fill(-9); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
+  H.g = g; H.t = t; H.s = s; H.m = m; H.K.fill(-1000001); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
 }
 // chamado no começo de cada quadro; devolve true quando o jogo está parado num menu (não simula nem renderiza)
 function uiFrame() {
@@ -129,6 +156,7 @@ function uiAfter() {
     if (st === ST.FITA && GS.tick60 >= GS.replay.length) { GS.replayOn = false; uiSet(ST.JOGO); }
     if (HUD.vis) hudFrame();
     if (GS.lapNew) { GS.lapNew = false; try { localStorage.setItem('uno-melhor', LAP[2].toFixed(3)); } catch (e) { /* idem */ } }
+    if (typeof GH !== 'undefined' && GH.savePending) { GH.savePending = false; const d = ghSaveData(); if (d) { try { localStorage.setItem('uno-ta-v1', d); } catch (e) { /* idem */ } } }
   }
   if (HUD.stats) hudStatsFrame();
   sndFrame();

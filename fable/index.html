@@ -9,10 +9,11 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 #c{position:absolute;inset:0;margin:auto;width:100vw;height:100vh;display:block;object-fit:contain}
 #msg{position:absolute;left:0;right:0;top:45%;text-align:center;letter-spacing:.08em;white-space:pre-wrap}
 #hint{position:absolute;left:14px;bottom:10px;opacity:.75;text-shadow:0 1px 2px #000;transition:opacity 1.5s;pointer-events:none}
-#hg,#ht,#hs,#tag,#ui{display:none;position:absolute;pointer-events:none}
+#hg,#ht,#hs,#hm,#tag,#ui{display:none;position:absolute;pointer-events:none}
 #hg{right:1.6vh;bottom:1.6vh}
 #ht{left:50%;top:1.6vh;transform:translateX(-50%)}
 #hs{left:1.6vh;top:1.6vh}
+#hm{left:1.6vh;bottom:1.6vh}
 #tag{left:50%;bottom:2.2vh;transform:translateX(-50%);padding:.45em 1.1em;border-radius:1.2em;background:rgba(9,11,14,.62);color:#fff;white-space:nowrap}
 #ui{inset:0;pointer-events:auto;align-items:center;justify-content:center;background:rgba(6,8,10,.62);font-size:clamp(11px,1.72vh,17px)}
 #ui.ini{background:linear-gradient(rgba(6,8,10,.5),rgba(6,8,10,.82))}
@@ -24,6 +25,8 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 #ui table{border-collapse:collapse}
 #ui td,#ui th{padding:.13em .7em .13em 0;font-weight:400;text-align:left}
 #ui td:first-child{color:#fff;font-weight:600;white-space:nowrap;padding-right:1.3em}
+#med{margin:0 0 1.1em;font-size:.9em;color:rgba(255,255,255,.72)}
+#med .on{font-weight:700;padding:.14em .55em;border-radius:.8em;background:rgba(255,255,255,.11);border:1px solid currentColor}
 #res{display:none;margin:0 0 1.4em;padding:1em 1.4em;border-radius:.8em;background:rgba(255,255,255,.07)}
 #res table{margin:0 auto}#res th,#res td{padding:.2em 1.1em;text-align:right}#res td{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}#res p{margin:.7em 0 0}
 #ui .bt{margin-top:1.5em}
@@ -36,10 +39,11 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <canvas id="c"></canvas>
 <div id="msg">carregando…</div>
 <div id="hint">W acelera · S freia/ré · A/D faz curvas · Espaço freio de mão · C câmera · R volta à pista</div>
-<canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas><div id="tag"></div>
+<canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas><canvas id="hm"></canvas><div id="tag"></div>
 <div id="ui"><div>
 <h1>Uno com escada</h1>
 <p class="sub">Fiat Uno Mille EP 1996 · circuito</p>
+<div id="med"></div>
 <div id="res"></div>
 <div class="cols">
 <div><h2>Teclado</h2><table>
@@ -65,6 +69,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <div><h2>Ferramentas</h2><table>
 <tr><td>M</td><td>liga e desliga o som</td></tr>
 <tr><td>H</td><td>estatísticas de desempenho</td></tr>
+<tr><td>G</td><td>liga e desliga o carro fantasma</td></tr>
 <tr><td>B</td><td>benchmark (volta roteirizada de 60 s)</td></tr>
 <tr><td>F</td><td>assistir à volta roteirizada</td></tr>
 <tr><td>1 a 6</td><td>poses fixas</td></tr>
@@ -472,6 +477,20 @@ fn matId(m: u32) -> u32 { return m & 255u; }
 fn matA(m: u32) -> f32 { return f32((m >> 8u) & 255u) / 255.0; }
 fn matB(m: u32) -> f32 { return f32((m >> 16u) & 255u) / 255.0; }
 fn matC(m: u32) -> f32 { return f32((m >> 24u) & 255u) / 255.0; }
+`;
+WGSL["ghost"] = `// Carro fantasma (passe de transparentes): holograma azulado com realce de Fresnel e fade de proximidade.
+#include mesh_vert
+#include fwd_common
+fn shade(in: V2F, ff: bool) -> vec4f {
+  var N = normalize(in.nrm); if (!ff) { N = -N; }
+  let V = normalize(F.camPos.xyz - in.wpos);
+  let nv = max(dot(N, V), 1e-3);
+  let fr = pow(1.0 - nv, 2.0);
+  let fade = O.p0.x;
+  let col = mix(vec3f(0.10, 0.45, 0.85), vec3f(0.55, 0.92, 1.0), fr) * (0.55 + 0.45 * sat(N.y * 0.5 + 0.5));
+  let a = (0.13 + 0.42 * fr) * fade;
+  return vec4f(col * a, a);
+}
 `;
 WGSL["glass"] = `// Vidros e lentes (passe de transparentes). Dois desenhos por malha:
 //   GLASS_MUL: multiplica o fundo pela transmitância colorida;  GLASS_ADD: soma reflexo do ambiente + brilho do sol.
@@ -4830,7 +4849,7 @@ const CAR = {
   wheelbase: 2.362, trackF: 1.34, trackR: 1.30, wheelR: 0.281,
   hubs: [[1.181, 0.281, -0.67], [1.181, 0.281, 0.67], [-1.181, 0.281, -0.65], [-1.181, 0.281, 0.65]],
   slotBody: 0, slotWheel: [0, 0, 0, 0], slotSteer: 0,
-  steerMat: m4(), tris: 0, _t: m4(), _t2: m4(), _t3: m4(), set: null, glass: null, atlasBG: null, fam: null,
+  steerMat: m4(), tris: 0, _t: m4(), _t2: m4(), _t3: m4(), set: null, glass: null, atlasBG: null, fam: null, bodyMesh: null, wheelMesh: null,
   build() {
     carShapeInit(); carWindowsInit(); carSeamInit();
     const fam = CAR.fam = mkFamily('car', { src: 'mat_car', noCube: true });
@@ -4840,9 +4859,9 @@ const CAR = {
     carBuildBody(mb, gl);
     if (typeof carBuildParts === 'function') carBuildParts(mb, gl);
     CAR.tris = mb.ni / 3 + gl.ni / 3;
-    set.add(mb.upload(), CAR.slotBody, 3); glass.add_(gl.upload(), CAR.slotBody);
+    const bm = CAR.bodyMesh = mb.upload(); set.add(bm, CAR.slotBody, 3); glass.add_(gl.upload(), CAR.slotBody);
     if (typeof carBuildWheel === 'function') {
-      const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); const wm = w.upload(), wbm = wb.upload(); CAR.tris += 4 * (w.ni + wb.ni) / 3;
+      const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); const wm = CAR.wheelMesh = w.upload(), wbm = wb.upload(); CAR.tris += 4 * (w.ni + wb.ni) / 3;
       for (let i = 0; i < 4; i++) { set.add(wm, CAR.slotWheel[i], 3); set.add(wbm, CAR.slotWheel[i], 1); }   // disco de borrão: só no passe principal
     }
     if (typeof carBuildSteer === 'function') { const s = new MeshBuilder(1 << 12); carBuildSteer(s); CAR.tris += s.ni / 3; set.add(s.upload(), CAR.slotSteer, 3); }
@@ -7199,6 +7218,7 @@ function gameInit() {
   // colisão: usa o afastamento real do guard-rail do cenário quando existe (contorna a pit lane)
   if (typeof PROPS !== 'undefined' && PROPS.railD) for (let i = 0; i < TRK.N; i++) { const l = PROPS.railD(-1, i), r = PROPS.railD(1, i); if (l === l) TRK.barL[i] = Math.abs(l); if (r === r) TRK.barR[i] = Math.abs(r); }
   sndInit();
+  if (typeof ghInit === 'function') ghInit();
   gameWarmup();
   gameRestart();
 }
@@ -7207,6 +7227,7 @@ function gameInit() {
 // Sem isso, a primeira troca de câmera ou a primeira ré desotimizaria funções do laço e geraria lixo temporário.
 function gameWarmup() {
   const fx = GS.fxOn, rp = GS.replayOn; GS.replayOn = false; GS.ai = false; RT[2] = 1 / 120;
+  if (typeof GH !== 'undefined') GH.warm = true;
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0);
   for (let i = 0; i < 9000; i++) {
     const ph = (i / 300) | 0, t = i / 120; let k = aiKeys(t);
@@ -7229,6 +7250,7 @@ function gameWarmup() {
       cs.focusOn = false; setCamera(x, y, z, x + ux, y + uy, z + uz, 0.9); cascadeSetup(k % 3);
     }
   }
+  if (typeof GH !== 'undefined') GH.warm = false;
   GS.held = 0; GS.padKeys = 0; LAP[2] = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
 }
 // Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas três câmeras (com fumaça e marcas),
@@ -7254,6 +7276,7 @@ function gameRestart() {
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
+  if (typeof ghRestart === 'function') ghRestart();
   GS.alpha = 1; gamePose(); gameCamera();
 }
 // um passo de física; a cada 2 passos (1/60 s) lê as teclas (gravadas, piloto automático ou teclado)
@@ -7274,6 +7297,7 @@ function gameStep() {
   GS.sub++;
   vehicleStep(GS.keys);
   if (VEH.laps !== GS.lapSeen) lapCross();
+  if (typeof ghStep === 'function') ghStep();
   if (GS.fxOn && typeof fxStep === 'function') fxStep();
 }
 // junta o controle ao teclado: gatilhos e alavanca valem como entrada analógica (VIN); A/D do teclado têm prioridade na direção
@@ -7289,7 +7313,15 @@ function lapCross() {
   const V = VEH;
   if (V.laps > GS.lapMax) {
     const st = V.vx * PHYS_DT, fr = st > 1e-6 ? V.s / st : 0, t = V.time - (fr < 0 ? 0 : fr > 1 ? 1 : fr) * PHYS_DT;
-    if (LAP[3] === 1) { const lt = t - LAP[0]; LAP[1] = lt; if (!GS.replayOn && (LAP[2] === 0 || lt < LAP[2])) { LAP[2] = lt; GS.lapNew = true; } }
+    if (LAP[3] === 1) {
+      const lt = t - LAP[0], rec = !GS.replayOn && (LAP[2] === 0 || lt < LAP[2]);
+      LAP[1] = lt;
+      if (rec) { LAP[2] = lt; GS.lapNew = true; }
+      if (typeof ghLapCross === 'function') ghLapCross(lt, rec);
+    } else if (typeof ghRestart === 'function') {
+      ghRestart();
+      if (typeof GH !== 'undefined') GH.qMask = 1;
+    }
     LAP[0] = t; LAP[3] = 1; GS.lapMax = V.laps;
   }
   GS.lapSeen = V.laps;
@@ -7341,6 +7373,7 @@ function gamePose() {
   const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = 0;
   f[FO.car2] = (GS.tick60 < 30 && GS.speed < 0.5) ? 1 : 0;   // luzes de largada: acesas só enquanto o carro espera no grid
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
+  if (typeof ghPose === 'function') ghPose();
 }
 // rotações lendo o ângulo do registrador ROTQ[0] (sem números por argumento)
 const ROTQ = new Float64Array(1);
@@ -7517,6 +7550,328 @@ function poseApply(i) {
     GS.replayOn = was;
   }
 }
+
+// ---- 49_ghost.js
+// Telemetria da volta (splits/delta), medalhas e gravação/reprodução/persistência do carro fantasma.
+const GH_NONE = -999999;
+const MEDALS = [5350, 5600, 6000, 6600]; // 0 = Firma <= 53,50s, 1 = Ouro <= 56,00s, 2 = Prata <= 60,00s, 3 = Bronze <= 66,00s
+const GH_SPIN_HALF = 16 * PI, GH_SPIN_PER = 32 * PI;
+const ghWrapSpin = a => { a = (a + GH_SPIN_HALF) % GH_SPIN_PER; if (a < 0) a += GH_SPIN_PER; return a - GH_SPIN_HALF; };
+
+function medalOf(cs) {
+  if (!(cs > 0)) return -1;
+  for (let i = 0; i < MEDALS.length; i++) if (cs <= MEDALS[i]) return i;
+  return -1;
+}
+
+const GH = {
+  on: true, warm: false, hasSplit: false, hasGhost: false, savePending: false,
+  deltaCs: GH_NONE, vis: false, drawOn: false, qMask: 0, curLen: 0, bestLen: 0, bestTime: 0,
+  curSplit: new Float32Array(2048).fill(-1), bestSplit: new Float32Array(2048).fill(-1),
+  curFrames: new Float32Array(10800 * 8), bestFrames: new Float32Array(10800 * 8),
+  gx: 0, gy: 0, gz: 0, gyaw: 0, gpitch: 0, groll: 0, gsteer: 0, gspin: 0,
+  slotBody: 0, slotWheel: [0, 0, 0, 0], fam: null, bg: null,
+  _b: m4(), _t: m4(), _w: m4(),
+};
+
+function ghInit() {
+  GH.warm = false;
+  GH.hasSplit = false;
+  GH.hasGhost = false;
+  GH.savePending = false;
+  GH.bestLen = 0;
+  GH.bestTime = 0;
+  GH.bestSplit.fill(-1);
+  ghRestart();
+}
+
+function ghRestart() {
+  GH.curSplit.fill(-1);
+  GH.curLen = 0;
+  GH.qMask = 0;
+  GH.deltaCs = GH_NONE;
+  GH.vis = false;
+  GH.drawOn = false;
+}
+
+function ghToggle() {
+  GH.on = !GH.on;
+  if (!GH.on) { GH.vis = false; GH.drawOn = false; }
+  return GH.on;
+}
+
+// Registra splits e pose a 60 Hz (após vehicleStep + lapCross, no passo ímpar de 120 Hz). Sem alocações.
+function ghStep() {
+  if ((GS.sub & 1) !== 1) return;
+  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
+  const N = TRK.N, ds = TRK.ds;
+  const q = ((VEH.s / TRK.L) * 4) | 0;
+  GH.qMask |= 1 << (q & 3);
+  const tLap = VEH.time - LAP[0], u = VEH.s / ds, iu = Math.floor(u), si = ((iu % N) + N) % N;
+  if (GH.curSplit[si] < 0) GH.curSplit[si] = tLap;
+  if (GH.hasSplit && tLap >= 0.25) {
+    const s0 = GH.bestSplit[si];
+    const s1 = si + 1 < N ? GH.bestSplit[si + 1] : (GH.bestTime > s0 ? GH.bestTime : GH.bestSplit[0]);
+    if (s0 >= 0 && s1 >= 0) {
+      const ref = s0 + (s1 - s0) * (u - iu);
+      GH.deltaCs = clamp(Math.round((tLap - ref) * 100), -9999, 9999);
+    }
+  }
+  if (GH.curLen < 10800) {
+    const o = GH.curLen * 8, F = GH.curFrames, ox = -(VP.L * 0.5 - VP.a);
+    const cy = Math.cos(VEH.yaw), sy = Math.sin(VEH.yaw);
+    F[o]     = VEH.x + cy * ox;
+    F[o + 1] = VEH.y;
+    F[o + 2] = VEH.z + sy * ox;
+    F[o + 3] = VEH.yaw;
+    F[o + 4] = VEH.gPitch - VEH.pitch;
+    F[o + 5] = VEH.gRoll + VEH.roll;
+    F[o + 6] = VEH.steer;
+    F[o + 7] = (VEH.spin[0] + VEH.spin[1]) * 0.5;
+    GH.curLen++;
+  }
+}
+
+// Preenche eventuais buracos (-1) nos splits da melhor volta por interpolação linear ao fechar a volta.
+function ghFillSplits(arr, n, lt) {
+  if (n <= 0) return;
+  if (arr[0] < 0) arr[0] = 0;
+  for (let i = 1; i < n; i++) {
+    if (arr[i] >= 0) continue;
+    let j = i + 1;
+    while (j < n && arr[j] < 0) j++;
+    const v0 = arr[i - 1], v1 = j < n ? arr[j] : lt, span = j - (i - 1);
+    for (let k = i; k < j; k++) arr[k] = v0 + (v1 - v0) * ((k - (i - 1)) / span);
+    i = j;
+  }
+}
+
+function ghLapCross(lt, isRecord) {
+  if (!GH.warm && !GS.replayOn && !GS.ai && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (LAP[2] === 0 || lt <= LAP[2] + 1e-6)) {
+    GH.bestSplit.set(GH.curSplit);
+    ghFillSplits(GH.bestSplit, TRK.N, lt);
+    GH.hasSplit = true;
+    const n = GH.curLen;
+    if (n > 0) GH.bestFrames.set(GH.curFrames.subarray(0, n * 8));
+    GH.bestLen = n;
+    GH.hasGhost = n > 30;
+    GH.bestTime = lt;
+    GH.savePending = true;
+  }
+  GH.curSplit.fill(-1);
+  GH.curLen = 0;
+  GH.qMask = 1;
+  GH.deltaCs = GH_NONE;
+}
+
+// Interpola a pose do fantasma para o instante atual da volta e atualiza matrizes + fade de proximidade. Sem alocações.
+function ghPose() {
+  let vis = GH.on && GH.hasGhost && LAP[3] === 1 && !GS.replayOn && !GS.ai && !GS.frozen;
+  if (vis) {
+    const f = (VEH.time - LAP[0]) * 60;
+    if (f < 0 || f >= GH.bestLen - 1) {
+      vis = false;
+    } else {
+      const k = f | 0, t = f - k, a = k * 8, b = a + 8, B = GH.bestFrames;
+      GH.gx = B[a] + (B[b] - B[a]) * t;
+      GH.gy = B[a + 1] + (B[b + 1] - B[a + 1]) * t;
+      GH.gz = B[a + 2] + (B[b + 2] - B[a + 2]) * t;
+      GH.gyaw = B[a + 3] + wrapPi(B[b + 3] - B[a + 3]) * t;
+      GH.gpitch = B[a + 4] + (B[b + 4] - B[a + 4]) * t;
+      GH.groll = B[a + 5] + (B[b + 5] - B[a + 5]) * t;
+      GH.gsteer = B[a + 6] + (B[b + 6] - B[a + 6]) * t;
+      GH.gspin = B[a + 7] + (B[b + 7] - B[a + 7]) * t;
+    }
+  }
+  GH.vis = vis;
+  if (!vis || !GH.slotBody || typeof CAR === 'undefined') { GH.drawOn = false; return; }
+  const dxP = GH.gx - GS.cx, dzP = GH.gz - GS.cz;
+  const dP = Math.sqrt(dxP * dxP + dzP * dzP);
+  const cp = R.cam.pos, dxC = GH.gx - cp[0], dyC = GH.gy + 0.8 - cp[1], dzC = GH.gz - cp[2];
+  const dC = Math.sqrt(dxC * dxC + dyC * dyC + dzC * dzC);
+  const fade = smooth(1.8, 5.2, dP < dC ? dP : dC);
+  if (fade < 0.01) { GH.drawOn = false; return; }
+  const wasOn = GH.drawOn;
+  GH.drawOn = true;
+  const B = GH._b, T = GH._t, W = GH._w;
+  const cy = Math.cos(GH.gyaw), sy = Math.sin(GH.gyaw);
+  B[0] = cy; B[1] = 0; B[2] = sy; B[3] = 0;
+  B[4] = 0;  B[5] = 1; B[6] = 0;  B[7] = 0;
+  B[8] = -sy; B[9] = 0; B[10] = cy; B[11] = 0;
+  B[12] = GH.gx; B[13] = GH.gy; B[14] = GH.gz; B[15] = 1;
+  ROTQ[0] = GH.gpitch; rotZQ(T); m4mul(B, B, T);
+  ROTQ[0] = -GH.groll; rotXQ(T); m4mul(B, B, T);
+  const sb = GH.slotBody, mb = objModel(sb);
+  objPrev(sb).set(wasOn ? mb : B);
+  mb.set(B);
+  objParams(sb)[0] = fade;
+  for (let i = 0; i < 4; i++) {
+    const sw = GH.slotWheel[i], mw = objModel(sw), h = CAR.hubs[i], left = (i & 1) === 0;
+    const a = -(i < 2 ? GH.gsteer : 0) + (left ? PI : 0), c = Math.cos(a), sn = Math.sin(a);
+    const g = left ? GH.gspin : -GH.gspin, cg = Math.cos(g), sg = Math.sin(g);
+    W[0] = c * cg; W[1] = sg; W[2] = -sn * cg; W[3] = 0;
+    W[4] = -c * sg; W[5] = cg; W[6] = sn * sg; W[7] = 0;
+    W[8] = sn; W[9] = 0; W[10] = c; W[11] = 0;
+    W[12] = h[0]; W[13] = h[1]; W[14] = h[2]; W[15] = 1;
+    m4mul(T, B, W);
+    objPrev(sw).set(wasOn ? mw : T);
+    mw.set(T);
+    objParams(sw)[0] = fade;
+  }
+}
+
+function ghB64Enc(ta) {
+  const u8 = new Uint8Array(ta.buffer, ta.byteOffset, ta.byteLength);
+  let s = '';
+  for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192));
+  return btoa(s);
+}
+
+function ghB64Dec(str) {
+  const bin = atob(str), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8;
+}
+
+function ghSaveData() {
+  if (!GH.hasSplit || !GH.hasGhost || TRK.N <= 0) return '';
+  const N = TRK.N, sn = Math.ceil(N / 2), sp = new Uint16Array(sn);
+  for (let k = 0; k < sn; k++) {
+    const v = GH.bestSplit[k * 2];
+    sp[k] = v >= 0 ? clamp(Math.round(v * 100), 0, 65535) : 0;
+  }
+  const len = GH.bestLen, needLast = len > 1 && (len - 1) % 3 !== 0;
+  const fn = Math.ceil(len / 3) + (needLast ? 1 : 0);
+  const fr = new Int16Array(fn * 8), B = GH.bestFrames;
+  for (let k = 0; k < fn; k++) {
+    const srcIdx = k * 3 < len ? k * 3 : len - 1, so = srcIdx * 8, doff = k * 8;
+    fr[doff]     = clamp(Math.round(B[so]     * 20), -32767, 32767);
+    fr[doff + 1] = clamp(Math.round(B[so + 1] * 20), -32767, 32767);
+    fr[doff + 2] = clamp(Math.round(B[so + 2] * 20), -32767, 32767);
+    fr[doff + 3] = clamp(Math.round(wrapPi(B[so + 3]) * 5000), -32767, 32767);
+    fr[doff + 4] = clamp(Math.round(B[so + 4] * 5000), -32767, 32767);
+    fr[doff + 5] = clamp(Math.round(B[so + 5] * 5000), -32767, 32767);
+    fr[doff + 6] = clamp(Math.round(B[so + 6] * 5000), -32767, 32767);
+    fr[doff + 7] = clamp(Math.round(ghWrapSpin(B[so + 7]) * 500), -32767, 32767);
+  }
+  return JSON.stringify({
+    v: 1,
+    t: GH.bestTime,
+    n: N,
+    l: len,
+    sp: ghB64Enc(sp),
+    fr: ghB64Enc(fr),
+  });
+}
+
+function ghLoadData(str, expectedBestSec) {
+  if (!str || typeof str !== 'string') return false;
+  let obj;
+  try { obj = JSON.parse(str); } catch (e) { return false; }
+  if (!obj || typeof obj !== 'object') return false;
+  if (typeof obj.t !== 'number' || !Number.isFinite(obj.t) || obj.t <= 0) return false;
+  if (typeof expectedBestSec !== 'number' || !Number.isFinite(expectedBestSec) || expectedBestSec <= 0) return false;
+  if (Math.abs(obj.t - expectedBestSec) > 0.05 || obj.n !== TRK.N) return false;
+  if (typeof obj.sp !== 'string' || typeof obj.fr !== 'string') return false;
+
+  let spU8, frU8;
+  try { spU8 = ghB64Dec(obj.sp); frU8 = ghB64Dec(obj.fr); } catch (e) { return false; }
+  const N = TRK.N, sn = Math.ceil(N / 2);
+  if (N <= 0 || N > GH.bestSplit.length) return false;
+  if (spU8.byteLength !== sn * 2) return false;
+  if (frU8.byteLength < 32 || (frU8.byteLength & 15) !== 0) return false;
+  if (obj.l !== undefined && (!Number.isInteger(obj.l) || obj.l < 2 || obj.l > 10800)) return false;
+
+  const sp = new Uint16Array(spU8.buffer), fr = new Int16Array(frU8.buffer), fn = fr.length / 8;
+  const bestLen = typeof obj.l === 'number' ? obj.l : Math.min(10800, (fn - 1) * 3 + 1);
+  if (bestLen < 2 || bestLen > 10800) return false;
+  const hasTrailing = bestLen > 1 && (bestLen - 1) % 3 !== 0;
+  const expectedFn = Math.ceil(bestLen / 3) + (hasTrailing ? 1 : 0);
+  if (typeof obj.l === 'number' && fn !== expectedFn) return false;
+
+  GH.bestSplit.fill(-1);
+  for (let k = 0; k < sn; k++) {
+    const i = k * 2, v0 = sp[k] * 0.01;
+    GH.bestSplit[i] = v0;
+    if (i + 1 < N) {
+      const v1 = k + 1 < sn ? sp[k + 1] * 0.01 : obj.t;
+      GH.bestSplit[i + 1] = (v0 + v1) * 0.5;
+    }
+  }
+
+  const B = GH.bestFrames, invPos = 1 / 20, invAng = 1 / 5000, invSpin = 1 / 500;
+  let accSpin = fr[7] * invSpin, prevK0 = 0, prevRawS = accSpin;
+  for (let f = 0; f < bestLen; f++) {
+    let k0 = (f / 3) | 0;
+    if (k0 >= fn - 1) k0 = fn - 1;
+    if (k0 !== prevK0) {
+      const rawS = fr[k0 * 8 + 7] * invSpin;
+      accSpin += ghWrapSpin(rawS - prevRawS);
+      prevRawS = rawS;
+      prevK0 = k0;
+    }
+    const k1 = k0 + 1 < fn ? k0 + 1 : k0;
+    const t0 = k0 * 3, t1 = (hasTrailing && k1 === fn - 1) ? (bestLen - 1) : (k1 * 3), dt = t1 - t0;
+    const u = dt > 0 ? (f - t0) / dt : 0, o0 = k0 * 8, o1 = k1 * 8, bo = f * 8;
+    B[bo]     = (fr[o0]     + (fr[o1]     - fr[o0])     * u) * invPos;
+    B[bo + 1] = (fr[o0 + 1] + (fr[o1 + 1] - fr[o0 + 1]) * u) * invPos;
+    B[bo + 2] = (fr[o0 + 2] + (fr[o1 + 2] - fr[o0 + 2]) * u) * invPos;
+    const y0 = fr[o0 + 3] * invAng, y1 = fr[o1 + 3] * invAng;
+    B[bo + 3] = y0 + wrapPi(y1 - y0) * u;
+    B[bo + 4] = (fr[o0 + 4] + (fr[o1 + 4] - fr[o0 + 4]) * u) * invAng;
+    B[bo + 5] = (fr[o0 + 5] + (fr[o1 + 5] - fr[o0 + 5]) * u) * invAng;
+    B[bo + 6] = (fr[o0 + 6] + (fr[o1 + 6] - fr[o0 + 6]) * u) * invAng;
+    const s0 = fr[o0 + 7] * invSpin, s1 = fr[o1 + 7] * invSpin;
+    B[bo + 7] = accSpin + ghWrapSpin(s1 - s0) * u;
+  }
+
+  GH.bestTime = obj.t;
+  GH.bestLen = bestLen;
+  GH.hasSplit = true;
+  GH.hasGhost = bestLen > 30;
+  GH.savePending = false;
+  return true;
+}
+
+// Aloca slots e família forward translúcida para renderizar o carro fantasma em WebGPU.
+function ghRenderInit() {
+  if (GH.slotBody || GAME.mode === 'test' || GAME.mode === 'car' || typeof CAR === 'undefined' || !CAR.bodyMesh) return;
+  GH.slotBody = objSlot();
+  for (let i = 0; i < 4; i++) GH.slotWheel[i] = objSlot();
+  GH.fam = mkFwdFamily('ghost', {
+    src: 'ghost',
+    cull: 'back',
+    blend: {
+      color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
+      alpha: { srcFactor: 'zero', dstFactor: 'one' },
+    },
+  });
+  GH.bg = null;
+  R.transparents.push({
+    draw(pass) {
+      if (!GH.drawOn || !GH.fam || !GH.fam.pipe) return;
+      if (!GH.bg) GH.bg = fwdBindGroup(GH.fam);
+      const bm = CAR.bodyMesh, wm = CAR.wheelMesh;
+      pass.setPipeline(GH.fam.pipe);
+      pass.setBindGroup(3, GH.bg);
+      R.dyn2[0] = GH.slotBody * 256;
+      pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1);
+      pass.setVertexBuffer(0, bm.vb);
+      pass.setIndexBuffer(bm.ib, 'uint32');
+      pass.drawIndexed(bm.count);
+      if (wm) {
+        pass.setVertexBuffer(0, wm.vb);
+        pass.setIndexBuffer(wm.ib, 'uint32');
+        for (let i = 0; i < 4; i++) {
+          R.dyn2[0] = GH.slotWheel[i] * 256;
+          pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1);
+          pass.drawIndexed(wm.count);
+        }
+      }
+    },
+  });
+}
+if (typeof BUILD !== 'undefined') BUILD.push(async () => { ghRenderInit(); });
 
 // ---- 50_som.js
 // Som: tudo sintetizado na hora, sem amostra gravada. O núcleo (sndCore) é JavaScript puro e determinístico: o mesmo
@@ -7789,29 +8144,94 @@ function sndOffline(mix, mudoDe, pausaDe) {
 }
 
 // ---- 51_painel.js
-// Painel na tela: velocímetro, conta-giros, marcha, cronômetro da volta, última e melhor volta, e as estatísticas de desempenho.
-// São três canvas 2D pequenos por cima do jogo, só no jogo aberto por uma pessoa (GAME.ui). Nenhuma alocação por quadro:
-// mostradores e rótulos são desenhados uma vez em canvas de fundo; a cada quadro só há cópias de imagem (algarismos de um
-// atlas) e dois ponteiros, sempre com argumentos inteiros (o canvas dos mostradores tem escala de 1/16 para os ponteiros
-// andarem em frações de pixel), e só quando o valor mostrado mudou. Nenhum texto é montado no laço.
+// Painel na tela: velocímetro, conta-giros, marcha, cronômetro da volta, última/melhor volta, delta, medalha, minimapa e estatísticas.
+// Quatro canvas 2D pequenos por cima do jogo, só no jogo aberto por uma pessoa (GAME.ui). Nenhuma alocação por quadro:
+// mostradores, minimapa, medalhas e rótulos são desenhados uma vez em canvas de fundo; a cada quadro só há cópias de imagem
+// (algarismos de atlas pré-coloridos), ponteiros e primitivas inteiras no minimapa, e só quando o valor quantizado mudou.
 const HUD = {
-  cg: null, ct: null, cs: null, g: null, t: null, s: null, face: null, hub: null, bgT: null, bgS: null, A: null, B: null, C: null,
-  L: new Int32Array(40), K: new Int32Array(12), acc: new Float64Array(4), stats: false, vis: false,
-  V: new Int32Array(6),   // o que o painel mostra: km/h × 10, rpm, marcha, volta atual, última e melhor (centésimos de segundo; -1 = sem tempo)
+  cg: null, ct: null, cs: null, cm: null, g: null, t: null, s: null, m: null,
+  face: null, hub: null, bgT: null, bgS: null, bgM: null, A: null, B: null, BG: null, BR: null, C: null, medals: null,
+  L: new Int32Array(40), K: new Int32Array(16), acc: new Float64Array(4), stats: false, vis: false,
+  V: new Int32Array(14),  // km/h × 10, rpm, marcha, volta, última, melhor, deltaCs, medalha, px, py, pa, gv, gx, gy
+  M: new Float64Array(3), // minimapa: ox, oy, escala
+  MC: new Float64Array(64), MS: new Float64Array(64),
 };
-const HCH = '0123456789:.,-R';
+const HCH = '0123456789:.,-R+';
+const HMED = ['#4be3ff', '#ffd23f', '#cfd6de', '#cd7f32'];
 // atlas de algarismos: cada caractere centrado numa célula; os algarismos têm todos a mesma largura (números não "dançam")
-function hudAtlas(px) {
+function hudAtlas(px, col) {
   const c = document.createElement('canvas'), g = c.getContext('2d'), font = '600 ' + px + 'px "Helvetica Neue",Helvetica,Arial,sans-serif', n = HCH.length, w = new Int32Array(n), x = new Int32Array(n);
   g.font = font; let dw = 0, X = 0; for (let i = 0; i < 10; i++) dw = Math.max(dw, Math.ceil(g.measureText(HCH[i]).width));
   for (let i = 0; i < n; i++) { const m = Math.ceil(g.measureText(HCH[i]).width); w[i] = (i < 10 || i > 12 ? Math.max(dw, m) : m) + 2; x[i] = X; X += w[i]; }
-  c.width = X; c.height = Math.ceil(px * 1.16); g.font = font; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  c.width = X; c.height = Math.ceil(px * 1.16); g.font = font; g.fillStyle = col || '#fff'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   for (let i = 0; i < n; i++) g.fillText(HCH[i], x[i] + w[i] / 2, px * 0.94);
   return { c, w, x, h: c.height };
 }
+// pré-renderiza os 4 ícones circulares de medalha (Firma com estrela, Ouro, Prata, Bronze)
+function hudMedalIcons(sz) {
+  const out = new Array(4), c = sz * 0.5, rad = sz * 0.42;
+  for (let i = 0; i < 4; i++) {
+    const cv = document.createElement('canvas'), g = cv.getContext('2d');
+    cv.width = cv.height = sz;
+    g.beginPath(); g.arc(c, c, rad, 0, TAU); g.fillStyle = HMED[i]; g.fill();
+    g.lineWidth = Math.max(1, sz * 0.08); g.strokeStyle = 'rgba(0,0,0,0.45)'; g.stroke();
+    if (i === 0) {
+      g.beginPath();
+      for (let k = 0; k < 10; k++) {
+        const a = -PI * 0.5 + k * PI / 5, rr = (k & 1) ? rad * 0.3 : rad * 0.62;
+        const px = c + Math.cos(a) * rr, py = c + Math.sin(a) * rr;
+        if (k === 0) g.moveTo(px, py); else g.lineTo(px, py);
+      }
+      g.closePath(); g.fillStyle = '#07222b'; g.fill();
+    } else {
+      g.beginPath(); g.arc(c, c, rad * 0.56, 0, TAU);
+      g.lineWidth = Math.max(1, sz * 0.07); g.strokeStyle = 'rgba(255,255,255,0.45)'; g.stroke();
+    }
+    out[i] = cv;
+  }
+  return out;
+}
+// pré-renderiza o cartão do minimapa com o traçado fechado da pista e a linha de largada
+function hudMinimapBg(r, dpr) {
+  const H = HUD, L = H.L, M = H.M, cm = H.cm;
+  const mw = Math.round(r * 1.85), mh = Math.round(r * 1.50);
+  if (cm) { cm.width = mw; cm.height = mh; cm.style.width = mw / dpr + 'px'; cm.style.height = mh / dpr + 'px'; }
+  const bg = document.createElement('canvas'); bg.width = mw; bg.height = mh;
+  const g = bg.getContext('2d');
+  g.fillStyle = 'rgba(9,11,14,.62)'; g.beginPath(); g.roundRect(0, 0, mw, mh, Math.round(r * 0.22)); g.fill();
+  const hasTrk = typeof TRK !== 'undefined' && TRK.N > 0 && TRK.x && TRK.z;
+  const pad = Math.round(r * 0.17);
+  if (hasTrk) {
+    const dx = Math.max(1, TRK.bx1 - TRK.bx0), dz = Math.max(1, TRK.bz1 - TRK.bz0);
+    const sc = Math.min((mw - 2 * pad) / dx, (mh - 2 * pad) / dz);
+    const ox = (mw - dx * sc) * 0.5 - TRK.bx0 * sc, oy = (mh - dz * sc) * 0.5 - TRK.bz0 * sc;
+    M[0] = ox; M[1] = oy; M[2] = sc;
+    const step = Math.max(1, (TRK.N / 260) | 0);
+    g.beginPath();
+    for (let i = 0; i < TRK.N; i += step) {
+      const px = TRK.x[i] * sc + ox, py = TRK.z[i] * sc + oy;
+      if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+    }
+    g.closePath();
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    g.lineWidth = Math.max(4, r * 0.088); g.strokeStyle = 'rgba(0,0,0,0.72)'; g.stroke();
+    g.lineWidth = Math.max(2, r * 0.044); g.strokeStyle = 'rgba(255,255,255,0.78)'; g.stroke();
+    const sx = TRK.x[0] * sc + ox, sy = TRK.z[0] * sc + oy;
+    const nx = -TRK.tz[0], ny = TRK.tx[0], hl = Math.max(3.5, r * 0.052);
+    g.beginPath(); g.moveTo(sx - nx * hl, sy - ny * hl); g.lineTo(sx + nx * hl, sy + ny * hl);
+    g.lineWidth = Math.max(2, r * 0.028); g.strokeStyle = '#fff'; g.stroke();
+  } else {
+    M[0] = mw * 0.5; M[1] = mh * 0.5; M[2] = 0;
+  }
+  L[30] = mw; L[31] = mh;
+  L[32] = Math.max(2, Math.round(r * 0.042));
+  L[33] = Math.max(4, Math.round(r * 0.082));
+  L[34] = Math.max(1, Math.round(r * 0.016));
+  return bg;
+}
 function hudInit() {
-  const H = HUD; H.cg = document.getElementById('hg'); H.ct = document.getElementById('ht'); H.cs = document.getElementById('hs');
-  H.g = H.cg.getContext('2d'); H.t = H.ct.getContext('2d'); H.s = H.cs.getContext('2d');
+  const H = HUD; H.cg = document.getElementById('hg'); H.ct = document.getElementById('ht'); H.cs = document.getElementById('hs'); H.cm = document.getElementById('hm');
+  H.g = H.cg.getContext('2d'); H.t = H.ct.getContext('2d'); H.s = H.cs.getContext('2d'); H.m = H.cm ? H.cm.getContext('2d') : null;
   hudLayout(); addEventListener('resize', hudLayout);
 }
 // tira com rótulos fixos e vãos para os números; devolve o canvas de fundo e grava em L[o + i] o x de cada número
@@ -7828,7 +8248,8 @@ function hudStrip(cv, labels, widths, units, At, px, o) {
 }
 function hudLayout() {
   const H = HUD, L = H.L, dpr = devicePixelRatio || 1, r = Math.round(Math.min(Math.max(innerHeight * 0.105, 54), 124) * dpr), W = Math.round(r * 4.5), Hh = Math.round(r * 2.26);
-  const A = H.A = hudAtlas(Math.round(r * 0.33)), B = H.B = hudAtlas(Math.round(r * 0.23)), C = H.C = hudAtlas(Math.round(r * 0.17));
+  const bPx = Math.round(r * 0.23), A = H.A = hudAtlas(Math.round(r * 0.33)), B = H.B = hudAtlas(bPx), C = H.C = hudAtlas(Math.round(r * 0.17));
+  H.BG = hudAtlas(bPx, '#3ee07a'); H.BR = hudAtlas(bPx, '#ff5a4e');
   const c = H.cg; c.width = W; c.height = Hh; c.style.width = W / dpr + 'px'; c.style.height = Hh / dpr + 'px';
   const cx1 = Math.round(r * 1.12), cy = Math.round(r * 1.12), cx2 = W - cx1; L[0] = cx1; L[1] = cy; L[2] = cx2; L[3] = r; L[4] = W; L[5] = Hh;
   const fc = H.face = document.createElement('canvas'); fc.width = W; fc.height = Hh; const f = fc.getContext('2d');
@@ -7849,11 +8270,16 @@ function hudLayout() {
   const hb = H.hub = document.createElement('canvas'), hr = Math.round(r * 0.085); hb.width = hb.height = hr * 2; const hg = hb.getContext('2d'); hg.beginPath(); hg.arc(hr, hr, hr, 0, TAU); hg.fillStyle = '#16181b'; hg.fill(); hg.lineWidth = hr * 0.25; hg.strokeStyle = '#ff5a36'; hg.stroke();
   L[6] = hr; L[7] = Math.round(cy + r * 0.3);                                   // raio do cubo; y dos números grandes
   const g = H.g; g.setTransform(1 / 16, 0, 0, 1 / 16, 0, 0); g.lineCap = 'round'; g.lineWidth = Math.round(r * 0.034 * 16); g.strokeStyle = '#ff5a36';
-  // cronômetro (m:ss.cc) e estatísticas
-  const tw = B.w[0] * 5 + B.w[10] + B.w[11];
-  H.bgT = hudStrip(H.ct, ['VOLTA', 'ÚLTIMA', 'MELHOR'], [tw, tw, tw], ['', '', ''], B, B.h / 1.16, 10);
+  // cronômetro (m:ss.cc), medalha, delta, minimapa e estatísticas
+  const tw = B.w[0] * 5 + B.w[10] + B.w[11], pxB = B.h / 1.16, msz = Math.max(12, Math.round(pxB * 1.1)), mgap = Math.round(pxB * 0.35);
+  const dw = Math.max(B.w[13], B.w[15]) + B.w[0] * 4 + B.w[11];
+  H.medals = hudMedalIcons(msz);
+  H.bgT = hudStrip(H.ct, ['VOLTA', 'ÚLTIMA', 'MELHOR', 'DELTA'], [tw, tw, tw + mgap + msz, dw], ['', '', '', ''], B, pxB, 10);
+  L[14] = L[12] + tw + mgap; L[15] = Math.round((L[18] - msz) / 2);
   H.bgS = hudStrip(H.cs, ['QPS', 'QUADRO', 'GPU'], [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
-  H.K.fill(-9);
+  for (let k = 0; k < 64; k++) { const a = k * (TAU / 64); H.MC[k] = Math.cos(a); H.MS[k] = Math.sin(a); }
+  H.bgM = hudMinimapBg(r, dpr);
+  H.K.fill(-1000001);
 }
 // copia o caractere i do atlas para (x, y) em pixels (q = 16 no canvas dos mostradores, 1 nos outros); devolve a largura
 function hudCh(g, A, i, x, y, q) { const w = A.w[i]; g.drawImage(A.c, A.x[i], 0, w, A.h, x * q, y * q, w * q, A.h * q); return w; }
@@ -7872,11 +8298,54 @@ function hudDec(g, A, v10, x, y) {
   if (v10 < 0) { hudCh(g, A, 13, x + w * 2, y, 1); hudCh(g, A, 13, x + w * 3 + A.w[12], y, 1); return; }
   hudInt(g, A, (v10 / 10) | 0, 3, x, y, 1); hudCh(g, A, 12, x + w * 3, y, 1); hudCh(g, A, v10 % 10, x + w * 3 + A.w[12], y, 1);
 }
+// delta em centésimos (+s.cc / -s.cc) sem alocação; cs <= -99999 = sem referência (--.--)
+function hudDelta(g, cs, x, y) {
+  const B = HUD.B;
+  if (cs <= -99999) {
+    x += B.w[0];
+    x += hudCh(g, B, 13, x, y, 1); x += hudCh(g, B, 13, x, y, 1);
+    x += hudCh(g, B, 11, x, y, 1);
+    x += hudCh(g, B, 13, x, y, 1); hudCh(g, B, 13, x, y, 1);
+    return;
+  }
+  if (cs > 9999) cs = 9999; else if (cs < -9999) cs = -9999;
+  const A = cs <= 0 ? HUD.BG : HUD.BR, sg = cs < 0 ? 13 : 15, a = cs < 0 ? -cs : cs, sec = (a / 100) | 0, c = a % 100;
+  if (sec >= 10) {
+    x += hudCh(g, A, sg, x, y, 1);
+    x += hudCh(g, A, (sec / 10) | 0, x, y, 1);
+  } else {
+    x += A.w[0];
+    x += hudCh(g, A, sg, x, y, 1);
+  }
+  x += hudCh(g, A, sec % 10, x, y, 1);
+  x += hudCh(g, A, 11, x, y, 1);
+  x += hudCh(g, A, (c / 10) | 0, x, y, 1);
+  hudCh(g, A, c % 10, x, y, 1);
+}
 // chamado a cada quadro do jogo: lê o estado (hudRead) e redesenha só o que mudou (hudDraw)
 function hudFrame() { hudRead(); hudDraw(); }
 function hudRead() {
-  const V = HUD.V, v = VEH; let kmh = GS.speed * 36; if (kmh > 2000) kmh = 2000; let rpm = v.rpm; if (rpm > 7000) rpm = 7000;
-  V[0] = kmh; V[1] = rpm; V[2] = v.gear; V[3] = LAP[3] === 1 ? (v.time - LAP[0]) * 100 : 0; V[4] = LAP[1] > 0 ? LAP[1] * 100 : -1; V[5] = LAP[2] > 0 ? LAP[2] * 100 : -1;
+  const V = HUD.V, M = HUD.M, L = HUD.L, v = VEH;
+  let kmh = GS.speed * 36; if (kmh > 2000) kmh = 2000; let rpm = v.rpm; if (rpm > 7000) rpm = 7000;
+  const best = LAP[2] > 0 ? Math.round(LAP[2] * 100) : -1;
+  V[0] = kmh; V[1] = rpm; V[2] = v.gear;
+  V[3] = LAP[3] === 1 ? (v.time - LAP[0]) * 100 : 0;
+  V[4] = LAP[1] > 0 ? Math.round(LAP[1] * 100) : -1;
+  V[5] = best;
+  const hasGh = typeof GH !== 'undefined';
+  V[6] = hasGh ? GH.deltaCs : -999999;
+  V[7] = best > 0 && typeof medalOf === 'function' ? medalOf(best) : -1;
+  const sc = M[2], ox = M[0], oy = M[1], mw = L[30], mh = L[31];
+  V[8] = clamp(Math.round(GS.cx * sc + ox), 0, mw);
+  V[9] = clamp(Math.round(GS.cz * sc + oy), 0, mh);
+  V[10] = Math.round((GS.yaw / TAU) * 64) & 63;
+  if (hasGh && GH.vis) {
+    V[11] = 1;
+    V[12] = clamp(Math.round(GH.gx * sc + ox), 0, mw);
+    V[13] = clamp(Math.round(GH.gz * sc + oy), 0, mh);
+  } else {
+    V[11] = 0; V[12] = -1; V[13] = -1;
+  }
 }
 function hudDraw() {
   const H = HUD, L = H.L, K = H.K, V = H.V, an = V[0], ki = ((an + 5) / 10) | 0, ar = (V[1] / 10) | 0, gear = V[2];
@@ -7893,10 +8362,34 @@ function hudDraw() {
     g.stroke();
     const hr = L[6]; g.drawImage(H.hub, (L[0] - hr) * 16, (cy - hr) * 16, hr * 32, hr * 32); g.drawImage(H.hub, (L[2] - hr) * 16, (cy - hr) * 16, hr * 32, hr * 32);
   }
-  const cur = V[3], last = V[4], best = V[5];
-  if (cur !== K[4] || last !== K[5] || best !== K[6]) {
-    K[4] = cur; K[5] = last; K[6] = best; const t = H.t, B = H.B, y = L[16];
+  const cur = V[3], last = V[4], best = V[5], delta = V[6], med = V[7];
+  if (cur !== K[4] || last !== K[5] || best !== K[6] || delta !== K[7] || med !== K[8]) {
+    K[4] = cur; K[5] = last; K[6] = best; K[7] = delta; K[8] = med; const t = H.t, B = H.B, y = L[16];
     t.clearRect(0, 0, L[17], L[18]); t.drawImage(H.bgT, 0, 0); hudTime(t, B, cur, L[10], y); hudTime(t, B, last, L[11], y); hudTime(t, B, best, L[12], y);
+    if (med >= 0 && med < 4) t.drawImage(H.medals[med], L[14], L[15]);
+    hudDelta(t, delta, L[13], y);
+  }
+  const px = V[8], py = V[9], pa = V[10], gv = V[11], gx = V[12], gy = V[13];
+  if (px !== K[9] || py !== K[10] || pa !== K[11] || gv !== K[12] || gx !== K[13] || gy !== K[14]) {
+    K[9] = px; K[10] = py; K[11] = pa; K[12] = gv; K[13] = gx; K[14] = gy;
+    const m = H.m;
+    if (m) {
+      m.clearRect(0, 0, L[30], L[31]); m.drawImage(H.bgM, 0, 0);
+      if (gv === 1) {
+        m.beginPath(); m.arc(gx, gy, L[32], 0, TAU);
+        m.fillStyle = '#4be3ff'; m.fill();
+        m.lineWidth = L[34]; m.strokeStyle = '#07222b'; m.stroke();
+      }
+      const ar = L[33], co = H.MC[pa], si = H.MS[pa];
+      m.beginPath();
+      m.moveTo(px + Math.round(co * ar), py + Math.round(si * ar));
+      m.lineTo(px + Math.round((-co * 0.75 + si * 0.65) * ar), py + Math.round((-si * 0.75 - co * 0.65) * ar));
+      m.lineTo(px + Math.round(-co * 0.35 * ar), py + Math.round(-si * 0.35 * ar));
+      m.lineTo(px + Math.round((-co * 0.75 - si * 0.65) * ar), py + Math.round((-si * 0.75 + co * 0.65) * ar));
+      m.closePath();
+      m.fillStyle = '#ff5a36'; m.fill();
+      m.lineWidth = L[34]; m.strokeStyle = '#ffffff'; m.stroke();
+    }
   }
 }
 // estatísticas de desempenho (tecla H): média de meio segundo de quadros; RT[3] = intervalo do último quadro (ms)
@@ -7907,7 +8400,7 @@ function hudStatsFrame() {
   a[0] = 0; a[1] = 0;
   s.clearRect(0, 0, L[27], L[28]); s.drawImage(H.bgS, 0, 0); hudInt(s, C, fps > 999 ? 999 : fps, 3, L[20], y, 1); hudDec(s, C, ms, L[21], y); hudDec(s, C, gpu, L[22], y);
 }
-function hudShow(on) { HUD.vis = on; HUD.cg.style.display = HUD.ct.style.display = on ? 'block' : 'none'; HUD.K.fill(-9); }
+function hudShow(on) { HUD.vis = on; const d = on ? 'block' : 'none'; HUD.cg.style.display = HUD.ct.style.display = d; if (HUD.cm) HUD.cm.style.display = d; HUD.K.fill(-1000001); }
 function hudStats(on) { HUD.stats = on; HUD.cs.style.display = on ? 'block' : 'none'; HUD.acc[0] = 0; HUD.acc[1] = 0; if (on) { const L = HUD.L; HUD.s.clearRect(0, 0, L[27], L[28]); HUD.s.drawImage(HUD.bgS, 0, 0); } }
 
 // ---- 52_ui.js
@@ -7915,12 +8408,22 @@ function hudStats(on) { HUD.stats = on; HUD.cs.style.display = on ? 'block' : 'n
 // poses, teclas de ferramenta e leitura do controle. Nas ferramentas de trabalho/ (captura, poses, teste, medição) nada
 // disto é ligado: sem menu, sem painel, sem som.
 const ST = { INICIO: 0, JOGO: 1, PAUSA: 2, BENCH: 3, FITA: 4, RESULT: 5, POSE: 6 };
-const UI = { st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, b0: null, b1: null, bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false };
+const UI = { st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, med: null, b0: null, b1: null, bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false };
+const MED_UI = [
+  { nome: 'Firma', tempo: '0:53,50', cor: '#4be3ff', sym: '★' },
+  { nome: 'Ouro',  tempo: '0:56,00', cor: '#ffd23f', sym: '●' },
+  { nome: 'Prata', tempo: '1:00,00', cor: '#cfd6de', sym: '●' },
+  { nome: 'Bronze', tempo: '1:06,00', cor: '#cd7f32', sym: '●' },
+];
 const $ = id => document.getElementById(id);
 function uiInit() {
-  UI.el = $('ui'); UI.tag = $('tag'); UI.res = $('res'); UI.b0 = $('b0'); UI.b1 = $('b1');
+  UI.el = $('ui'); UI.tag = $('tag'); UI.res = $('res'); UI.med = $('med'); UI.b0 = $('b0'); UI.b1 = $('b1');
   hudInit(); uiWarmup();
-  try { const b = +localStorage.getItem('uno-melhor'); if (b > 20 && b < 600) LAP[2] = b; } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
+  try {
+    const b = +localStorage.getItem('uno-melhor');
+    if (b > 20 && b < 600) LAP[2] = b;
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('uno-ta-v1'), LAP[2]);
+  } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
   UI.b0.onclick = () => { if (UI.st === ST.INICIO) { sndStart(); uiSet(ST.JOGO); } else uiResume(); };
   UI.b1.onclick = () => benchStart();
   addEventListener('keydown', uiKey);
@@ -7936,6 +8439,18 @@ function uiSet(st) {
   UI.b0.textContent = st === ST.INICIO ? 'Começar' : st === ST.RESULT ? 'Voltar a dirigir' : 'Continuar';
   UI.b1.style.display = st === ST.INICIO ? 'none' : ''; UI.b1.textContent = st === ST.RESULT ? 'Repetir benchmark' : 'Benchmark';
   UI.res.style.display = st === ST.RESULT ? 'block' : 'none';
+  if (menu && UI.med) {
+    const cs = LAP[2] > 0 ? Math.round(LAP[2] * 100) : 0;
+    const m = typeof medalOf === 'function' ? medalOf(cs) : -1;
+    let html = '';
+    for (let i = 0; i < MED_UI.length; i++) {
+      const d = MED_UI[i], hit = i === m;
+      if (i > 0) html += ' · ';
+      html += '<span' + (hit ? ' class="on" data-hit="1" style="color:' + d.cor + '"' : ' style="opacity:.78"') + '>' +
+        '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + d.tempo + '</span>';
+    }
+    UI.med.innerHTML = html;
+  }
   UI.tag.textContent = st === ST.BENCH ? 'Benchmark: volta roteirizada de 60 s · Esc cancela' : st === ST.FITA ? 'Volta roteirizada · R assume o volante · Esc menu' : st === ST.POSE ? 'Pose ' + (UI.pose + 1) + ' · ' + POSES[UI.pose].nome + ' · 1 a 6 trocam · Esc volta a dirigir' : '';
   UI.tag.style.display = UI.tag.textContent ? 'block' : 'none';
   hudShow(st === ST.JOGO || st === ST.FITA || (st === ST.PAUSA && UI.back !== ST.BENCH));
@@ -7956,6 +8471,7 @@ function uiKey(e) {
   const c = e.code, st = UI.st;
   if (c === 'KeyM') { sndMute(!SND.mute); return; }
   if (c === 'KeyH') { UI.stats = !UI.stats; hudStats(UI.stats); if (st !== ST.BENCH) perfAttach(UI.stats, 12); return; }
+  if (c === 'KeyG') { if (typeof ghToggle === 'function') ghToggle(); return; }
   if (st === ST.INICIO) return;                                   // na tela de início só o botão começa o jogo (e o som)
   if (c === 'Escape') { if (st === ST.JOGO || st === ST.FITA || st === ST.BENCH) uiPause(); else uiResume(); e.preventDefault(); }
   else if (c === 'KeyB') benchStart();
@@ -8018,15 +8534,19 @@ function padMenu(edge) {
 // levaria dezenas de segundos de jogo para otimizá-las — rodando até lá no interpretador, que aloca a cada conta.
 // (A parte do som que lê a simulação, sndControl, é aquecida junto com a física em gameWarmup.)
 function uiWarmup() {
-  const H = HUD, g = H.g, t = H.t, s = H.s, sc = document.createElement('canvas'); sc.width = sc.height = 4; const x = sc.getContext('2d'), V = H.V, rt3 = RT[3];
-  const po = PERF.on; UI.warm = true; H.g = H.t = H.s = x; PERF.on = true;
+  const H = HUD, g = H.g, t = H.t, s = H.s, m = H.m, sc = document.createElement('canvas'); sc.width = sc.height = 4; const x = sc.getContext('2d'), V = H.V, rt3 = RT[3];
+  const po = PERF.on; UI.warm = true; H.g = H.t = H.s = H.m = x; PERF.on = true;
   for (let i = 0; i < 6000; i++) {
     PADB[0] = i % 97 === 0 ? -1 : (i * 7919) & 0xffff; PADR[0] = (i % 50) / 49; PADR[1] = (i % 31) / 60; PADR[2] = Math.sin(i * 0.7); padApply();
     if (i % 2) continue;
-    V[0] = (i * 7) % 2100; V[1] = (i * 13) % 7400; V[2] = i % 6; V[3] = (i * 331) % 70000; V[4] = i % 5 ? (i * 17) % 9000 : -1; V[5] = i % 3 ? (i * 19) % 9000 : -1; hudDraw(); hudRead();
+    const j = i >> 1, dc = j % 6;
+    V[0] = (i * 7) % 2100; V[1] = (i * 13) % 7400; V[2] = j % 6; V[3] = (i * 331) % 70000; V[4] = i % 5 ? (i * 17) % 9000 : -1; V[5] = i % 3 ? (i * 19) % 9000 : -1;
+    V[6] = dc === 0 ? -999999 : dc === 1 ? 0 : dc === 2 ? -245 : dc === 3 ? 245 : dc === 4 ? -1234 : 1234;
+    V[7] = (j % 5) - 1; V[8] = 10 + (j % 80); V[9] = 10 + (j % 60); V[10] = j & 63; V[11] = j & 1; V[12] = 15 + (j % 70); V[13] = 15 + (j % 50);
+    hudDraw(); hudRead();
     RT[3] = 300 + i % 300; PERF.live[0] = i % 4 ? i % 40 : 0; hudStatsFrame();
   }
-  H.g = g; H.t = t; H.s = s; H.K.fill(-9); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
+  H.g = g; H.t = t; H.s = s; H.m = m; H.K.fill(-1000001); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
 }
 // chamado no começo de cada quadro; devolve true quando o jogo está parado num menu (não simula nem renderiza)
 function uiFrame() {
@@ -8042,6 +8562,7 @@ function uiAfter() {
     if (st === ST.FITA && GS.tick60 >= GS.replay.length) { GS.replayOn = false; uiSet(ST.JOGO); }
     if (HUD.vis) hudFrame();
     if (GS.lapNew) { GS.lapNew = false; try { localStorage.setItem('uno-melhor', LAP[2].toFixed(3)); } catch (e) { /* idem */ } }
+    if (typeof GH !== 'undefined' && GH.savePending) { GH.savePending = false; const d = ghSaveData(); if (d) { try { localStorage.setItem('uno-ta-v1', d); } catch (e) { /* idem */ } } }
   }
   if (HUD.stats) hudStatsFrame();
   sndFrame();

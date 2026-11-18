@@ -9,10 +9,11 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 #c{position:absolute;inset:0;margin:auto;width:100vw;height:100vh;display:block;object-fit:contain}
 #msg{position:absolute;left:0;right:0;top:45%;text-align:center;letter-spacing:.08em;white-space:pre-wrap}
 #hint{position:absolute;left:14px;bottom:10px;opacity:.75;text-shadow:0 1px 2px #000;transition:opacity 1.5s;pointer-events:none}
-#hg,#ht,#hs,#tag,#ui{display:none;position:absolute;pointer-events:none}
+#hg,#ht,#hs,#hm,#tag,#ui{display:none;position:absolute;pointer-events:none}
 #hg{right:1.6vh;bottom:1.6vh}
 #ht{left:50%;top:1.6vh;transform:translateX(-50%)}
 #hs{left:1.6vh;top:1.6vh}
+#hm{left:1.6vh;bottom:1.6vh}
 #tag{left:50%;bottom:2.2vh;transform:translateX(-50%);padding:.45em 1.1em;border-radius:1.2em;background:rgba(9,11,14,.62);color:#fff;white-space:nowrap}
 #ui{inset:0;pointer-events:auto;align-items:center;justify-content:center;background:rgba(6,8,10,.62);font-size:clamp(11px,1.72vh,17px)}
 #ui.ini{background:linear-gradient(rgba(6,8,10,.5),rgba(6,8,10,.82))}
@@ -24,6 +25,8 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 #ui table{border-collapse:collapse}
 #ui td,#ui th{padding:.13em .7em .13em 0;font-weight:400;text-align:left}
 #ui td:first-child{color:#fff;font-weight:600;white-space:nowrap;padding-right:1.3em}
+#med{margin:0 0 1.1em;font-size:.9em;color:rgba(255,255,255,.72)}
+#med .on{font-weight:700;padding:.14em .55em;border-radius:.8em;background:rgba(255,255,255,.11);border:1px solid currentColor}
 #res{display:none;margin:0 0 1.4em;padding:1em 1.4em;border-radius:.8em;background:rgba(255,255,255,.07)}
 #res table{margin:0 auto}#res th,#res td{padding:.2em 1.1em;text-align:right}#res td{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}#res p{margin:.7em 0 0}
 #ui .bt{margin-top:1.5em}
@@ -36,10 +39,11 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <canvas id="c"></canvas>
 <div id="msg">carregando…</div>
 <div id="hint">W acelera · S freia/ré · A/D faz curvas · Espaço freio de mão · C câmera · R volta à pista</div>
-<canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas><div id="tag"></div>
+<canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas><canvas id="hm"></canvas><div id="tag"></div>
 <div id="ui"><div>
 <h1>Uno com escada</h1>
 <p class="sub">Fiat Uno Mille EP 1996 · circuito</p>
+<div id="med"></div>
 <div id="res"></div>
 <div class="cols">
 <div><h2>Teclado</h2><table>
@@ -65,6 +69,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <div><h2>Ferramentas</h2><table>
 <tr><td>M</td><td>liga e desliga o som</td></tr>
 <tr><td>H</td><td>estatísticas de desempenho</td></tr>
+<tr><td>G</td><td>liga e desliga o carro fantasma</td></tr>
 <tr><td>B</td><td>benchmark (volta roteirizada de 60 s)</td></tr>
 <tr><td>F</td><td>assistir à volta roteirizada</td></tr>
 <tr><td>1 a 6</td><td>poses fixas</td></tr>
