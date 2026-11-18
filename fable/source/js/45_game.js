@@ -148,10 +148,10 @@ function gameWarmup() {
   carSyncActive(true);
   if (typeof GH !== 'undefined') GH.warm = true;
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0);
-  for (let i = 0; i < 9000; i++) {
+  for (let i = 0; i < 3600; i++) {
     const ph = (i / 300) | 0, t = i / 120; let k = aiKeys(t);
     if (ph % 7 === 3) k = K_S; else if (ph % 7 === 5) k = K_W | K_D | (i % 60 < 30 ? K_SPACE : 0); else if (ph % 11 === 9) k = K_W | K_A;
-    if (i % 1500 === 1499) k |= K_R; if (i % 400 === 399) k |= K_C; if (ph % 5 === 2) k |= K_HORN; if (ph % 6 === 1) k |= K_BOOST;
+    if (i % 900 === 899) k |= K_R; if (i % 240 === 239) k |= K_C; if (ph % 5 === 2) k |= K_HORN; if (ph % 6 === 1) k |= K_BOOST;
     GS.lightsOn = (ph & 2) !== 0; GS.hazardOn = (ph & 4) !== 0;
     // metade das fases com as mesmas manobras vindas do controle (gatilhos e alavanca analógicos, olhar para trás)
     if (ph & 1) { const f = 0.3 + (i % 71) / 100; GS.padKeys = K_PAD | K_PADS | (ph % 4 === 1 ? K_V : 0) | (k & (K_W | K_S | K_SPACE | K_C | K_R | K_BOOST | K_HORN)); PADV[0] = (k & K_W) ? f : 0; PADV[1] = (k & K_S) ? f : 0; PADV[2] = (((k & K_D) ? 1 : 0) - ((k & K_A) ? 1 : 0)) * f; k = i % 9 === 0 ? k & (K_A | K_D) : 0; } else GS.padKeys = 0;
@@ -164,8 +164,8 @@ function gameWarmup() {
   {
     const cs = R.casc, m = cs.view; lightView(m);
     const rx = m[0], ry = m[4], rz = m[8], ux = m[1], uy = m[5], uz = m[9], t0 = -m[12], s0 = -m[13];
-    for (let k = 0; k < 3000; k++) {
-      const sc = k < 1500 ? 0.004 : 0.9, t = t0 + (k % 1000 - 500) * sc, u = s0 + (k * 7 % 1000 - 500) * sc, x = rx * t + ux * u, y = ry * t + uy * u, z = rz * t + uz * u;
+    for (let k = 0; k < 900; k++) {
+      const sc = k < 450 ? 0.004 : 0.9, t = t0 + (k % 1000 - 500) * sc, u = s0 + (k * 7 % 1000 - 500) * sc, x = rx * t + ux * u, y = ry * t + uy * u, z = rz * t + uz * u;
       cs.focusOn = true; cs.focus[0] = x; cs.focus[1] = y; cs.focus[2] = z; cascadeSetup(k % 3);
       cs.focusOn = false; setCamera(x, y, z, x + ux, y + uy, z + uz, 0.9); cascadeSetup(k % 3);
     }

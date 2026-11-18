@@ -66,6 +66,7 @@ async function skyInit(progress) {
 }
 async function envDrain() {
   let last = ENV.idx;
+  R._envDraining = true;   // o re-bake do clima atualiza as 6 faces do cubemap + SH mesmo no modo Leve
   try {
     while (_envNext !== null) {
       const i = _envNext;
@@ -83,6 +84,7 @@ async function envDrain() {
       if (typeof renderFrame === 'function') for (let k = 0; k < 3; k++) renderFrame();
     }
   } finally {
+    R._envDraining = false;
     _envBusy = null;
   }
   return last;

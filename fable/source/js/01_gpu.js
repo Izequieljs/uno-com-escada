@@ -9,6 +9,23 @@ GAME.ui = Q.has('ui') ? Q.get('ui') !== '0' : !(Q.has('cap') || Q.has('perf') ||
 // Tempo em vetor tipado (escrita por quadro sem caixa na heap): RT[0] = tempo acumulado (s), RT[1] = dt do quadro renderizado, RT[2] = dt pedido ao jogo
 const RT = new Float64Array([0, 1 / 60, 1 / 60, 0]);   // RT[3] = intervalo real do último quadro (ms), para as estatísticas
 const G = { dev: null, ctx: null, fmt: 'bgra8unorm', W: 0, H: 0, hasTS: false, canvas: null };
+// Qualidade gráfica: 0 = Normal (fidelidade total), 1 = Leve (menos passes de tela cheia, sombras/cubemap/grama mais baratos, DPR até 1).
+const QUAL = { idx: 0, maxDpr: 2 };
+function qualResolveInit() {
+  const q = (Q.get('qual') || '').toLowerCase();
+  if (q === '1' || q === 'leve') QUAL.idx = 1;
+  else if (q === '0' || q === 'normal') QUAL.idx = 0;
+  else if (GAME.ui) { try { const pr = JSON.parse(localStorage.getItem('uno-prefs-v1')); if (pr && pr.qualIdx === 1) QUAL.idx = 1; } catch (e) { /* sem preferências: Normal */ } }
+  QUAL.maxDpr = QUAL.idx === 1 ? 1 : 2;
+  return QUAL.idx;
+}
+// troca em tempo real: só muda o caminho de renderização, nada é realocado
+function qualApply(idx) {
+  const n = (idx | 0) === 1 ? 1 : 0, ch = n !== QUAL.idx;
+  QUAL.idx = n; QUAL.maxDpr = n === 1 ? 1 : 2;
+  if (ch && typeof R !== 'undefined' && R.cam) R.cam.first = true;   // histórico temporal (hist/mb) fica velho ao trocar de caminho
+  return n;
+}
 
 async function gpuInit() {
   if (!navigator.gpu) throw new Error('WebGPU indisponível neste navegador.');
@@ -27,7 +44,9 @@ async function gpuInit() {
   G.dev.addEventListener('uncapturederror', e => { console.error('GPU: ' + e.error.message); G.lastErr = e.error.message; });
   G.canvas = document.getElementById('c');
   const res = (Q.get('res') || '').split('x');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  qualResolveInit();
+  const dprCap = QUAL.idx === 1 ? 1 : 2;
+  const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
   G.W = res.length === 2 ? +res[0] : Math.round(innerWidth * dpr);
   G.H = res.length === 2 ? +res[1] : Math.round(innerHeight * dpr);
   G.W = clamp(G.W & ~1, 320, 5120); G.H = clamp(G.H & ~1, 180, 2880);

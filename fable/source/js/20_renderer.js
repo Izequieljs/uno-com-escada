@@ -312,25 +312,28 @@ function apiCanvasView() { return G.ctx.getCurrentTexture().createView(); }
 function renderFrame() {
   const dev = G.dev, c = R.cam, D = R.pd;
   frameUniforms();
-  for (let i = 0; i < 3; i++) cascadeSetup(i);
+  // Leve (e fora do re-bake do clima): 2 cascatas dinâmicas (a 3ª fica congelada, já desenhada no quadro 0) e 1 face de cubemap a cada 2 quadros
+  const leve = QUAL.idx === 1 && !R._envDraining, nC = leve && R.frameIdx > 0 ? 2 : 3;
+  for (let i = 0; i < nC; i++) cascadeSetup(i);
   setPass(0, c.vpJ, c.pos);
   for (let i = 0; i < 3; i++) setPass(1 + i, R.casc.vp[i], c.pos);
   // uma face do cubemap de ambiente por quadro (ciclo completo a cada 6 quadros)
   // duas faces do cubemap de ambiente por quadro, cada uma na posição atual do carro (ciclo completo a cada 3 quadros)
-  const face = (R.frameIdx * 2) % 6; R.cube.cur.set(R.cube.pos);
-  for (let k = 0; k < 2; k++) { cubeSetup(face + k); setPass(5 + face + k, R.cube.vp, R.cube.cur); m4inv(R.cube.view, R.cube.vp); R.passData.set(R.cube.view, (11 + k) * 64); }
+  let face = (R.frameIdx * 2) % 6, nF = 2; R.cube.cur.set(R.cube.pos);
+  if (leve && R.frameIdx >= 6) { nF = (R.frameIdx & 1) === 0 ? 1 : 0; face = (R.frameIdx >> 1) % 6; }
+  for (let k = 0; k < nF; k++) { cubeSetup(face + k); setPass(5 + face + k, R.cube.vp, R.cube.cur); m4inv(R.cube.view, R.cube.vp); R.passData.set(R.cube.view, (11 + k) * 64); }
   dev.queue.writeBuffer(R.frameBuf, 0, FR.data);
   dev.queue.writeBuffer(R.passBuf, 0, R.passData, 0, 13 * 64);
   dev.queue.writeBuffer(R.objBuf, 0, R.objData, 0, R.objCount * 64);
   for (let i = 0; i < R.preFrame.length; i++) R.preFrame[i]();
   const enc = apiEncoder();
   // sombras
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < nC; i++) {
     const p = apiPass(enc, D.shadow[i]);
     drawAll(p, ctxFrom(KIND.SHADOW, R.casc.vp[i], 6, c.pos, i), 1 + i, R.passBG); p.end();
   }
   // faces do cubemap de ambiente
-  for (let k = 0; k < 2; k++) {
+  for (let k = 0; k < nF; k++) {
     const f = face + k; cubeSetup(f);
     const p = apiPass(enc, D.cube[f]);
     cubeSky(p, 11 + k);

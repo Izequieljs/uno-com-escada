@@ -54,6 +54,7 @@ function uiSavePrefs(overrideTrackIdx) {
       paintIdx: typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0,
       envIdx: typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0,
       trackIdx: ti,
+      qualIdx: typeof QUAL !== 'undefined' && QUAL.idx === 1 ? 1 : 0,
     }));
   } catch (e) { /* sem armazenamento local */ }
 }
@@ -115,6 +116,8 @@ function uiSyncCfg() {
       if (dm !== null) { uiSetBtn(b, (+dm === 1) === rm); continue; }
       const dc = b.getAttribute ? b.getAttribute('data-car') : null;
       if (dc !== null) { uiSetBtn(b, +dc === ci); continue; }
+      const dq = b.getAttribute ? b.getAttribute('data-qual') : null;
+      if (dq !== null) { uiSetBtn(b, (+dq | 0) === (typeof QUAL !== 'undefined' ? QUAL.idx : 0)); continue; }
       const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
       if (dp !== null) {
         const idx = +dp | 0;
@@ -183,6 +186,11 @@ function uiBindCfg() {
           }
           uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
         };
+        continue;
+      }
+      const dq = b.getAttribute ? b.getAttribute('data-qual') : null;
+      if (dq !== null) {
+        b.onclick = () => { if (typeof qualApply === 'function') qualApply(+dq | 0); uiSavePrefs(); uiSyncCfg(); uiPreview(); };
         continue;
       }
       const dp = b.getAttribute ? b.getAttribute('data-paint') : null;

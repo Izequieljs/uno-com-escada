@@ -55,7 +55,7 @@ function grassBuild() {
       G.dev.queue.writeBuffer(GRASS.buf, 0, u);
       pass.setPipeline(pipe);
       for (let r = 0; r < nr; r++) {
-        const g = GRASS.rings[r]; if (g.tele && zf <= 0) continue;
+        const g = GRASS.rings[r]; if ((g.tele && zf <= 0) || (g.K > 0 && QUAL.idx === 1)) continue;   // Leve: só os anéis de tufos (K = 0)
         const bsz = g.cell * g.bs, o = r * 64, ox = u[o + 10], oz = u[o + 11], B = g.B, per = g.bs * g.bs, nv = g.K ? 2 * g.K + 1 : 4, rad = bsz * 0.7072 + 1.2;
         const pv = g.prev, ph = pv >= 0 ? u[o + 17] * 0.8 : 0, pcx = u[o + 18], pcz = u[o + 19], qin = g.q[0], qout = g.q[3];
         GRASS.dyn[0] = r * 256; pass.setBindGroup(3, GRASS.bg, GRASS.dyn, 0, 1);

@@ -11,6 +11,9 @@ function postInit() {
   D.blurV = mkPassDesc(1, null, false, 'blurV'); D.blurV.colorAttachments[0].view = V.half[2];
   P.light = mkPost('light', { SSR: '' }, [HDR]);
   P.lightBG = [0, 1].map(i => bgOf(P.light, 0, [R.frameBuf, V.gA, V.gB, V.gC, V.depth, V.shadow, V.shadowS, R.sCmp, V.half[2], V.env, V.sky, R.sClamp, R.sSky, V.hist[i]]));
+  // caminho Leve: iluminação sem SSR lendo a névoa/AO meia-resolução direto (sem desfoque bilateral)
+  P.lightFast = mkPost('light', {}, [HDR]);
+  P.lightFastBG = [0, 1].map(i => bgOf(P.lightFast, 0, [R.frameBuf, V.gA, V.gB, V.gC, V.depth, V.shadow, V.shadowS, R.sCmp, V.half[0], V.env, V.sky, R.sClamp, R.sSky, V.hist[i]]));
   P.taa = mkPost('taa', {}, [HDR, 'rg16float']);
   P.taaBG = [0, 1].map(i => bgOf(P.taa, 0, [R.frameBuf, V.hdr, V.hist[i], V.gV, V.depth, R.sClamp]));
   D.taa = [0, 1].map(i => { const d = mkPassDesc(2, null, false, 'taa'); d.colorAttachments[0].view = V.hist[i]; d.colorAttachments[1].view = V.vel; return d; });
@@ -44,6 +47,9 @@ function postInit() {
   D.expo = [0, 1].map(i => { const d = mkPassDesc(1, null, false, 'expo'); d.colorAttachments[0].view = V.ex[i]; return d; });
   P.final = mkPost('final', {}, [G.fmt]);
   P.finalBG = [0, 1].map(i => bgOf(P.final, 0, [R.frameBuf, V.mb, V.bl[0], V.ex[i], R.sClamp, V.depth]));
+  // caminho Leve: sem desfoque de movimento, bloom e saída leem o resultado do TAA (hist) direto
+  P.blDownFastBG0 = [0, 1].map(i => bgOf(P.blFirst, 0, [V.hist[i], R.sClamp]));
+  P.finalFastBG = [0, 1].map(i => bgOf(P.final, 0, [R.frameBuf, V.hist[i], V.bl[0], V.ex[i], R.sClamp, V.depth]));
   D.final = mkPassDesc(1, null, false, 'final');
   // cubemap: céu + pré-filtro
   P.cubeSky = mkPost('cubesky', {}, [HDR], { depthStencil: { format: 'depth32float', depthWriteEnabled: false, depthCompare: 'always' } });
@@ -80,19 +86,20 @@ function postFrame(enc) {
   const P = R.post, D = R.pd, cur = R.frameIdx & 1, prev = cur ^ 1;
   // decalques (marcas de pneu) sobre o G-buffer
   if (R.decals.length) { const p = apiPass(enc, D.decal); p.setBindGroup(0, R.globBG); R.dyn1[0] = 0; p.setBindGroup(1, R.passBG, R.dyn1, 0, 1); for (let i = 0; i < R.decals.length; i++) R.decals[i].draw(p); p.end(); }
-  fsPass(enc, D.half, P.half, P.halfBG); fsPass(enc, D.blurH, P.blurH, P.blurHBG); fsPass(enc, D.blurV, P.blurV, P.blurVBG);
-  fsPass(enc, D.light, P.light, P.lightBG[prev]);
+  const leve = QUAL.idx === 1;
+  fsPass(enc, D.half, P.half, P.halfBG);
+  if (leve) fsPass(enc, D.light, P.lightFast, P.lightFastBG[prev]);
+  else { fsPass(enc, D.blurH, P.blurH, P.blurHBG); fsPass(enc, D.blurV, P.blurV, P.blurVBG); fsPass(enc, D.light, P.light, P.lightBG[prev]); }
   if (R.transparents.length) {
     const p = apiPass(enc, D.trans); p.setBindGroup(0, R.globBG); R.dyn1[0] = 0; p.setBindGroup(1, R.passBG, R.dyn1, 0, 1); R.dyn2[0] = 0; p.setBindGroup(2, R.objBG, R.dyn2, 0, 1);
     for (let i = 0; i < R.transparents.length; i++) R.transparents[i].draw(p); p.end();
   }
   { const p = apiPass(enc, D.taa[cur]); p.setPipeline(P.taa); p.setBindGroup(0, P.taaBG[prev]); p.draw(3); p.end(); }
-  fsPass(enc, D.mbTile, P.mbTile, P.mbTileBG); fsPass(enc, D.mbNeigh, P.mbNeigh, P.mbNeighBG);
-  fsPass(enc, D.mb, P.mb, P.mbBG[cur]);
-  for (let i = 0; i < BLOOM_N; i++) fsPass(enc, D.blDown[i], i ? P.blDown : P.blFirst, P.blDownBG[i]);
+  if (!leve) { fsPass(enc, D.mbTile, P.mbTile, P.mbTileBG); fsPass(enc, D.mbNeigh, P.mbNeigh, P.mbNeighBG); fsPass(enc, D.mb, P.mb, P.mbBG[cur]); }
+  for (let i = 0; i < BLOOM_N; i++) fsPass(enc, D.blDown[i], i ? P.blDown : P.blFirst, leve && i === 0 ? P.blDownFastBG0[cur] : P.blDownBG[i]);
   for (let i = 0; i < BLOOM_N - 1; i++) fsPass(enc, D.blUp[i], P.blUp, P.blUpBG[i]);
   fsPass(enc, D.expo[cur], P.expo, P.expoBG[prev]);
   D.final.colorAttachments[0].view = apiCanvasView();
-  if (R.dbgBG) fsPass(enc, D.final, P.dbg, R.dbgBG); else fsPass(enc, D.final, P.final, P.finalBG[cur]);
+  if (R.dbgBG) fsPass(enc, D.final, P.dbg, R.dbgBG); else fsPass(enc, D.final, P.final, leve ? P.finalFastBG[cur] : P.finalBG[cur]);
 }
 R.decals = [];
