@@ -161,20 +161,28 @@ struct LOut { @location(0) col: vec4f }
     let cp = (F.carInv * vec4f(wp, 1.0)).xyz;
     if (cp.x > 1.85 && cp.x < 52.0) {
       let ln = normalize((F.carInv * vec4f(N, 0.0)).xyz);
+      let lv = normalize((F.carInv * vec4f(V, 0.0)).xyz);
       let aim = normalize(vec3f(1.0, -0.055, 0.0));
       let fadeX = smoothstep(1.85, 2.45, cp.x) * (1.0 - smoothstep(28.0, 52.0, cp.x));
-      var hAcc = 0.0;
+      var hlCol = vec3f(0.0);
       for (var i = 0; i < 2; i++) {
         let lp0 = vec3f(1.85, 0.68, select(-0.48, 0.48, i == 1));
         let dv = cp - lp0;
         let distH = length(dv);
         let dirL = dv / max(distH, 0.05);
+        let hlVec = -dirL;
         let cone = smoothstep(0.76, 0.96, dot(dirL, aim));
         let attD = 1.0 / (1.0 + 0.04 * distH + 0.004 * distH * distH);
-        let face = max(sat(dot(ln, -dirL)), 0.22 * sat(ln.y));
-        hAcc += cone * attD * face;
+        let nlH = sat(dot(ln, hlVec));
+        let face = max(nlH, 0.22 * sat(ln.y));
+        let hvRaw = hlVec + lv;
+        let hVec = hvRaw * inverseSqrt(max(dot(hvRaw, hvRaw), 1e-5));
+        let nhH = sat(dot(ln, hVec));
+        let vhH = sat(dot(lv, hVec));
+        let spH = fSchlick(f0, vhH) * min(dGGX(nhH, al) * vSmith(nv, nlH, al), 4.0) * nlH;
+        hlCol += (dif * face + spH * 0.35) * (cone * attD);
       }
-      col += vec3f(1.0, 0.92, 0.76) * 20.0 * F.car.w * fadeX * hAcc * (dif + spec * 0.35);
+      col += vec3f(1.0, 0.92, 0.76) * 20.0 * F.car.w * fadeX * hlCol;
     }
   }
   // névoa
