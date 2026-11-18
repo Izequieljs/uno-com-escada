@@ -88,6 +88,7 @@ function uiSyncCfg() {
     if (de !== null) uiSetBtn(b, +de === ei);
   }
 }
+function uiPreview() { if (typeof GAME !== 'undefined' && GAME.ready && typeof renderFrame === 'function') renderFrame(); }
 function uiBindCfg() {
   if (!UI.cfg || !UI.cfg.querySelectorAll) return;
   const btns = UI.cfg.querySelectorAll('button');
@@ -99,11 +100,12 @@ function uiBindCfg() {
         const next = +dm === 1;
         if (typeof GS !== 'undefined' && 'raceMode' in GS && GS.raceMode !== next) {
           GS.raceMode = next;
-          if (UI.st === ST.PAUSA) UI.back = ST.JOGO;
+          if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
           if (GS.replayOn) GS.replayOn = false;
           if (typeof gameRestart === 'function') gameRestart();
+          if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
         }
-        uiSavePrefs(); uiSyncCfg(); uiRenderMed();
+        uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
       };
       continue;
     }
@@ -114,12 +116,13 @@ function uiBindCfg() {
         if (typeof GS !== 'undefined' && 'carIdx' in GS && GS.carIdx !== next) {
           GS.carIdx = next;
           if (typeof carSyncActive === 'function') carSyncActive(false);
-          if (UI.st === ST.PAUSA) UI.back = ST.JOGO;
+          if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
           if (GS.replayOn) GS.replayOn = false;
           if (typeof gameRestart === 'function') gameRestart();
           else if (typeof ghRestart === 'function') ghRestart();
+          if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
         }
-        uiSavePrefs(); uiSyncCfg(); uiRenderMed();
+        uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
       };
       continue;
     }
@@ -131,7 +134,7 @@ function uiBindCfg() {
         if (typeof carApplyPaint === 'function' && typeof CAR !== 'undefined' && CAR.slotBody) {
           carApplyPaint(CAR.slotBody, next, CAR.bodyKind);
         }
-        uiSavePrefs(); uiSyncCfg();
+        uiSavePrefs(); uiSyncCfg(); uiPreview();
       };
       continue;
     }
@@ -139,9 +142,9 @@ function uiBindCfg() {
     if (de !== null) {
       b.onclick = () => {
         const next = +de | 0;
-        if (typeof envApply === 'function') envApply(next);
+        if (typeof envApply === 'function') envApply(next, { keepLights: !!(typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn)) });
         if (typeof gamePose === 'function') gamePose();
-        uiSavePrefs(); uiSyncCfg();
+        uiSavePrefs(); uiSyncCfg(); uiPreview();
       };
     }
   }
@@ -178,12 +181,16 @@ function uiInit() {
           GS.paintIdx = ((pr.paintIdx | 0) % pn + pn) % pn;
         }
         const activeOk = !GS.replayOn && !GS.poseOn;
-        if (typeof carSyncActive === 'function' && activeOk) carSyncActive(false);
-        if (typeof pr.envIdx === 'number' && typeof envApply === 'function' && typeof ENV !== 'undefined' && activeOk) {
-          const en = ENV.presets.length, ei = ((pr.envIdx | 0) % en + en) % en;
-          if (ei > 0 || ei !== ENV.idx) envApply(ei);
+        if (activeOk) {
+          if (typeof carSyncActive === 'function') carSyncActive(false);
+          if (typeof pr.envIdx === 'number' && typeof envApply === 'function' && typeof ENV !== 'undefined') {
+            const en = ENV.presets.length, ei = ((pr.envIdx | 0) % en + en) % en;
+            if (ei > 0 || ei !== ENV.idx) envApply(ei);
+          }
+          if (typeof gameRestart === 'function') gameRestart();
+        } else if (typeof carSyncLapBest === 'function') {
+          carSyncLapBest(GS.carIdx ? 1 : 0);
         }
-        if (typeof gameRestart === 'function' && activeOk) gameRestart();
       }
     }
   } catch (e) { /* ignora preferências inválidas */ }
