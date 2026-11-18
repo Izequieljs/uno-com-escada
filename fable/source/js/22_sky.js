@@ -1,5 +1,17 @@
 // Geração única das texturas de ruído e do céu; cor do sol; harmônicos esféricos do ambiente.
 const SUN_EL = 17 * PI / 180, SUN_AZ = 180.5 * PI / 180;
+const ENV = {
+  idx: 0,
+  wet: 0,
+  grip: 1,
+  presets: [
+    { nome: 'Sol (Manhã)', el: SUN_EL, az: SUN_AZ, colEl: 14.5 * PI / 180, colMul: 1.5, turb: 0.57, fog: [0.0008, 1 / 55, 0, 0.05], exposure: 1, wet: 0, grip: 1.0 },
+    { nome: 'Pôr do Sol', el: 5.5 * PI / 180, az: 212 * PI / 180, colEl: 5.0 * PI / 180, colMul: 1.85, turb: 0.72, fog: [0.0011, 1 / 50, 0, 0.065], exposure: 1.08, wet: 0, grip: 1.0 },
+    { nome: 'Pista Molhada', el: 11.5 * PI / 180, az: 192 * PI / 180, colEl: 11.5 * PI / 180, colMul: 0.95, turb: 0.88, fog: [0.0016, 1 / 45, 0, 0.08], exposure: 1.05, wet: 0.92, grip: 0.84 },
+  ],
+};
+let SKY_PIPE = null, SKY_UB = null, SKY_BG = null;
+const _skyU = new Float32Array(8);
 function atmSunColor(dirY) {
   // mesma atmosfera do shader (atmos.wgsl): transmitância do sol até o chão
   const RP = 6360e3, RA = 6440e3, o = RP + 40, n = 32;
@@ -8,11 +20,30 @@ function atmSunColor(dirY) {
   const BR = [5.8e-6, 13.6e-6, 33.1e-6], BO = [0.65e-6, 1.881e-6, 0.085e-6], BM = 26e-6 * 1.11;
   return [0, 1, 2].map(i => 22 * Math.exp(-(BR[i] * oR + BM * oM + BO[i] * oO)));
 }
+function envSyncCpu(idx, opts) {
+  const n = ENV.presets.length, i = ((idx | 0) % n + n) % n, p = ENV.presets[i];
+  ENV.idx = i; ENV.wet = p.wet; ENV.grip = p.grip;
+  R.sun[0] = Math.cos(p.el) * Math.cos(p.az); R.sun[1] = Math.sin(p.el); R.sun[2] = Math.cos(p.el) * Math.sin(p.az);
+  // cor do sol: transmitância da atmosfera com ganho artístico
+  const sc = atmSunColor(Math.sin(p.colEl)); R.sunCol[0] = sc[0] * p.colMul; R.sunCol[1] = sc[1] * p.colMul; R.sunCol[2] = sc[2] * p.colMul;
+  R.fog[0] = p.fog[0]; R.fog[1] = p.fog[1]; R.fog[2] = p.fog[2]; R.fog[3] = p.fog[3];
+  R.exposure = p.exposure;
+  if (typeof GS !== 'undefined' && (!opts || !opts.keepLights)) GS.lightsOn = i > 0;
+  return i;
+}
+async function skyBake(progress) {
+  const dev = G.dev, skyView = R.view.sky, strips = 16;
+  for (let i = 0; i < strips; i++) {
+    const enc = dev.createCommandEncoder();
+    const p = enc.beginRenderPass({ colorAttachments: [{ view: skyView, loadOp: i ? 'load' : 'clear', storeOp: 'store' }] });
+    p.setPipeline(SKY_PIPE); p.setBindGroup(0, SKY_BG); p.setScissorRect(i * SKY_W / strips, 0, SKY_W / strips, SKY_H); p.draw(3); p.end();
+    dev.queue.submit([enc.finish()]);
+    await dev.queue.onSubmittedWorkDone(); if (progress) progress(i / strips);
+  }
+}
 async function skyInit(progress) {
   const dev = G.dev, T = R.tex, V = R.view;
-  R.sun[0] = Math.cos(SUN_EL) * Math.cos(SUN_AZ); R.sun[1] = Math.sin(SUN_EL); R.sun[2] = Math.cos(SUN_EL) * Math.sin(SUN_AZ);
-  // cor do sol: transmitância da atmosfera como se o sol estivesse um pouco mais baixo (tom mais quente), com ganho artístico
-  const sc = atmSunColor(Math.sin(14.5 * PI / 180)); R.sunCol[0] = sc[0] * 1.5; R.sunCol[1] = sc[1] * 1.5; R.sunCol[2] = sc[2] * 1.5;
+  const idx = envSyncCpu(ENV.idx, { keepLights: true });
   // ruído
   const nb = mkPost('noisebake', {}, ['rgba8unorm']);
   const ub = mkBuf(65 * 256, BU.U), ud = new Float32Array(65 * 64);
@@ -25,17 +56,25 @@ async function skyInit(progress) {
   dev.queue.submit([enc.finish()]);
   genMips(T.noise, 'rgba8unorm');
   // céu, em faixas (para não travar a GPU num único comando longo)
-  const sb = mkPost('skybake', {}, ['rgba16float']);
-  const su = mkBuf(32, BU.U, new Float32Array([R.sun[0], R.sun[1], R.sun[2], 0, 0.57, 0, 0, 0]));
-  const sbg = bgOf(sb, 0, [su, V.noise3, V.noise, R.sLin]);
-  const strips = 16;
-  for (let i = 0; i < strips; i++) {
-    enc = dev.createCommandEncoder();
-    const p = enc.beginRenderPass({ colorAttachments: [{ view: V.sky, loadOp: i ? 'load' : 'clear', storeOp: 'store' }] });
-    p.setPipeline(sb); p.setBindGroup(0, sbg); p.setScissorRect(i * SKY_W / strips, 0, SKY_W / strips, SKY_H); p.draw(3); p.end();
-    dev.queue.submit([enc.finish()]);
-    await dev.queue.onSubmittedWorkDone(); if (progress) progress(i / strips);
+  SKY_PIPE = mkPost('skybake', {}, ['rgba16float']);
+  _skyU[0] = R.sun[0]; _skyU[1] = R.sun[1]; _skyU[2] = R.sun[2]; _skyU[3] = 0;
+  _skyU[4] = ENV.presets[idx].turb; _skyU[5] = 0; _skyU[6] = 0; _skyU[7] = 0;
+  SKY_UB = mkBuf(32, BU.U, _skyU);
+  SKY_BG = bgOf(SKY_PIPE, 0, [SKY_UB, V.noise3, V.noise, R.sLin]);
+  await skyBake(progress);
+}
+async function envApply(idx, opts) {
+  const i = envSyncCpu(idx, opts);
+  if (typeof G !== 'undefined' && G.dev && SKY_PIPE && SKY_UB && SKY_BG) {
+    _skyU[0] = R.sun[0]; _skyU[1] = R.sun[1]; _skyU[2] = R.sun[2]; _skyU[3] = 0;
+    _skyU[4] = ENV.presets[i].turb; _skyU[5] = 0; _skyU[6] = 0; _skyU[7] = 0;
+    G.dev.queue.writeBuffer(SKY_UB, 0, _skyU);
+    await skyBake();
+    if (typeof renderStaticShadow === 'function') renderStaticShadow();
+    if (typeof renderFrame === 'function') for (let k = 0; k < 6; k++) renderFrame();
+    if (typeof computeSH === 'function') await computeSH();
   }
+  return i;
 }
 function halfToFloat(h) { const s = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 31, f = h & 1023; if (e === 0) return s * Math.pow(2, -14) * (f / 1024); if (e === 31) return f ? NaN : s * Infinity; return s * Math.pow(2, e - 15) * (1 + f / 1024); }
 // lê um mip do cubemap de ambiente e projeta em SH de ordem 2 (irradiância/π)

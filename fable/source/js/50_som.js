@@ -237,7 +237,7 @@ function sndControl() {
   const px = A[0] + bx * t - cp[0], pz = A[1] + bz * t - cp[2], pd = Math.sqrt(px * px + pz * pz) + 0.01, fw = cam.fwd, fl = Math.sqrt(fw[0] * fw[0] + fw[2] * fw[2]) + 1e-6;
   const horn = (typeof K_HORN !== 'undefined' && (GS.keys & K_HORN)) ? 32 : 0;
   c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | ((view & 7) << 2) | horn;
-  c[1] = V.rpm; c[2] = V.ctl[0] * 1000; c[3] = V.gear; c[4] = sp * 100; c[5] = sl * 1000; c[6] = sr * 1000; c[7] = loose * kv * 1000; c[8] = kerb * kv * 1000;
+  c[1] = V.rpm; c[2] = Math.min(1400, V.ctl[0] * 1000 + (V.boosting ? 320 : 0)); c[3] = V.gear; c[4] = sp * 100; c[5] = sl * 1000; c[6] = sr * 1000; c[7] = loose * kv * 1000; c[8] = kerb * kv * 1000;
   c[9] = dist * 10; c[10] = dop * 10000; c[11] = lsp * 100; c[12] = 1000 / (1 + pd * pd / 2025); c[13] = (px * -fw[2] + pz * fw[0]) / (pd * fl) * 1000; c[14] = V.hits & 1023;
 }
 // O contexto de áudio só pode nascer num gesto do usuário: é chamado no clique de "Começar".

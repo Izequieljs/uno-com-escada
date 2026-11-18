@@ -95,9 +95,10 @@ fn asphaltSurf(in: V2F) -> Surface {
   alb = mix(alb, alb * 1.3 + 0.006, wear); rough = mix(rough, 0.77, wear);
   // piche das emendas e trincas: cinza-escuro, um pouco mais liso
   alb = mix(alb, alb * 0.38 + vec3f(0.004), tar); rough = mix(rough, 0.74, tar);
+  let wZone = max(in.col.g, F.car2.y);
   {
     let dn = textureSample(tNoise, sLin, vec2f(s * 0.0037 + 0.21, d * 0.045)).g * 0.6 + n1.b * 0.4;
-    let dampG = smoothstep(0.6, 0.74, dn) * (1.0 - smoothstep(0.0, 0.2, in.col.g));
+    let dampG = smoothstep(0.6, 0.74, dn) * (1.0 - smoothstep(0.0, 0.2, wZone));
     alb = mix(alb, alb * 0.72, dampG); rough = mix(rough, 0.88, dampG * 0.6);
   }
   // borda do asfalto irregular: terra e grama invadindo os últimos centímetros (a divisa não é uma reta limpa)
@@ -138,12 +139,12 @@ fn asphaltSurf(in: V2F) -> Surface {
   var N = bumpXZ(Ng, grad);
   // ---- trechos molhados ----
   var wet = 0.0;
-  if (in.col.g > 0.001) {
+  if (wZone > 0.001) {
     // "profundidade" da água: depressões de baixa frequência + sulcos das rodas + beira da pista; borda orgânica por ruído fino
     let lo = textureSample(tNoise, sLin, vec2f(s * 0.0125 + 0.37, d * 0.062)).r * 0.56 + textureSample(tNoise, sLin, vec2f(s * 0.031, d * 0.11 + 0.4)).g * 0.24 + textureSample(tNoise, sLin, xz * 0.047 + 0.13).r * 0.2;
     let fine = (n2.r - 0.5) * 0.02 + (n3.r - 0.5) * 0.035 + (n4.r - 0.5) * 0.012;    // a borda segue o agregado: nítida e irregular, não uma máscara mole
     let edge = smoothstep(2.4, 5.2, abs(d)) * 0.05 + rutG * 0.085;      // a água junta nos trilhos de roda e na beira
-    let lvl = lo + fine + edge - mix(0.78, 0.665, in.col.g);
+    let lvl = lo + fine + edge - mix(0.78, 0.665, wZone);
     // seco → úmido (halo largo, escurece e alisa um pouco) → filme d'água → lâmina. Tudo em rampas largas: sem borda dura.
     let lw = fwidth(lvl) * 0.75;                                        // largura de 1 pixel em unidades do nível
     let damp = smoothstep(-0.09, -0.035, lvl);

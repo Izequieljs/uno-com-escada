@@ -20,7 +20,7 @@ const GS = {
   tvData: new Float32Array(64 * 4), tvN: 0, tvCur: -1, tvAim: new Float32Array(3), tvFov: 0.3, pl: new Float64Array(2),
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
-  paintIdx: 0, carIdx: 0, carBest: new Float64Array(2), _bestCar: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false,
+  paintIdx: 0, carIdx: 0, carBest: new Float64Array(2), _bestCar: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false, boostF: 0,
 };
 // Cronômetro: LAP[0] instante (s de simulação) em que a volta atual começou, [1] última volta, [2] melhor volta, [3] 1 = cronômetro correndo
 const LAP = new Float64Array(4);
@@ -43,7 +43,7 @@ function carSyncActive(forceUno) {
 }
 // Controle (Gamepad API): PADV[0] gatilho direito, [1] gatilho esquerdo, [2] analógico esquerdo já com zona morta e curva. Preenchido por padPoll.
 const PADV = new Float64Array(3);
-const KEYMAP = { KeyW: K_W, ArrowUp: K_W, KeyS: K_S, ArrowDown: K_S, KeyA: K_A, ArrowLeft: K_A, KeyD: K_D, ArrowRight: K_D, Space: K_SPACE, KeyC: K_C, KeyR: K_R, KeyV: K_V, KeyE: K_HORN };
+const KEYMAP = { KeyW: K_W, ArrowUp: K_W, KeyS: K_S, ArrowDown: K_S, KeyA: K_A, ArrowLeft: K_A, KeyD: K_D, ArrowRight: K_D, Space: K_SPACE, KeyC: K_C, KeyR: K_R, KeyV: K_V, ShiftLeft: K_BOOST, ShiftRight: K_BOOST, KeyE: K_HORN };
 function onKeyDown(e) {
   const c = e.code, k = KEYMAP[c];
   if (k) { GS.held |= k; if (e.preventDefault) e.preventDefault(); return; }
@@ -124,10 +124,10 @@ function gameWarmup() {
   for (let i = 0; i < 9000; i++) {
     const ph = (i / 300) | 0, t = i / 120; let k = aiKeys(t);
     if (ph % 7 === 3) k = K_S; else if (ph % 7 === 5) k = K_W | K_D | (i % 60 < 30 ? K_SPACE : 0); else if (ph % 11 === 9) k = K_W | K_A;
-    if (i % 1500 === 1499) k |= K_R; if (i % 400 === 399) k |= K_C; if (ph % 5 === 2) k |= K_HORN;
+    if (i % 1500 === 1499) k |= K_R; if (i % 400 === 399) k |= K_C; if (ph % 5 === 2) k |= K_HORN; if (ph % 6 === 1) k |= K_BOOST;
     GS.lightsOn = (ph & 2) !== 0; GS.hazardOn = (ph & 4) !== 0;
     // metade das fases com as mesmas manobras vindas do controle (gatilhos e alavanca analógicos, olhar para trás)
-    if (ph & 1) { const f = 0.3 + (i % 71) / 100; GS.padKeys = K_PAD | K_PADS | (ph % 4 === 1 ? K_V : 0) | (k & (K_W | K_S | K_SPACE | K_C | K_R | K_HORN)); PADV[0] = (k & K_W) ? f : 0; PADV[1] = (k & K_S) ? f : 0; PADV[2] = (((k & K_D) ? 1 : 0) - ((k & K_A) ? 1 : 0)) * f; k = i % 9 === 0 ? k & (K_A | K_D) : 0; } else GS.padKeys = 0;
+    if (ph & 1) { const f = 0.3 + (i % 71) / 100; GS.padKeys = K_PAD | K_PADS | (ph % 4 === 1 ? K_V : 0) | (k & (K_W | K_S | K_SPACE | K_C | K_R | K_BOOST | K_HORN)); PADV[0] = (k & K_W) ? f : 0; PADV[1] = (k & K_S) ? f : 0; PADV[2] = (((k & K_D) ? 1 : 0) - ((k & K_A) ? 1 : 0)) * f; k = i % 9 === 0 ? k & (K_A | K_D) : 0; } else GS.padKeys = 0;
     GS.held = k; GS.acc = PHYS_DT * (1 + (i % 3 === 0 ? 0.5 : 0)); gameTick(i % 4 === 0); sndControl();
     for (let q = 0; q < 3; q++) cascadeSetup(q);   // cascatas de sombra das cinco câmeras (inclusive o modo foco da TV): só contas, refeitas a cada quadro
   }
@@ -144,7 +144,7 @@ function gameWarmup() {
     }
   }
   if (typeof GH !== 'undefined') GH.warm = false;
-  GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; LAP[2] = 0; GS.carBest.fill(0); GS._bestCar = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
+  GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; GS.boostF = 0; LAP[2] = 0; GS.carBest.fill(0); GS._bestCar = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
 }
 // Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas cinco câmeras (com fumaça e marcas),
 // para o driver compilar todas as variantes de pipeline e carregar todas as texturas agora, e não no meio da volta.
@@ -169,7 +169,7 @@ function gameRestart() {
   carSyncActive(unoF);
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   const qCam = +(Q.get('cam') || 0);
-  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = false; GS.hazardOn = false;
+  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = (!unoF && typeof ENV !== 'undefined') ? ENV.idx > 0 : false; GS.hazardOn = false; GS.boostF = 0;
   GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 || qCam === 4 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
@@ -283,6 +283,7 @@ function gamePose() {
   if (C.slotWheel[0] !== C.slotBody) { const D2 = GS.tmp2; m4mul(D2, objPrev(C.slotBody), T); for (let i = 0; i < 4; i++) m4mul(objPrev(C.slotWheel[i]), D2, objModel(C.slotWheel[i])); }
   const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = bp[2];
   f[FO.car2] = (GS.tick60 < 30 && GS.speed < 0.5) ? 1 : 0;   // luzes de largada: acesas só enquanto o carro espera no grid
+  f[FO.car2 + 1] = (!unoF && typeof ENV !== 'undefined') ? ENV.wet : 0;
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
   if (typeof ghPose === 'function') ghPose();
 }
@@ -293,6 +294,9 @@ function rotXQ(o) { const a = ROTQ[0], c = Math.cos(a), s = Math.sin(a); o.fill(
 function camCut() { GS.cut = true; }
 function gameCamera() {
   const V = VEH, c = Math.cos(GS.yaw), s = Math.sin(GS.yaw), dt = RT[1], q = CAMQ, lb = (GS.keys & K_V) ? -1 : 1;   // lb = -1: olhando para trás
+  const noExt = !GS.replayOn && !GS.poseOn;
+  GS.boostF += ((noExt && V.boosting ? 1 : 0) - GS.boostF) * (1 - Math.exp(-dt * 9));
+  const boostFov = noExt ? 0.065 * GS.boostF : 0;
   if (GS.cam === 0 || GS.cam === 3) {
     // perseguição (0 baixa, 3 alta): segue a direção do movimento com atraso
     const hi = GS.cam === 3;
@@ -307,13 +311,13 @@ function gameCamera() {
     let ey = GS.chaseY + (hi ? 2.65 : 1.62) - V.gPitch * dist * 0.6 * pitchLb;
     _gq[0] = ex; _gq[1] = ez; hfAtQ(_gq); if (ey < _gq[6] + 0.55) ey = _gq[6] + 0.55;
     let rl = -V.ay * 0.004; rl = rl < -0.05 ? -0.05 : rl > 0.05 ? 0.05 : rl;
-    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * aim * lb; q[4] = GS.cy + (hi ? 1.15 : 0.95) + V.gPitch * aim * pitchLb; q[5] = GS.cz + s * aim * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042; q[7] = rl;
+    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * aim * lb; q[4] = GS.cy + (hi ? 1.15 : 0.95) + V.gPitch * aim * pitchLb; q[5] = GS.cz + s * aim * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042 + boostFov; q[7] = rl;
   } else if (GS.cam === 1) {
     // capô: presa à carroceria
     const B = GS.body;
     q[0] = B[0] * 0.5 + B[4] * 1.15 + B[12]; q[1] = B[1] * 0.5 + B[5] * 1.15 + B[13]; q[2] = B[2] * 0.5 + B[6] * 1.15 + B[14];   // acima da base do para-brisa: capô inteiro, com a grelha de ventilação junto à base do quadro
     q[3] = B[0] * 6.5 + B[4] * 0.52 + B[12]; q[4] = B[1] * 6.5 + B[5] * 0.52 + B[13]; q[5] = B[2] * 6.5 + B[6] * 0.52 + B[14];
-    q[6] = 1.0; q[7] = -(V.gRoll + V.roll) * 0.8;
+    q[6] = 1.0 + boostFov; q[7] = -(V.gRoll + V.roll) * 0.8;
     if (lb < 0) {   // para trás: do alto da tampa traseira, sem o carro no quadro
       q[0] = B[0] * -2.0 + B[4] * 1.05 + B[12]; q[1] = B[1] * -2.0 + B[5] * 1.05 + B[13]; q[2] = B[2] * -2.0 + B[6] * 1.05 + B[14];
       q[3] = B[0] * -9 + B[4] * 0.6 + B[12]; q[4] = B[1] * -9 + B[5] * 0.6 + B[13]; q[5] = B[2] * -9 + B[6] * 0.6 + B[14]; q[7] = -q[7];
@@ -329,7 +333,7 @@ function gameCamera() {
     q[3] = B[0] * tx0 + B[4] * ty0 + B[8] * tz0 + B[12];
     q[4] = B[1] * tx0 + B[5] * ty0 + B[9] * tz0 + B[13];
     q[5] = B[2] * tx0 + B[6] * ty0 + B[10] * tz0 + B[14];
-    q[6] = 1.02; q[7] = -(V.gRoll + V.roll) * 0.8 * lb;
+    q[6] = 1.02 + boostFov; q[7] = -(V.gRoll + V.roll) * 0.8 * lb;
   } else {
     // TV: câmera fixa à beira da pista mais próxima à frente do carro, com lente longa
     let best = GS.tvCur, bd = 1e9; const n = GS.tvN, TV = GS.tvData;

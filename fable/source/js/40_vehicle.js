@@ -2,7 +2,7 @@
 // tração dianteira, câmbio automático, freio de mão, relevo/inclinação da pista e colisão com barreiras.
 // Passo fixo de 1/120 s. Nenhuma alocação durante a simulação.
 const PHYS_DT = 1 / 120;
-const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512, K_HORN = 2048;
+const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512, K_BOOST = 1024, K_HORN = 2048;
 // Entrada analógica do controle: VIN[0] acelerador 0..1, VIN[1] freio 0..1 (valem quando as teclas trazem K_PAD), VIN[2] direção -1..1 (K_PADS).
 // As teclas gravadas da volta roteirizada nunca trazem esses bits: a via digital fica exatamente como era.
 const VIN = new Float64Array(3);
@@ -35,6 +35,7 @@ const VP = {
 const VEH = {
   x: 0, z: 0, yaw: 0, vx: 0, vy: 0, r: 0,                  // posição do CG no plano, direção, velocidades no corpo (frente, direita), guinada
   steer: 0, rpm: 900, gear: 1, throttle: 0, brake: 0, hand: 0,
+  boost: 1, boosting: 0,
   ax: 0, ay: 0,                                              // acelerações filtradas (corpo)
   roll: 0, rollV: 0, pitch: 0, pitchV: 0, heave: 0, heaveV: 0,
   y: 0, gPitch: 0, gRoll: 0,                                 // altura e inclinação do chão sob o carro (filtradas)
@@ -96,7 +97,7 @@ const ZMU = [1.0, 0.96, 0.56, 0.5, 0.5, 0.95, 0.95], ZDRAG = [0, 0.005, 0.07, 0.
 function vehicleReset(s, d, heading) {
   const V = VEH; trackPos(s, d, _vp);
   V.x = _vp[0]; V.z = _vp[2]; V.yaw = Math.atan2(_vp[4], _vp[3]) + (heading || 0);
-  V.vx = V.vy = V.r = 0; V.steer = 0; V.rpm = 900; V.gear = 1; V.ax = V.ay = 0; V.roll = V.rollV = V.pitch = V.pitchV = V.heave = V.heaveV = 0;
+  V.vx = V.vy = V.r = 0; V.steer = 0; V.rpm = 900; V.gear = 1; V.boost = 1; V.boosting = 0; V.ax = V.ay = 0; V.roll = V.rollV = V.pitch = V.pitchV = V.heave = V.heaveV = 0;
   V.hint = -1; V.whint.fill(-1); V.omega.fill(0); V.slip.fill(0);
   _gq[0] = V.x; _gq[1] = V.z; groundQ(-1); V.y = _gq[8]; V.gPitch = 0; V.gRoll = 0; V.lastS = V.s;
   for (let k = 0; k < 6; k++) vehicleGround(1);
@@ -147,11 +148,21 @@ function vehicleStep(keys) {
     else if (V.gear > 1 && Math.abs(wheelSpd * P.gears[V.gear - 2] * P.final) * 9.5493 < 5350) V.gear--;
     ratio = P.gears[V.gear - 1] * P.final; rpm = Math.abs(wheelSpd * ratio) * 9.5493;
   }
-  const rpmE = Math.min(6700, Math.max(900, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // embreagem patinando na saída
+  const noExt = typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn);
+  const boostOn = !noExt && (keys & K_BOOST) !== 0 && V.boost > 0.02 && V.gear > 0 && thr > 0.1;
+  if (boostOn) {
+    V.boosting = 1;
+    V.boost = Math.max(0, V.boost - 0.28 * dt);
+  } else {
+    V.boosting = 0;
+  }
+  const rpmMax = boostOn ? 6950 : 6700, rpmCut = boostOn ? 6750 : 6500;
+  const rpmE = Math.min(rpmMax, Math.max(900, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // embreagem patinando na saída
   V.rpm += (rpmE - V.rpm) * 0.25;
   const ex = rpmE / 1000, ek = (ex - P.tShift) / P.tSpan, eT = P.t0 + P.tA * Math.sin((ek < 0 ? 0 : ek > 1 ? 1 : ek) * PI) - (ex > P.tPeak ? (ex - P.tPeak) * P.tDrop : 0);   // = engineTorque(rpmE), embutido
   let Tdrive = throttle * (eT > 0 ? eT : 0) * ratio * P.eff;                  // torque total nas rodas dianteiras
-  if (rpm > 6500) Tdrive = 0;
+  if (boostOn) Tdrive *= 1.38;
+  if (rpm > rpmCut) Tdrive = 0;
   if (reverse && V.vx < -11) Tdrive = 0;
   Tdrive -= (1 - throttle) * 0.012 * rpmE * Math.sign(wheelSpd) * Math.abs(ratio) * 0.1;   // freio-motor
   // --- carga vertical por roda
@@ -163,8 +174,9 @@ function vehicleStep(keys) {
   let Fx = 0, Fy = 0, Mz = 0; const cs = Math.cos(V.steer), sn = Math.sin(V.steer);
   const lw0 = Math.min(1, Math.max(0, (speed - 0.4) / 1.8));
   const lowW = (lw0 * lw0 * (3 - 2 * lw0));
+  const gripMul = (!noExt && typeof ENV !== 'undefined') ? ENV.grip : 1;
   for (let i = 0; i < 4; i++) {
-    const front = i < 2, zone = V.wzone[i], mu = P.mu * ZMU[zone], cap = mu * V.fz[i];
+    const front = i < 2, zone = V.wzone[i], hard = zone === ZONE.ASPHALT || zone === ZONE.KERB || zone === ZONE.PIT, mu = P.mu * ZMU[zone] * (hard ? gripMul : 1), cap = mu * V.fz[i];
     // velocidade do ponto de contato no referencial do corpo
     const vxw = V.vx - V.r * WLZ[i], vyw = V.vy + V.r * WLX[i];
     // no referencial da roda
@@ -200,6 +212,11 @@ function vehicleStep(keys) {
     // para o referencial do corpo
     const fbx = front ? fx * cs - fy * sn : fx, fby = front ? fx * sn + fy * cs : fy;
     Fx += fbx; Fy += fby; Mz += WLX[i] * fby - WLZ[i] * fbx;
+  }
+  if (!V.boosting) {
+    let maxSlip = 0;
+    for (let i = 0; i < 4; i++) if (V.slip[i] > maxSlip) maxSlip = V.slip[i];
+    V.boost = Math.min(1, V.boost + (0.055 * Math.min(1, speed / 22) + 0.045 * maxSlip) * dt);
   }
   // arrasto, gravidade nas rampas
   Fx -= 0.5 * 1.2 * P.cdA * V.vx * Math.abs(V.vx);

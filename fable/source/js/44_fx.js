@@ -31,6 +31,9 @@ function fxRnd() { const s = FX.seed; let x = s[0]; x ^= x << 13; x ^= x >>> 17;
 // por passo de física: estende as marcas e emite partículas nas rodas que derrapam
 function fxStep() {
   const V = VEH, L = FX.last;
+  const wetOn = (typeof ENV !== 'undefined' && ENV.wet > 0.5) && !(typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn));
+  const speed = Math.sqrt(V.vx * V.vx + V.vy * V.vy);
+  const c = Math.cos(V.yaw), s = Math.sin(V.yaw), wvx = V.vx * c - V.vy * s, wvz = V.vx * s + V.vy * c;
   for (let i = 0; i < 4; i++) {
     const sl = V.slip[i], zone = V.wzone[i], hard = zone === ZONE.ASPHALT || zone === ZONE.KERB || zone === ZONE.PIT;
     const x = V.wx[i], y = V.wy[i] + 0.012, z = V.wz[i], o = i * 8;
@@ -55,14 +58,20 @@ function fxStep() {
       }
     } else FX.active[i] = 0;
     // partículas
-    const speed = Math.sqrt(V.vx * V.vx + V.vy * V.vy);
-    const rate = hard ? (sl > 0.62 ? (sl - 0.62) * 1.0 * Math.min(1, speed * 0.1) : 0) : Math.min(1, speed / 14) * 0.3;
+    const smokeRate = hard ? (sl > 0.62 ? (sl - 0.62) * 1.0 * Math.min(1, speed * 0.1) : 0) : Math.min(1, speed / 14) * 0.3;
+    const spray = wetOn && hard && speed > 8;
+    const rate = spray ? Math.min(0.65, (speed - 8) / 35) * (0.55 + 0.45 * sl) : (wetOn && hard ? 0 : smokeRate);
     for (let rep = 0; rep < 2; rep++) if (rate > 0 && fxRnd() < rate * (rep ? 0.6 : 1) * 65536) {
       const q = FX.pNext * 12, p = FX.p, K = 1 / 65536; FX.pNext = (FX.pNext + 1) % PT_N;
-      const c = Math.cos(V.yaw), s = Math.sin(V.yaw), wvx = V.vx * c - V.vy * s, wvz = V.vx * s + V.vy * c;
-      p[q] = x + ((fxRnd() * K) - 0.5) * 0.25; p[q + 1] = y + 0.08; p[q + 2] = z + ((fxRnd() * K) - 0.5) * 0.25;
-      p[q + 3] = wvx * 0.18 + ((fxRnd() * K) - 0.5) * 1.1; p[q + 4] = 0.5 + (fxRnd() * K) * 0.7; p[q + 5] = wvz * 0.18 + ((fxRnd() * K) - 0.5) * 1.1;
-      p[q + 6] = 0; p[q + 7] = hard ? 0.8 + (fxRnd() * K) * 0.9 : 0.8 + (fxRnd() * K) * 0.7; p[q + 8] = 0.16 + (fxRnd() * K) * 0.14; p[q + 9] = (fxRnd() * K) * 6.28; p[q + 10] = hard ? 0 : (zone === ZONE.GRAVEL ? 1 : 2); p[q + 11] = (fxRnd() * K);
+      if (spray) {
+        p[q] = x - c * 0.22 + ((fxRnd() * K) - 0.5) * 0.2; p[q + 1] = y + 0.08 + (fxRnd() * K) * 0.08; p[q + 2] = z - s * 0.22 + ((fxRnd() * K) - 0.5) * 0.2;
+        p[q + 3] = wvx * 0.22 - c * (1.2 + (fxRnd() * K) * 1.4) + ((fxRnd() * K) - 0.5) * 0.9; p[q + 4] = 0.65 + (fxRnd() * K) * 0.85; p[q + 5] = wvz * 0.22 - s * (1.2 + (fxRnd() * K) * 1.4) + ((fxRnd() * K) - 0.5) * 0.9;
+        p[q + 6] = 0; p[q + 7] = 0.45 + (fxRnd() * K) * 0.45; p[q + 8] = 0.11 + (fxRnd() * K) * 0.11; p[q + 9] = (fxRnd() * K) * 6.28; p[q + 10] = 3; p[q + 11] = (fxRnd() * K);
+      } else {
+        p[q] = x + ((fxRnd() * K) - 0.5) * 0.25; p[q + 1] = y + 0.08; p[q + 2] = z + ((fxRnd() * K) - 0.5) * 0.25;
+        p[q + 3] = wvx * 0.18 + ((fxRnd() * K) - 0.5) * 1.1; p[q + 4] = 0.5 + (fxRnd() * K) * 0.7; p[q + 5] = wvz * 0.18 + ((fxRnd() * K) - 0.5) * 1.1;
+        p[q + 6] = 0; p[q + 7] = hard ? 0.8 + (fxRnd() * K) * 0.9 : 0.8 + (fxRnd() * K) * 0.7; p[q + 8] = 0.16 + (fxRnd() * K) * 0.14; p[q + 9] = (fxRnd() * K) * 6.28; p[q + 10] = hard ? 0 : (zone === ZONE.GRAVEL ? 1 : 2); p[q + 11] = (fxRnd() * K);
+      }
     }
   }
 }
@@ -78,9 +87,9 @@ function fxFrame() {
     p[q + 3] = p[q + 3] * k + R.wind[0] * 0.6 * dt; p[q + 5] = p[q + 5] * k + R.wind[1] * 0.6 * dt; p[q + 4] = p[q + 4] * Math.exp(-dt * 0.9) + 0.25 * dt;
     p[q] += p[q + 3] * dt; p[q + 1] += p[q + 4] * dt; p[q + 2] += p[q + 5] * dt;
     const t = age / life, kind = p[q + 10], w = n * 12;
-    o[w] = p[q]; o[w + 1] = p[q + 1] + p[q + 8] * 0.5; o[w + 2] = p[q + 2]; o[w + 3] = p[q + 8] * (1 + Math.sqrt(t) * (kind === 0 ? 3.4 : 3.2));
-    const a = Math.min(1, t * 45) * Math.pow(1 - t, 1.6) * (kind === 0 ? 0.5 : 0.42) / (1 + t * 2.2);
-    if (kind === 0) { o[w + 4] = 0.5; o[w + 5] = 0.52; o[w + 6] = 0.55; } else if (kind === 1) { o[w + 4] = 0.55; o[w + 5] = 0.48; o[w + 6] = 0.38; } else { o[w + 4] = 0.5; o[w + 5] = 0.44; o[w + 6] = 0.33; }
+    o[w] = p[q]; o[w + 1] = p[q + 1] + p[q + 8] * 0.5; o[w + 2] = p[q + 2]; o[w + 3] = p[q + 8] * (1 + Math.sqrt(t) * (kind === 0 ? 3.4 : kind === 3 ? 2.6 : 3.2));
+    const a = Math.min(1, t * 45) * Math.pow(1 - t, 1.6) * (kind === 0 ? 0.5 : kind === 3 ? 0.34 : 0.42) / (1 + t * 2.2);
+    if (kind === 0) { o[w + 4] = 0.5; o[w + 5] = 0.52; o[w + 6] = 0.55; } else if (kind === 1) { o[w + 4] = 0.55; o[w + 5] = 0.48; o[w + 6] = 0.38; } else if (kind === 3) { o[w + 4] = 0.62; o[w + 5] = 0.67; o[w + 6] = 0.72; } else { o[w + 4] = 0.5; o[w + 5] = 0.44; o[w + 6] = 0.33; }
     o[w + 7] = a; o[w + 8] = p[q + 9] + t * 0.8; o[w + 9] = p[q + 11]; n++;
   }
   FX.pAlive = n;
