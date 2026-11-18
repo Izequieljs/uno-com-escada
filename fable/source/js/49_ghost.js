@@ -14,6 +14,8 @@ const GH = {
   curSplit: new Float32Array(2048).fill(-1), bestSplit: new Float32Array(2048).fill(-1),
   curFrames: new Float32Array(10800 * 8), bestFrames: new Float32Array(10800 * 8),
   gx: 0, gy: 0, gz: 0, gyaw: 0, gpitch: 0, groll: 0, gsteer: 0, gspin: 0,
+  slotBody: 0, slotWheel: [0, 0, 0, 0], fam: null, bg: null,
+  _b: m4(), _t: m4(), _w: m4(),
 };
 
 function ghInit() {
@@ -45,7 +47,7 @@ function ghToggle() {
 // Registra splits e pose a 60 Hz (após vehicleStep + lapCross, no passo ímpar de 120 Hz). Sem alocações.
 function ghStep() {
   if ((GS.sub & 1) !== 1) return;
-  if (GH.warm || GS.replayOn || GS.ai || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
+  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
   const N = TRK.N, ds = TRK.ds;
   const q = ((VEH.s / TRK.L) * 4) | 0;
   GH.qMask |= 1 << (q & 3);
@@ -106,7 +108,7 @@ function ghLapCross(lt, isRecord) {
   GH.deltaCs = GH_NONE;
 }
 
-// Interpola a pose do fantasma para o instante atual da volta. Sem alocações.
+// Interpola a pose do fantasma para o instante atual da volta e atualiza matrizes + fade de proximidade. Sem alocações.
 function ghPose() {
   let vis = GH.on && GH.hasGhost && LAP[3] === 1 && !GS.replayOn && !GS.ai && !GS.frozen;
   if (vis) {
@@ -126,6 +128,40 @@ function ghPose() {
     }
   }
   GH.vis = vis;
+  if (!vis || !GH.slotBody || typeof CAR === 'undefined') { GH.drawOn = false; return; }
+  const dxP = GH.gx - GS.cx, dzP = GH.gz - GS.cz;
+  const dP = Math.sqrt(dxP * dxP + dzP * dzP);
+  const cp = R.cam.pos, dxC = GH.gx - cp[0], dyC = GH.gy + 0.8 - cp[1], dzC = GH.gz - cp[2];
+  const dC = Math.sqrt(dxC * dxC + dyC * dyC + dzC * dzC);
+  const fade = smooth(1.8, 5.2, dP < dC ? dP : dC);
+  if (fade < 0.01) { GH.drawOn = false; return; }
+  const wasOn = GH.drawOn;
+  GH.drawOn = true;
+  const B = GH._b, T = GH._t, W = GH._w;
+  const cy = Math.cos(GH.gyaw), sy = Math.sin(GH.gyaw);
+  B[0] = cy; B[1] = 0; B[2] = sy; B[3] = 0;
+  B[4] = 0;  B[5] = 1; B[6] = 0;  B[7] = 0;
+  B[8] = -sy; B[9] = 0; B[10] = cy; B[11] = 0;
+  B[12] = GH.gx; B[13] = GH.gy; B[14] = GH.gz; B[15] = 1;
+  ROTQ[0] = GH.gpitch; rotZQ(T); m4mul(B, B, T);
+  ROTQ[0] = -GH.groll; rotXQ(T); m4mul(B, B, T);
+  const sb = GH.slotBody, mb = objModel(sb);
+  objPrev(sb).set(wasOn ? mb : B);
+  mb.set(B);
+  objParams(sb)[0] = fade;
+  for (let i = 0; i < 4; i++) {
+    const sw = GH.slotWheel[i], mw = objModel(sw), h = CAR.hubs[i], left = (i & 1) === 0;
+    const a = -(i < 2 ? GH.gsteer : 0) + (left ? PI : 0), c = Math.cos(a), sn = Math.sin(a);
+    const g = left ? GH.gspin : -GH.gspin, cg = Math.cos(g), sg = Math.sin(g);
+    W[0] = c * cg; W[1] = sg; W[2] = -sn * cg; W[3] = 0;
+    W[4] = -c * sg; W[5] = cg; W[6] = sn * sg; W[7] = 0;
+    W[8] = sn; W[9] = 0; W[10] = c; W[11] = 0;
+    W[12] = h[0]; W[13] = h[1]; W[14] = h[2]; W[15] = 1;
+    m4mul(T, B, W);
+    objPrev(sw).set(wasOn ? mw : T);
+    mw.set(T);
+    objParams(sw)[0] = fade;
+  }
 }
 
 function ghB64Enc(ta) {
@@ -187,10 +223,12 @@ function ghLoadData(str, expectedBestSec) {
   const N = TRK.N, sn = Math.ceil(N / 2);
   if (N <= 0 || N > GH.bestSplit.length) return false;
   if (spU8.byteLength !== sn * 2) return false;
-  if (frU8.byteLength < 16 || (frU8.byteLength & 15) !== 0) return false;
+  if (frU8.byteLength < 32 || (frU8.byteLength & 15) !== 0) return false;
+  if (obj.l !== undefined && (!Number.isInteger(obj.l) || obj.l < 2 || obj.l > 10800)) return false;
 
   const sp = new Uint16Array(spU8.buffer), fr = new Int16Array(frU8.buffer), fn = fr.length / 8;
-  const bestLen = (typeof obj.l === 'number' && obj.l >= 2 && obj.l <= 10800) ? (obj.l | 0) : Math.min(10800, (fn - 1) * 3 + 1);
+  const bestLen = typeof obj.l === 'number' ? obj.l : Math.min(10800, (fn - 1) * 3 + 1);
+  if (bestLen < 2 || bestLen > 10800) return false;
   const hasTrailing = bestLen > 1 && (bestLen - 1) % 3 !== 0;
   const expectedFn = Math.ceil(bestLen / 3) + (hasTrailing ? 1 : 0);
   if (typeof obj.l === 'number' && fn !== expectedFn) return false;
@@ -206,9 +244,16 @@ function ghLoadData(str, expectedBestSec) {
   }
 
   const B = GH.bestFrames, invPos = 1 / 20, invAng = 1 / 5000, invSpin = 1 / 20;
+  let accSpin = fr[7] * invSpin, prevK0 = 0, prevRawS = accSpin;
   for (let f = 0; f < bestLen; f++) {
     let k0 = (f / 3) | 0;
     if (k0 >= fn - 1) k0 = fn - 1;
+    if (k0 !== prevK0) {
+      const rawS = fr[k0 * 8 + 7] * invSpin;
+      accSpin += wrapPi(rawS - prevRawS);
+      prevRawS = rawS;
+      prevK0 = k0;
+    }
     const k1 = k0 + 1 < fn ? k0 + 1 : k0;
     const t0 = k0 * 3, t1 = (hasTrailing && k1 === fn - 1) ? (bestLen - 1) : (k1 * 3), dt = t1 - t0;
     const u = dt > 0 ? (f - t0) / dt : 0, o0 = k0 * 8, o1 = k1 * 8, bo = f * 8;
@@ -221,7 +266,7 @@ function ghLoadData(str, expectedBestSec) {
     B[bo + 5] = (fr[o0 + 5] + (fr[o1 + 5] - fr[o0 + 5]) * u) * invAng;
     B[bo + 6] = (fr[o0 + 6] + (fr[o1 + 6] - fr[o0 + 6]) * u) * invAng;
     const s0 = fr[o0 + 7] * invSpin, s1 = fr[o1 + 7] * invSpin;
-    B[bo + 7] = s0 + wrapPi(s1 - s0) * u;
+    B[bo + 7] = accSpin + wrapPi(s1 - s0) * u;
   }
 
   GH.bestTime = obj.t;
@@ -231,3 +276,43 @@ function ghLoadData(str, expectedBestSec) {
   GH.savePending = false;
   return true;
 }
+
+// Aloca slots e família forward translúcida para renderizar o carro fantasma em WebGPU.
+function ghRenderInit() {
+  if (GH.slotBody || GAME.mode === 'test' || GAME.mode === 'car' || typeof CAR === 'undefined' || !CAR.bodyMesh) return;
+  GH.slotBody = objSlot();
+  for (let i = 0; i < 4; i++) GH.slotWheel[i] = objSlot();
+  GH.fam = mkFwdFamily('ghost', {
+    src: 'ghost',
+    cull: 'back',
+    blend: {
+      color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
+      alpha: { srcFactor: 'zero', dstFactor: 'one' },
+    },
+  });
+  GH.bg = null;
+  R.transparents.push({
+    draw(pass) {
+      if (!GH.drawOn || !GH.fam || !GH.fam.pipe) return;
+      if (!GH.bg) GH.bg = fwdBindGroup(GH.fam);
+      const bm = CAR.bodyMesh, wm = CAR.wheelMesh;
+      pass.setPipeline(GH.fam.pipe);
+      pass.setBindGroup(3, GH.bg);
+      R.dyn2[0] = GH.slotBody * 256;
+      pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1);
+      pass.setVertexBuffer(0, bm.vb);
+      pass.setIndexBuffer(bm.ib, 'uint32');
+      pass.drawIndexed(bm.count);
+      if (wm) {
+        pass.setVertexBuffer(0, wm.vb);
+        pass.setIndexBuffer(wm.ib, 'uint32');
+        for (let i = 0; i < 4; i++) {
+          R.dyn2[0] = GH.slotWheel[i] * 256;
+          pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1);
+          pass.drawIndexed(wm.count);
+        }
+      }
+    },
+  });
+}
+if (typeof BUILD !== 'undefined') BUILD.push(async () => { ghRenderInit(); });
