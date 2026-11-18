@@ -303,6 +303,8 @@ const CAT = {
   dmc: [720 / 1024, 220 / 512, 1012 / 1024, 340 / 512],
   mk: [780 / 1024, 4 / 512, 866 / 1024, 90 / 512],
   mk1: [880 / 1024, 4 / 512, 966 / 1024, 90 / 512],
+  tg2: [720 / 1024, 346 / 512, 864 / 1024, 394 / 512],
+  tg2Plate: [876 / 1024, 346 / 512, 1016 / 1024, 394 / 512],
 };
 function carDecals(mb) {
   // quad sobre a superfície traseira/dianteira: centro (z, y), largura w, altura h; rear: texto lido por quem olha de trás
@@ -424,6 +426,18 @@ function carAtlas() {
   g.strokeStyle = '#d4221a'; g.lineWidth = 3; g.beginPath(); g.arc(923, 47, 33, 0, TAU); g.stroke();
   g.strokeStyle = '#181c22'; carText(g, '1', 911, 70, 46, 8.5, 0);
   g.lineWidth = 7; g.beginPath(); g.moveTo(912, 70); g.lineTo(936, 70); g.stroke();
+  // emblema 'TG2' (720..864, 346..394) e placa 'TG2-93' (876..1016, 346..394) do Top Gear 2 GT
+  g.strokeStyle = '#121418';
+  const tx = carText(g, 'TG', 736, 383, 29, 9.5, 0.16, 7.0); carText(g, '2', tx + 4, 383, 29, 9.5, 0.16, 7.0);
+  g.strokeStyle = '#e8ecf2'; const tx2 = carText(g, 'TG', 736, 383, 29, 5.2, 0.16, 7.0);
+  g.strokeStyle = '#ea3b18'; carText(g, '2', tx2 + 4, 383, 29, 5.6, 0.16, 7.0);
+  g.strokeStyle = '#ffc233'; carText(g, '2', tx2 + 4, 383, 29, 2.0, 0.16, 7.0);
+  g.fillStyle = '#e8ecf2'; g.fillRect(732, 388, 76, 3); g.fillStyle = '#ea3b18'; g.fillRect(808, 388, 36, 3);
+  g.fillStyle = '#e5e8ec'; g.fillRect(876, 346, 140, 48);
+  g.strokeStyle = '#1b1e24'; g.lineWidth = 2.5; g.strokeRect(878, 348, 136, 44);
+  g.fillStyle = '#1a4594'; g.fillRect(879, 349, 14, 42);
+  g.fillStyle = '#d42c1d'; g.fillRect(893, 349, 3, 42);
+  g.strokeStyle = '#121418'; carText(g, 'TG2-93', 903, 381, 22, 3.4, 0.06, 2.2);
   const im = g.getImageData(0, 0, W, H);
   const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 6 });
   G.dev.queue.writeTexture({ texture: tex }, im.data, { bytesPerRow: W * 4 }, [W, H]);
