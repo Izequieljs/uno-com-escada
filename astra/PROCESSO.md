@@ -13,7 +13,9 @@ Em 17 de novembro de 2026, rodei o GPT-6.2 Astra no Codex em esforço Ultra com 
 
 Graves em cada rodada, da primeira à última: `3, 3, 2, 2, 2, 2, 1, 1, 2, 2, 2, 0, 1, 0, 0, 0, 1, 0, 0`.
 
-O teste levou **6 h 49 min de trabalho do agente**, com **19 rodadas** e custo equivalente a **US$ 371,02** em preço de API. Depois da rodada 18, pedi para parar na próxima versão sem defeito grave. O teste foi encerrado quando saiu o parecer da rodada 19. O [`index.html`](index.html) deste repositório é o HTML que o crítico examinou nessa última rodada, com **478.646 bytes**.
+O teste levou **6 h 49 min de trabalho do agente**, com **19 rodadas** e custo equivalente a **US$ 371,02** em preço de API. Depois da rodada 18, pedi para parar na próxima versão sem defeito grave. O teste foi encerrado quando saiu o parecer da rodada 19. O HTML que o crítico examinou tem **478.646 bytes**. [Arquivo avaliado na rodada 19](https://github.com/viktorkav/uno-com-escada/blob/8c4a7a8024943a78d391dd2bb5e040cbed5421de/astra/index.html)
+
+A versão jogável recebeu uma correção de compatibilidade na etapa que desenha a sombra do carro. O WebKit podia rejeitar essa etapa e deixar a pista preta. [HTML atualizado](index.html) · [Relato do erro no WebKit](https://bugs.webkit.org/show_bug.cgi?id=319980)
 
 ## Tempo de GPU
 
