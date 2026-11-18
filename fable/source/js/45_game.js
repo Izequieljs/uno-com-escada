@@ -372,7 +372,7 @@ function gameCamera() {
     // cockpit: nos olhos do motorista, vendo painel, volante e capô
     const B = GS.body, C = carObj(), ep = C.eyePos;
     const ex0 = ep ? ep[0] : -0.10, ey0 = ep ? ep[1] : 1.175, ez0 = ep ? ep[2] : -0.355;
-    const tx0 = lb < 0 ? -6.0 : 4.5, ty0 = lb < 0 ? 1.05 : 0.96, tz0 = lb < 0 ? 0.0 : -0.355;
+    const tx0 = lb < 0 ? -6.0 : 4.5, ty0 = lb < 0 ? (ey0 < 0.9 ? 0.80 : 1.05) : (ey0 < 0.9 ? ey0 - 0.16 : 0.96), tz0 = lb < 0 ? 0.0 : ez0;
     q[0] = B[0] * ex0 + B[4] * ey0 + B[8] * ez0 + B[12];
     q[1] = B[1] * ex0 + B[5] * ey0 + B[9] * ez0 + B[13];
     q[2] = B[2] * ex0 + B[6] * ey0 + B[10] * ez0 + B[14];

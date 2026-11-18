@@ -301,6 +301,8 @@ const CAT = {
   gol18: [520 / 1024, 400 / 512, 980 / 1024, 500 / 512],
   outatime: [0, 360 / 512, 0.5, 510 / 512],
   dmc: [720 / 1024, 220 / 512, 1012 / 1024, 340 / 512],
+  mk: [780 / 1024, 4 / 512, 866 / 1024, 90 / 512],
+  mk1: [880 / 1024, 4 / 512, 966 / 1024, 90 / 512],
 };
 function carDecals(mb) {
   // quad sobre a superfície traseira/dianteira: centro (z, y), largura w, altura h; rear: texto lido por quem olha de trás
@@ -411,6 +413,17 @@ function carAtlas() {
   g.fillStyle = '#25529c'; g.fillRect(16, 370, 44, 20);
   g.strokeStyle = '#14161a'; carText(g, 'DMC', 746, 314, 80, 14, 0.12, 14);
   g.strokeStyle = '#e8edf2'; carText(g, 'DMC', 746, 314, 80, 7.5, 0.12, 14);
+  // emblema circular 'M' e numeral '1' do Mini-Bolido MK (espaco livre no topo direito x=780..966, y=4..90)
+  g.fillStyle = '#1b1f26'; g.beginPath(); g.arc(823, 47, 41, 0, TAU); g.fill();
+  g.fillStyle = '#f2f4f7'; g.beginPath(); g.arc(823, 47, 37, 0, TAU); g.fill();
+  g.strokeStyle = '#c4cbd4'; g.lineWidth = 2.5; g.beginPath(); g.arc(823, 47, 34, 0, TAU); g.stroke();
+  g.strokeStyle = '#181c22'; carText(g, 'M', 809.5, 68, 42, 10.5, 0);
+  g.strokeStyle = '#d4221a'; carText(g, 'M', 809.5, 68, 42, 6.8, 0);
+  g.fillStyle = '#1b1f26'; g.beginPath(); g.arc(923, 47, 41, 0, TAU); g.fill();
+  g.fillStyle = '#f2f4f7'; g.beginPath(); g.arc(923, 47, 37, 0, TAU); g.fill();
+  g.strokeStyle = '#d4221a'; g.lineWidth = 3; g.beginPath(); g.arc(923, 47, 33, 0, TAU); g.stroke();
+  g.strokeStyle = '#181c22'; carText(g, '1', 911, 70, 46, 8.5, 0);
+  g.lineWidth = 7; g.beginPath(); g.moveTo(912, 70); g.lineTo(936, 70); g.stroke();
   const im = g.getImageData(0, 0, W, H);
   const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 6 });
   G.dev.queue.writeTexture({ texture: tex }, im.data, { bytesPerRow: W * 4 }, [W, H]);

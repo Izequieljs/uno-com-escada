@@ -33,8 +33,8 @@ const VEH_SPECS = [
   },
   {
     name: 'Mini-Bólido MK',
-    m: 470, Izz: 178, L: 1.24, a: 0.50, b: 0.74, tw: 0.92, h: 0.25, R: 0.185,
-    mu: 1.56, B: 9.8, C: 1.40,
+    m: 470, Izz: 220, L: 1.24, a: 0.46, b: 0.78, tw: 0.92, h: 0.25, R: 0.185,
+    mu: 1.65, B: 17.0, C: 1.46,
     gears: [3.25, 2.05, 1.42, 1.04, 0.78], final: 3.10, rev: 3.2, eff: 0.92,
     cdA: 0.44, crr: 0.012, brakeF: 0.74, halfW: 0.52, front: 1.04, rear: 0.98,
     t0: 105, tA: 68, tShift: 0.8, tSpan: 5.4, tDrop: 75, tPeak: 6.2,
