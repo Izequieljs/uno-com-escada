@@ -4,14 +4,14 @@
 // (algarismos de atlas pré-coloridos), ponteiros e primitivas inteiras no minimapa, e só quando o valor quantizado mudou.
 const HUD = {
   cg: null, ct: null, cs: null, cm: null, g: null, t: null, s: null, m: null,
-  face: null, hub: null, bgT: null, bgR: null, bgS: null, bgM: null, A: null, B: null, BG: null, BR: null, C: null, medals: null,
+  face: null, hub: null, bgT: null, bgR: null, bgCp: null, bgS: null, bgM: null, A: null, B: null, BG: null, BR: null, C: null, medals: null,
   rivCol: ['#bf352f', '#e2e3e0', '#c2c5c8'],
-  L: new Int32Array(50), K: new Int32Array(28), acc: new Float64Array(4), stats: false, vis: false,
-  V: new Int32Array(25),  // km/h × 10, rpm, marcha, volta, última, melhor, deltaCs, medalha, px, py, pa, gv, gx, gy, boost, boosting, raceOn, rx0,ry0, rx1,ry1, rx2,ry2, rank, lap
+  L: new Int32Array(64), K: new Int32Array(32), acc: new Float64Array(4), stats: false, vis: false,
+  V: new Int32Array(28),  // km/h × 10, rpm, marcha, volta, última, melhor, deltaCs, medalha, px, py, pa, gv, gx, gy, boost, boosting, raceOn, rx0,ry0, rx1,ry1, rx2,ry2, rank, lap, cpOn, cpTime, cpDelta
   M: new Float64Array(3), // minimapa: ox, oy, escala
   MC: new Float64Array(64), MS: new Float64Array(64),
 };
-const HCH = '0123456789:.,-R+/';
+const HCH = '0123456789:.,-R+/CP';
 const HMED = ['#4be3ff', '#ffd23f', '#cfd6de', '#cd7f32'];
 function hudPaintHex(idx) {
   if (typeof PAINTS === 'undefined' || !PAINTS[idx]) return '#cfd6de';
@@ -86,6 +86,16 @@ function hudMinimapBg(r, dpr) {
     const nx = -TRK.tz[0], ny = TRK.tx[0], hl = Math.max(3.5, r * 0.052);
     g.beginPath(); g.moveTo(sx - nx * hl, sy - ny * hl); g.lineTo(sx + nx * hl, sy + ny * hl);
     g.lineWidth = Math.max(2, r * 0.028); g.strokeStyle = '#fff'; g.stroke();
+    if (TRK.cps && TRK.tx && TRK.tz) {
+      const ds = TRK.ds || 1, chl = Math.max(3, r * 0.046);
+      g.lineWidth = Math.max(2, r * 0.024); g.strokeStyle = '#eab308';
+      for (let c = 0; c < TRK.cps.length; c++) {
+        const idx = ((Math.round(TRK.cps[c] / ds) % TRK.N) + TRK.N) % TRK.N;
+        const cx = TRK.x[idx] * sc + ox, cy = TRK.z[idx] * sc + oy;
+        const cnx = -TRK.tz[idx], cny = TRK.tx[idx];
+        g.beginPath(); g.moveTo(cx - cnx * chl, cy - cny * chl); g.lineTo(cx + cnx * chl, cy + cny * chl); g.stroke();
+      }
+    }
   } else {
     M[0] = mw * 0.5; M[1] = mh * 0.5; M[2] = 0;
   }
@@ -157,6 +167,18 @@ function hudLayout() {
   H.bgT = hudStrip(H.ct, ['VOLTA', 'ÚLTIMA', 'MELHOR', 'DELTA'], [tw, tw, tw + mgap + msz, dw], ['', '', '', ''], B, pxB, 10);
   H.bgR = hudStrip(null, ['POS', 'VOLTAS', 'TEMPO', 'ÚLTIMA'], [fw, fw, tw, tw], ['', '', '', ''], B, pxB, 40, L[17]);
   L[14] = L[12] + tw + mgap; L[15] = Math.round((L[18] - msz) / 2);
+  const cpPad = Math.round(pxB * 0.72), cpMid = Math.round(pxB * 0.85), cpGap = Math.max(4, Math.round(pxB * 0.28));
+  const cpLblW = B.w[17] + B.w[18] + B.w[0], cpValW = Math.max(tw, dw);
+  const cpW = Math.round(cpPad * 2 + cpLblW + cpMid + cpValW), cpH = Math.round(pxB * 1.58);
+  const cpX = Math.round((L[17] - cpW) * 0.5), cpY = L[18] + cpGap, totalH = cpY + cpH;
+  const bcp = H.bgCp = document.createElement('canvas'); bcp.width = cpW; bcp.height = cpH;
+  const cg = bcp.getContext('2d');
+  cg.fillStyle = 'rgba(9,11,14,.74)'; cg.beginPath(); cg.roundRect(0, 0, cpW, cpH, cpH * 0.3); cg.fill();
+  cg.lineWidth = Math.max(1, Math.round(pxB * 0.07)); cg.strokeStyle = 'rgba(234,179,8,.55)'; cg.stroke();
+  H.ct.height = totalH; H.ct.style.height = totalH / dpr + 'px';
+  L[50] = totalH; L[51] = cpX; L[52] = cpY;
+  L[53] = cpX + cpPad; L[54] = cpX + cpW - cpPad - dw; L[55] = cpX + cpW - cpPad - tw;
+  L[56] = cpY + Math.round((cpH - B.h) * 0.5);
   H.bgS = hudStrip(H.cs, ['QPS', 'QUADRO', 'GPU'], [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
   if (typeof RIV !== 'undefined' && RIV.cars) {
     for (let i = 0; i < 3; i++) if (RIV.cars[i]) H.rivCol[i] = hudPaintHex(RIV.cars[i].paintIdx);
@@ -252,6 +274,11 @@ function hudRead() {
     V[17] = V[18] = V[19] = V[20] = V[21] = V[22] = -1;
     V[23] = 0; V[24] = 0;
   }
+  const cpNone = typeof GH_NONE !== 'undefined' ? GH_NONE : -999999;
+  const cpOn = hasGh && GH.cpFlashTicks > 0 && (GH.cpFlashIdx === 1 || GH.cpFlashIdx === 2) ? GH.cpFlashIdx : 0;
+  V[25] = cpOn;
+  V[26] = cpOn && GH.cpFlashTimeCs !== undefined ? (GH.cpFlashTimeCs | 0) : 0;
+  V[27] = cpOn && GH.cpFlashDeltaCs !== undefined ? (GH.cpFlashDeltaCs | 0) : cpNone;
 }
 function hudDraw() {
   const H = HUD, L = H.L, K = H.K, V = H.V, an = V[0], ki = ((an + 5) / 10) | 0, ar = (V[1] / 10) | 0, gear = V[2];
@@ -277,10 +304,13 @@ function hudDraw() {
   }
   const cur = V[3], last = V[4], best = V[5], delta = V[6], med = V[7];
   const ra = V[16], rank = V[23], rlap = V[24];
-  if (cur !== K[4] || last !== K[5] || best !== K[6] || delta !== K[7] || med !== K[8] || ra !== K[24] || (ra === 1 && (rank !== K[25] || rlap !== K[26]))) {
+  const cpOn = V[25], cpTime = V[26], cpDelta = V[27];
+  if (cur !== K[4] || last !== K[5] || best !== K[6] || delta !== K[7] || med !== K[8] || ra !== K[24] ||
+      (ra === 1 && (rank !== K[25] || rlap !== K[26])) || cpOn !== K[27] || cpTime !== K[28] || cpDelta !== K[29]) {
     K[4] = cur; K[5] = last; K[6] = best; K[7] = delta; K[8] = med; K[24] = ra;
+    K[27] = cpOn; K[28] = cpTime; K[29] = cpDelta;
     const t = H.t, B = H.B;
-    t.clearRect(0, 0, L[17], L[18]);
+    t.clearRect(0, 0, L[17], L[50]);
     if (ra === 1) {
       K[25] = rank; K[26] = rlap;
       const y = L[46];
@@ -294,6 +324,16 @@ function hudDraw() {
       t.drawImage(H.bgT, 0, 0); hudTime(t, B, cur, L[10], y); hudTime(t, B, last, L[11], y); hudTime(t, B, best, L[12], y);
       if (med >= 0 && med < 4) t.drawImage(H.medals[med], L[14], L[15]);
       hudDelta(t, delta, L[13], y);
+    }
+    if (cpOn > 0) {
+      t.drawImage(H.bgCp, L[51], L[52]);
+      const cy = L[56], cpNone = typeof GH_NONE !== 'undefined' ? GH_NONE : -999999;
+      let cx = L[53];
+      cx += hudCh(t, B, 17, cx, cy, 1);
+      cx += hudCh(t, B, 18, cx, cy, 1);
+      hudCh(t, B, cpOn === 2 ? 2 : 1, cx, cy, 1);
+      if (cpDelta !== cpNone) hudDelta(t, cpDelta, L[54], cy);
+      else hudTime(t, B, cpTime, L[55], cy);
     }
   }
   const px = V[8], py = V[9], pa = V[10], gv = V[11], gx = V[12], gy = V[13];

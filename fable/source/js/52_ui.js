@@ -5,6 +5,13 @@ const ST = { INICIO: 0, JOGO: 1, PAUSA: 2, BENCH: 3, FITA: 4, RESULT: 5, POSE: 6
 const UI = {
   st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, med: null, cfg: null, tit: null, sub: null, b0: null, b1: null,
   bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false, raceDone: false,
+  lastNavUrl: '',
+  navTrack(url, idx) {
+    if (typeof location !== 'undefined') {
+      if (typeof location.assign === 'function') location.assign(url);
+      else location.search = '?track=' + idx;
+    }
+  },
 };
 const MED_UI = [
   { nome: 'Firma', tempo: '0:53,50', cor: '#4be3ff', sym: '★' },
@@ -29,17 +36,38 @@ function uiFmtTime(sec) {
 function uiSetBtn(btn, on) {
   if (btn.classList) { btn.classList.toggle('on', on); return; }
   const sw = btn.hasAttribute && btn.hasAttribute('data-paint');
-  btn.className = sw ? (on ? 'sw on' : 'sw') : (on ? 'on' : '');
+  const pl = btn.hasAttribute && btn.hasAttribute('data-track');
+  btn.className = sw ? (on ? 'sw on' : 'sw') : pl ? (on ? 'pill on' : 'pill') : (on ? 'on' : '');
 }
-function uiSavePrefs() {
+function uiSavePrefs(overrideTrackIdx) {
   try {
+    const ti = overrideTrackIdx !== undefined ? (overrideTrackIdx ? 1 : 0) : (typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0);
     localStorage.setItem('uno-prefs-v1', JSON.stringify({
       raceMode: typeof GS !== 'undefined' && !!GS.raceMode,
       carIdx: typeof GS !== 'undefined' && GS.carIdx ? 1 : 0,
       paintIdx: typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0,
       envIdx: typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0,
+      trackIdx: ti,
     }));
   } catch (e) { /* sem armazenamento local */ }
+}
+function uiSelectTrack(idx) {
+  const next = (idx | 0) === 1 ? 1 : 0;
+  const cur = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+  uiSavePrefs(next);
+  if (next === cur) {
+    uiSyncCfg();
+    return false;
+  }
+  const p = new URLSearchParams(typeof location !== 'undefined' && location.search ? location.search : '');
+  p.set('track', String(next));
+  const qs = '?' + p.toString();
+  const base = typeof location !== 'undefined' ? (location.href ? location.href.split(/[?#]/)[0] : (location.pathname || '')) : '';
+  const hash = typeof location !== 'undefined' && location.hash ? location.hash : '';
+  const targetUrl = base + qs + hash;
+  UI.lastNavUrl = targetUrl;
+  if (typeof UI.navTrack === 'function') UI.navTrack(targetUrl, next);
+  return true;
 }
 function uiRenderMed() {
   if (!UI.med) return;
@@ -50,12 +78,14 @@ function uiRenderMed() {
   }
   const cs = LAP[2] > 0 ? Math.round(LAP[2] * 100) : 0;
   const m = typeof medalOf === 'function' ? medalOf(cs) : -1;
+  const M = (typeof TRK !== 'undefined' && TRK.medals) ? TRK.medals : (typeof MEDALS !== 'undefined' ? MEDALS : null);
   let html = '';
   for (let i = 0; i < MED_UI.length; i++) {
     const d = MED_UI[i], hit = i === m;
+    const tempo = M && M[i] > 0 ? uiFmtTime(M[i] / 100) : d.tempo;
     if (i > 0) html += ' · ';
     html += '<span' + (hit ? ' class="on" data-hit="1" style="color:' + d.cor + '"' : ' style="opacity:.78"') + '>' +
-      '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + d.tempo + '</span>';
+      '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + tempo + '</span>';
   }
   UI.med.innerHTML = html;
 }
@@ -63,89 +93,123 @@ function uiSyncCfg() {
   const ci = typeof GS !== 'undefined' && GS.carIdx ? 1 : 0;
   const pi = typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0;
   const ei = typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0;
+  const ti = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+  const trkSub = typeof TRK !== 'undefined' && TRK.sub ? TRK.sub : 'Circuito da Serra · 1,64 km';
   const rm = typeof GS !== 'undefined' && !!GS.raceMode;
   if (UI.tit) UI.tit.textContent = ci ? 'Gol Quadrado' : 'Uno com escada';
-  if (UI.sub) UI.sub.textContent = ci ? 'VW Gol AP 1.8 1993 · circuito' : 'Fiat Uno Mille EP 1996 · circuito';
-  if (!UI.cfg || !UI.cfg.querySelectorAll) return;
-  const btns = UI.cfg.querySelectorAll('button');
-  for (let i = 0; i < btns.length; i++) {
-    const b = btns[i];
-    const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
-    if (dm !== null) { uiSetBtn(b, (+dm === 1) === rm); continue; }
-    const dc = b.getAttribute ? b.getAttribute('data-car') : null;
-    if (dc !== null) { uiSetBtn(b, +dc === ci); continue; }
-    const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
-    if (dp !== null) {
-      const idx = +dp | 0;
-      if (typeof PAINTS !== 'undefined' && PAINTS[idx]) {
-        b.title = PAINTS[idx].nome;
-        if (b.style) b.style.background = uiPaintCss(PAINTS[idx].rgb);
+  if (UI.sub) UI.sub.textContent = (ci ? 'VW Gol AP 1.8 1993' : 'Fiat Uno Mille EP 1996') + ' · ' + trkSub;
+  let sawTrack = false;
+  if (UI.cfg && UI.cfg.querySelectorAll) {
+    const btns = UI.cfg.querySelectorAll('button');
+    for (let i = 0; i < btns.length; i++) {
+      const b = btns[i];
+      const dt = b.getAttribute ? b.getAttribute('data-track') : null;
+      if (dt !== null) { sawTrack = true; uiSetBtn(b, (+dt | 0) === ti); continue; }
+      const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
+      if (dm !== null) { uiSetBtn(b, (+dm === 1) === rm); continue; }
+      const dc = b.getAttribute ? b.getAttribute('data-car') : null;
+      if (dc !== null) { uiSetBtn(b, +dc === ci); continue; }
+      const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
+      if (dp !== null) {
+        const idx = +dp | 0;
+        if (typeof PAINTS !== 'undefined' && PAINTS[idx]) {
+          b.title = PAINTS[idx].nome;
+          if (b.style) b.style.background = uiPaintCss(PAINTS[idx].rgb);
+        }
+        uiSetBtn(b, idx === pi);
+        continue;
       }
-      uiSetBtn(b, idx === pi);
-      continue;
+      const de = b.getAttribute ? b.getAttribute('data-env') : null;
+      if (de !== null) uiSetBtn(b, +de === ei);
     }
-    const de = b.getAttribute ? b.getAttribute('data-env') : null;
-    if (de !== null) uiSetBtn(b, +de === ei);
+  }
+  if (!sawTrack) {
+    const trkEl = $('cfgTrack');
+    if (trkEl && trkEl.querySelectorAll) {
+      const tb = trkEl.querySelectorAll('button');
+      for (let i = 0; i < tb.length; i++) {
+        const dt = tb[i].getAttribute ? tb[i].getAttribute('data-track') : null;
+        if (dt !== null) uiSetBtn(tb[i], (+dt | 0) === ti);
+      }
+    }
   }
 }
 function uiPreview() { if (typeof GAME !== 'undefined' && GAME.ready && typeof renderFrame === 'function') renderFrame(); }
 function uiBindCfg() {
-  if (!UI.cfg || !UI.cfg.querySelectorAll) return;
-  const btns = UI.cfg.querySelectorAll('button');
-  for (let i = 0; i < btns.length; i++) {
-    const b = btns[i];
-    const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
-    if (dm !== null) {
-      b.onclick = () => {
-        const next = +dm === 1;
-        if (typeof GS !== 'undefined' && 'raceMode' in GS && GS.raceMode !== next) {
-          GS.raceMode = next;
-          if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
-          if (GS.replayOn) GS.replayOn = false;
-          if (typeof gameRestart === 'function') gameRestart();
-          if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
-        }
-        uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
-      };
-      continue;
+  let sawTrack = false;
+  if (UI.cfg && UI.cfg.querySelectorAll) {
+    const btns = UI.cfg.querySelectorAll('button');
+    for (let i = 0; i < btns.length; i++) {
+      const b = btns[i];
+      const dt = b.getAttribute ? b.getAttribute('data-track') : null;
+      if (dt !== null) {
+        sawTrack = true;
+        b.onclick = () => { uiSelectTrack(+dt | 0); };
+        continue;
+      }
+      const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
+      if (dm !== null) {
+        b.onclick = () => {
+          const next = +dm === 1;
+          if (typeof GS !== 'undefined' && 'raceMode' in GS && GS.raceMode !== next) {
+            GS.raceMode = next;
+            if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
+            if (GS.replayOn) GS.replayOn = false;
+            if (typeof gameRestart === 'function') gameRestart();
+            if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
+          }
+          uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
+        };
+        continue;
+      }
+      const dc = b.getAttribute ? b.getAttribute('data-car') : null;
+      if (dc !== null) {
+        b.onclick = () => {
+          const next = +dc === 1 ? 1 : 0;
+          if (typeof GS !== 'undefined' && 'carIdx' in GS && GS.carIdx !== next) {
+            GS.carIdx = next;
+            if (typeof carSyncActive === 'function') carSyncActive(false);
+            if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
+            if (GS.replayOn) GS.replayOn = false;
+            if (typeof gameRestart === 'function') gameRestart();
+            else if (typeof ghRestart === 'function') ghRestart();
+            if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
+          }
+          uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
+        };
+        continue;
+      }
+      const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
+      if (dp !== null) {
+        b.onclick = () => {
+          const next = +dp | 0;
+          if (typeof GS !== 'undefined' && 'paintIdx' in GS) GS.paintIdx = next;
+          if (typeof carApplyPaint === 'function' && typeof CAR !== 'undefined' && CAR.slotBody) {
+            carApplyPaint(CAR.slotBody, next, CAR.bodyKind);
+          }
+          uiSavePrefs(); uiSyncCfg(); uiPreview();
+        };
+        continue;
+      }
+      const de = b.getAttribute ? b.getAttribute('data-env') : null;
+      if (de !== null) {
+        b.onclick = () => {
+          const next = +de | 0;
+          if (typeof envApply === 'function') envApply(next, { keepLights: !!(typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn)) });
+          if (typeof gamePose === 'function') gamePose();
+          uiSavePrefs(); uiSyncCfg(); uiPreview();
+        };
+      }
     }
-    const dc = b.getAttribute ? b.getAttribute('data-car') : null;
-    if (dc !== null) {
-      b.onclick = () => {
-        const next = +dc === 1 ? 1 : 0;
-        if (typeof GS !== 'undefined' && 'carIdx' in GS && GS.carIdx !== next) {
-          GS.carIdx = next;
-          if (typeof carSyncActive === 'function') carSyncActive(false);
-          if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
-          if (GS.replayOn) GS.replayOn = false;
-          if (typeof gameRestart === 'function') gameRestart();
-          else if (typeof ghRestart === 'function') ghRestart();
-          if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
-        }
-        uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
-      };
-      continue;
-    }
-    const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
-    if (dp !== null) {
-      b.onclick = () => {
-        const next = +dp | 0;
-        if (typeof GS !== 'undefined' && 'paintIdx' in GS) GS.paintIdx = next;
-        if (typeof carApplyPaint === 'function' && typeof CAR !== 'undefined' && CAR.slotBody) {
-          carApplyPaint(CAR.slotBody, next, CAR.bodyKind);
-        }
-        uiSavePrefs(); uiSyncCfg(); uiPreview();
-      };
-      continue;
-    }
-    const de = b.getAttribute ? b.getAttribute('data-env') : null;
-    if (de !== null) {
-      b.onclick = () => {
-        const next = +de | 0;
-        if (typeof envApply === 'function') envApply(next, { keepLights: !!(typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn)) });
-        if (typeof gamePose === 'function') gamePose();
-        uiSavePrefs(); uiSyncCfg(); uiPreview();
-      };
+  }
+  if (!sawTrack) {
+    const trkEl = $('cfgTrack');
+    if (trkEl && trkEl.querySelectorAll) {
+      const tb = trkEl.querySelectorAll('button');
+      for (let i = 0; i < tb.length; i++) {
+        const dt = tb[i].getAttribute ? tb[i].getAttribute('data-track') : null;
+        if (dt !== null) tb[i].onclick = () => { uiSelectTrack(+dt | 0); };
+      }
     }
   }
 }
@@ -156,18 +220,20 @@ function uiInit() {
   UI.b0 = $('b0'); UI.b1 = $('b1');
   hudInit(); uiWarmup();
   try {
-    const b0 = +localStorage.getItem('uno-melhor');
+    const pfx0 = typeof ghStoragePrefix === 'function' ? ghStoragePrefix(0) : 'uno';
+    const pfx1 = typeof ghStoragePrefix === 'function' ? ghStoragePrefix(1) : 'gol';
+    const b0 = +localStorage.getItem(pfx0 + '-melhor');
     if (b0 > 20 && b0 < 600) {
       if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[0] = b0;
       if (typeof GS === 'undefined' || !GS.carIdx) LAP[2] = b0;
     }
-    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('uno-ta-v1'), b0, 0);
-    const b1 = +localStorage.getItem('gol-melhor');
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem(pfx0 + '-ta-v1'), b0, 0);
+    const b1 = +localStorage.getItem(pfx1 + '-melhor');
     if (b1 > 20 && b1 < 600) {
       if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[1] = b1;
       if (typeof GS !== 'undefined' && GS.carIdx === 1) LAP[2] = b1;
     }
-    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('gol-ta-v1'), b1, 1);
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem(pfx1 + '-ta-v1'), b1, 1);
   } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
   try {
     const raw = localStorage.getItem('uno-prefs-v1');
@@ -332,6 +398,9 @@ function uiWarmup() {
     V[14] = (i * 7) % 101; V[15] = (j >> 1) & 1; V[16] = j % 3 === 0 ? 1 : 0;
     V[17] = 12 + (j % 70); V[18] = 12 + (j % 50); V[19] = 18 + (j % 60); V[20] = 18 + (j % 45); V[21] = 24 + (j % 50); V[22] = 24 + (j % 40);
     V[23] = 1 + (j & 3); V[24] = 1 + (j % 3);
+    V[25] = j % 4 === 0 ? 0 : (j % 2) + 1;
+    V[26] = 1500 + (i * 13) % 4500;
+    V[27] = dc === 0 ? -999999 : dc === 1 ? 0 : dc === 2 ? -145 : dc === 3 ? 215 : dc === 4 ? -1120 : 1120;
     hudDraw(); hudRead();
     RT[3] = 300 + i % 300; PERF.live[0] = i % 4 ? i % 40 : 0; hudStatsFrame();
   }

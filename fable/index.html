@@ -50,9 +50,10 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas><canvas id="hm"></canvas><div id="tag"></div>
 <div id="ui"><div>
 <h1 id="tit">Uno com escada</h1>
-<p class="sub" id="sub">Fiat Uno Mille EP 1996 · circuito</p>
+<p class="sub" id="sub">Fiat Uno Mille EP 1996 · Circuito da Serra · 1,64 km</p>
 <div id="med"></div>
 <div id="cfg">
+<div id="cfgTrack" class="cg cfg-row"><span class="cl">Pista</span><button type="button" class="pill" data-track="0">Serra da Mata</button><button type="button" class="pill" data-track="1">Interlagos</button></div>
 <div class="cg"><span class="cl">Modo</span><button type="button" data-mode="0">Volta Livre</button><button type="button" data-mode="1">Corrida (3 voltas)</button></div>
 <div class="cg"><span class="cl">Carro</span><button type="button" data-car="0">Uno Mille EP (escada)</button><button type="button" data-car="1">Gol Quadrado AP 1.8</button></div>
 <div class="cg"><span class="cl">Pintura</span><button type="button" class="sw" data-paint="0" title="Azul Metálico" aria-label="Azul Metálico" style="background:#728fae"></button><button type="button" class="sw" data-paint="1" title="Branco de Firma" aria-label="Branco de Firma" style="background:#e2e3e0"></button><button type="button" class="sw" data-paint="2" title="Vermelho Flash" aria-label="Vermelho Flash" style="background:#bf352f"></button><button type="button" class="sw" data-paint="3" title="Prata Lunar" aria-label="Prata Lunar" style="background:#c2c5c8"></button><button type="button" class="sw" data-paint="4" title="Cinza Chumbo" aria-label="Cinza Chumbo" style="background:#5c6066"></button><button type="button" class="sw" data-paint="5" title="Vinho Clássico" aria-label="Vinho Clássico" style="background:#86293c"></button></div>
@@ -3281,9 +3282,67 @@ class MeshBuilder {
 }
 
 // ---- 10_track.js
-// Circuito original: traçado, elevação, zonas e altura do terreno (somente CPU; sem GPU).
-// Convenções: X leste, Z sul, Y para cima. Sentido horário. s = distância ao longo do eixo (m), d = afastamento lateral (m, + à direita).
+// Circuitos: traçado, elevação, zonas e altura do terreno (somente CPU; sem GPU).
+// Convenções: X leste, Z sul, Y para cima. s = distância ao longo do eixo (m), d = afastamento lateral (m, + à direita).
+const TRACKS = [
+  {
+    id: 'serra',
+    nome: 'Serra da Mata',
+    sub: 'Circuito da Serra · 1,64 km',
+    x0: -60, z0: 0,
+    cps: [530, 1090],
+    medals: [5350, 5600, 6000, 6600],
+    wet: [[676, 790, 1.0], [985, 1130, 0.9]],
+    tvCamsDef: [[262, -1, 6, 5.5], [322, -1, 5, 5.5], [417, 1, 5, 5], [536, -1, 6, 6], [615, 1, 6, 5], [806, 1, 6, 5.5], [905, 1, 6, 5], [1036, -1, 6, 6], [1168, -1, 5, 5], [1300, -1, 6, 5], [1392, -1, 6, 5.5]],
+    adRows: [[668, 790, -1, 13.2], [676, 790, 1, 19.8], [1135, 1250, -1, 13.2]],
+    gantry2S: 742,
+    marshalExtra: [[700, 1], [1190, -1]],
+    def: [
+      ['S', 210, -0.6], ['A', 55, 90, -2.6, 'T1'], ['S', 40, -2.2],
+      ['A', 80, -33, 1.0, 'S1'], ['A', 62, 66, 5.2, 'S2'], ['A', 80, -33, 9.0, 'S3'], ['S', 20, 10.6],
+      ['A', 27, 180, 12.6, 'Grampo'], ['S', 30, 12.0], ['A', 42, -90, 10.2, 'T5'],
+      ['S', 'Lw', 3.8], ['A', 75, -90, -1.4, 'T6'], ['S', 25, -2.4],
+      ['A', 58, 180, -4.4, 'Curvão'], ['S', 'Ln', -3.0],
+      ['A', 40, -30, -2.0, 'Ch1'], ['A', 40, 60, -1.0, 'Ch2'], ['A', 40, -30, -0.4, 'Ch3'], ['S', 15, -0.2],
+      ['A', 45, 90, 0, 'Final'], ['S', 110, 0],
+    ],
+  },
+  {
+    id: 'interlagos',
+    nome: 'Interlagos',
+    sub: 'Autódromo Brasileiro · 1,66 km',
+    x0: -80, z0: 0,
+    cps: [545, 1230],
+    medals: [5500, 5750, 6150, 6750],
+    wet: [[560, 840, 1.0], [1240, 1350, 0.9]],
+    tvCamsDef: [[235, 1, 6, 5.5], [315, -1, 5.5, 5.5], [440, 1, 6, 5.5], [680, 1, 6, 5.5], [895, 1, 6, 5.5], [1065, -1, 6, 5.5], [1190, 1, 5.5, 5], [1370, 1, 6, 5.5], [1485, 1, 6, 5.5]],
+    adRows: [[560, 820, -1, 13.2], [575, 820, 1, 19.8], [1240, 1345, -1, 13.2]],
+    gantry2S: 705,
+    marshalExtra: [[700, 1], [1290, -1]],
+    def: [
+      ['S', 220, 1.5],
+      ['A', 34, -92, -3.0, 'S do Senna'],
+      ['S', 18, -4.8],
+      ['A', 38, 76, -6.4, 'S do Senna 2'],
+      ['A', 78, -144, -8.2, 'Curva do Sol'],
+      ['S', 'Lw', -6.0],
+      ['A', 54, -105, -9.4, 'Descida do Lago'],
+      ['S', 65, -5.8],
+      ['A', 44, 125, -1.8, 'Ferradura'],
+      ['S', 35, -3.2],
+      ['A', 28, -125, -5.4, 'Pinheirinho'],
+      ['S', 'Ln', -7.8],
+      ['A', 38, -55, -6.0, 'Junção'],
+      ['S', 45, -2.6],
+      ['A', 120, -40, -0.4, 'Subida dos Boxes'],
+      ['S', 140, 0.0],
+    ],
+  },
+];
 const TRK = {
+  idx: 0, id: 'serra', nome: 'Serra da Mata', sub: 'Circuito da Serra · 1,64 km', x0: -60, z0: 0,
+  cps: [530, 1090], medals: [5350, 5600, 6000, 6600],
+  wet: null, tvCamsDef: null, adRows: null, gantry2S: 742, marshalExtra: null, line: null,
   N: 0, L: 0, ds: 1,
   x: null, z: null, y: null, tx: null, tz: null, k: null, bank: null, slope: null,
   hw: 5.5,                 // meia largura do asfalto
@@ -3301,20 +3360,39 @@ const TRK = {
 const KERB_W = 1.3, APRON = 2.6;
 const ZONE = { ASPHALT: 0, KERB: 1, GRASS: 2, GRAVEL: 3, ROUGH: 4, PIT: 5, CONCRETE: 6 };
 
-function trackBuild() {
+function trackResolveIdx() {
+  if (typeof Q !== 'undefined' && Q.has('track')) {
+    const v = String(Q.get('track') || '').toLowerCase();
+    return (v === '1' || v === 'interlagos') ? 1 : 0;
+  }
+  const tool = typeof Q !== 'undefined' && (Q.has('cap') || Q.has('perf') || Q.has('replay') || Q.has('auto') || Q.has('scene'));
+  if (!tool && typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('uno-prefs-v1');
+      if (raw) {
+        const pr = JSON.parse(raw);
+        if (pr && (pr.trackIdx === 1 || pr.trackIdx === '1')) return 1;
+      }
+    } catch (e) { /* ignora preferências indisponíveis */ }
+  }
+  return 0;
+}
+
+function trackBuild(forceIdx) {
+  TRK.idx = forceIdx !== undefined ? (forceIdx ? 1 : 0) : trackResolveIdx();
+  const spec = TRACKS[TRK.idx];
+  TRK.id = spec.id; TRK.nome = spec.nome; TRK.sub = spec.sub;
+  TRK.x0 = spec.x0; TRK.z0 = spec.z0;
+  TRK.cps = spec.cps; TRK.medals = spec.medals;
+  TRK.wet = spec.wet; TRK.tvCamsDef = spec.tvCamsDef;
+  TRK.adRows = spec.adRows; TRK.gantry2S = spec.gantry2S; TRK.marshalExtra = spec.marshalExtra;
+  TRK.line = null;
+  TRK.segs.length = 0; TRK.corners.length = 0;
   // Segmentos: ['S', comprimento] ou ['A', raio, ângulo° (+ direita)]. Lw e Ln resolvidos para fechar o laço.
-  const def = [
-    ['S', 210, -0.6], ['A', 55, 90, -2.6, 'T1'], ['S', 40, -2.2],
-    ['A', 80, -33, 1.0, 'S1'], ['A', 62, 66, 5.2, 'S2'], ['A', 80, -33, 9.0, 'S3'], ['S', 20, 10.6],
-    ['A', 27, 180, 12.6, 'Grampo'], ['S', 30, 12.0], ['A', 42, -90, 10.2, 'T5'],
-    ['S', 'Lw', 3.8], ['A', 75, -90, -1.4, 'T6'], ['S', 25, -2.4],
-    ['A', 58, 180, -4.4, 'Curvão'], ['S', 'Ln', -3.0],
-    ['A', 40, -30, -2.0, 'Ch1'], ['A', 40, 60, -1.0, 'Ch2'], ['A', 40, -30, -0.4, 'Ch3'], ['S', 15, -0.2],
-    ['A', 45, 90, 0, 'Final'], ['S', 110, 0],
-  ];
+  const def = spec.def;
   // resolve Lw, Ln: posição final é linear neles
   const walk = (Lw, Ln, emit) => {
-    let x = -60, z = 0, th = 0, s = 0;
+    let x = spec.x0, z = spec.z0, th = 0, s = 0;
     for (const sg of def) {
       const s0 = s;
       if (sg[0] === 'S') {
@@ -3332,7 +3410,7 @@ function trackBuild() {
   };
   const p0 = walk(0, 0), pw = walk(1, 0), pn = walk(0, 1);
   // [pw-p0, pn-p0] * [Lw,Ln] = target - p0
-  const a = pw[0] - p0[0], b = pn[0] - p0[0], c = pw[1] - p0[1], d = pn[1] - p0[1], ex = -60 - p0[0], ez = 0 - p0[1], det = a * d - b * c;
+  const a = pw[0] - p0[0], b = pn[0] - p0[0], c = pw[1] - p0[1], d = pn[1] - p0[1], ex = spec.x0 - p0[0], ez = spec.z0 - p0[1], det = a * d - b * c;
   const Lw = (ex * d - b * ez) / det, Ln = (a * ez - c * ex) / det;
   // amostragem bruta a cada 0.5 m
   const raw = []; const elevKeys = [];
@@ -5259,7 +5337,8 @@ function ribbonBuild() {
     for (let i = 0; i < N; i++) t[i] = sat((AI.vt[i] - AI.vt[(i + 4) % N]) / (4 * ds) * 3.2);
     for (let i = 0; i < N; i++) { let a = 0; for (let q = -5; q <= 5; q++) a += t[(i + q + N) % N]; brk[i] = a / 11; }
   }
-  const wetAt = s => { let w = 0; for (const z of WORLD.wet) w = Math.max(w, z[2] * Math.min(1, (s - z[0]) / 14, (z[1] - s) / 14)); return Math.max(0, w); };
+  const wet = (typeof TRK !== 'undefined' && TRK.wet) ? TRK.wet : WORLD.wet;
+  const wetAt = s => { let w = 0; for (const z of wet) w = Math.max(w, z[2] * Math.min(1, (s - z[0]) / 14, (z[1] - s) / 14)); return Math.max(0, w); };
   // colunas: [x além da borda (ou d absoluto para o asfalto), dy fixo, tipo]  tipo: 0 asfalto, 1 zebra, 2 acostamento
   const kx = [KERB_W, 1.28, 1.066, 0.8, 0.53, 0.27, 0.03, 0];
   const strips = [];
@@ -5510,8 +5589,9 @@ function atlasBuild() {
   const REG = PROPS.regions, reg = (name, x, y, w, h) => { REG[name] = [x / 2048, y / 1024, (x + w) / 2048, (y + h) / 1024]; };
   const centered = (txt, x, y, w, h, th, color, weight, skew) => strokeText(g, txt, x + (w - textW(txt, th)) / 2, y + (h - th) / 2, th, color, weight, skew);
   // nome do circuito
+  const banner = (typeof TRK !== 'undefined' && TRK.idx === 1) ? 'AUTODROMO INTERLAGOS' : 'CIRCUITO SERRA DA MATA';
   g.fillStyle = '#0b2a4a'; g.fillRect(0, 0, 1024, 128); g.fillStyle = '#e8b21c'; g.fillRect(0, 0, 1024, 10); g.fillRect(0, 118, 1024, 10);
-  centered('CIRCUITO SERRA DA MATA', 0, 0, 1024, 128, 50, '#f4f1e6', 1.75, 0.1); reg('name', 0, 0, 1024, 128);
+  centered(banner, 0, 0, 1024, 128, 50, '#f4f1e6', 1.75, 0.1); reg('name', 0, 0, 1024, 128);
   // setas de curva (chevrons)
   g.fillStyle = '#e9e6dc'; g.fillRect(1024, 0, 512, 128); g.fillStyle = '#b3160f';
   for (let i = 0; i < 5; i++) { const x = 1034 + i * 102; g.beginPath(); g.moveTo(x, 8); g.lineTo(x + 48, 8); g.lineTo(x + 92, 64); g.lineTo(x + 48, 120); g.lineTo(x, 120); g.lineTo(x + 44, 64); g.closePath(); g.fill(); }
@@ -5559,6 +5639,7 @@ function atlasBuild() {
 }
 
 function propsBuild() {
+  if (typeof WORLD !== 'undefined' && WORLD.tvCams) WORLD.tvCams.length = 0;
   const hw = TRK.hw, N = TRK.N, ds = TRK.ds, pit = TRK.pit, REG = PROPS.regions;
   const atlas = atlasBuild();
   const fam = mkFamily('props', { src: 'mat_props' }), famDS = mkFamily('propsDS', { src: 'mat_props', cull: 'none' });
@@ -5724,8 +5805,9 @@ function propsBuild() {
 
   // ================= construções na reta (coordenadas locais: u = s relativo à linha, y, v = d) =================
   // converte os vértices adicionados desde v0 de (u, y, v) para o mundo, seguindo a inclinação suave da reta
+  const x0Trk = (typeof TRK !== 'undefined' && TRK.x0 !== undefined) ? TRK.x0 : -60;
   const toStraight = (m, v0) => {
-    const f = m.f32; for (let i = v0; i < m.nv; i++) { const u = f[i * 9], v = f[i * 9 + 2]; trackPos(u, 0, o5); f[i * 9] = u - 60; f[i * 9 + 1] += o5[1]; f[i * 9 + 2] = v; }
+    const f = m.f32; for (let i = v0; i < m.nv; i++) { const u = f[i * 9], v = f[i * 9 + 2]; trackPos(u, 0, o5); f[i * 9] = u + x0Trk; f[i * 9 + 1] += o5[1]; f[i * 9 + 2] = v; }
   };
   const Bx = (m, u0, u1, y0, y1, v0, v1) => m.box((u0 + u1) / 2, (y0 + y1) / 2, (v0 + v1) / 2, Math.abs(u1 - u0), Math.abs(y1 - y0), Math.abs(v1 - v0));
   const rng = mkRng(77);
@@ -5999,7 +6081,7 @@ function propsBuild() {
   // lado de fora de cada curva grande
   const corners = TRK.corners.filter(c => Math.abs(c.ang) >= 60);
   // câmeras de TV (lista usada adiante para as torres): [s, lado, afastamento além da barreira, altura]
-  const TVC = [[262, -1, 6, 5.5], [322, -1, 5, 5.5], [417, 1, 5, 5], [536, -1, 6, 6], [615, 1, 6, 5], [806, 1, 6, 5.5], [905, 1, 6, 5], [1036, -1, 6, 6], [1168, -1, 5, 5], [1300, -1, 6, 5], [1392, -1, 6, 5.5]];
+  const TVC = (typeof TRK !== 'undefined' && TRK.tvCamsDef) ? TRK.tvCamsDef : [[262, -1, 6, 5.5], [322, -1, 5, 5.5], [417, 1, 5, 5], [536, -1, 6, 6], [615, 1, 6, 5], [806, 1, 6, 5.5], [905, 1, 6, 5], [1036, -1, 6, 6], [1168, -1, 5, 5], [1300, -1, 6, 5], [1392, -1, 6, 5.5]];
   // há câmera de TV deste lado cuja tomada passa por s? (a câmera filma de ~110 m antes dela até ~60 m depois)
   const camSees = (s, side) => TVC.some(c => { if (c[1] !== side) return false; let q = c[0] - s; q -= Math.round(q / TRK.L) * TRK.L; return q > -70 && q < 120; });
   // ---- placas de distância (150/100/50) ----
@@ -6034,13 +6116,14 @@ function propsBuild() {
       row(mid - Math.min(len * 0.32, 30), mid + Math.min(len * 0.32, 30), side, 6.6, 6, 1.5, 1.05, false);
       row(c.s0 - 26, c.s0 - 6, side, 5.2, 5, 1.25, 1.05, true);
     }
-    row(668, 790, -1, 13.2, 6, 1.5, 1.05, false); row(676, 790, 1, 19.8, 6, 1.5, 1.05, false);   // reta oposta
-    row(1135, 1250, -1, 13.2, 6, 1.5, 1.05, false);
+    for (const [a0, a1, sd, stp] of ((typeof TRK !== 'undefined' && TRK.adRows) ? TRK.adRows : [[668, 790, -1, 13.2], [676, 790, 1, 19.8], [1135, 1250, -1, 13.2]])) {
+      row(a0, a1, sd, stp, 6, 1.5, 1.05, false);
+    }
     row(TRK.L - 108, TRK.L - 98, -1, 6.6, 6, 1.5, 1.05, false);
   }
   // ---- segundo pórtico (publicitário) na reta oposta ----
   {
-    const s = 742, v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, i = sI(s), dL = -(TRK.barL[i] - 1.2), dR = TRK.barR[i] - 1.2, yB = 6.0, yT = 7.4;
+    const s = (typeof TRK !== 'undefined' && TRK.gantry2S !== undefined) ? TRK.gantry2S : 742, v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, i = sI(s), dL = -(TRK.barL[i] - 1.2), dR = TRK.barR[i] - 1.2, yB = 6.0, yT = 7.4;
     mb.push(frame(s, 0)); md.push(frame(s, 0));
     gantry(0, dL, dR, null, false, true);
     const wd = dR - dL - 1.2, hh = 1.3;
@@ -6051,7 +6134,8 @@ function propsBuild() {
   // ---- postos de fiscal ----
   {
     const spots = []; for (const c of TRK.corners) { spots.push([c.s0 - 8, c.k > 0 ? 1 : -1]); if (Math.abs(c.ang) > 100) spots.push([(c.s0 + c.s1) / 2, c.k > 0 ? -1 : 1]); }
-    spots.push([700, 1], [1190, -1]); let pn = 0;
+    for (const sp of ((typeof TRK !== 'undefined' && TRK.marshalExtra) ? TRK.marshalExtra : [[700, 1], [1190, -1]])) spots.push(sp);
+    let pn = 0;
     for (const [s, side] of spots) {
       const i = sI(s), sr = srOf(i); if (sr > pit.s0 - 50 && sr < pit.s1 + 50) continue;
       const d = side * ((side < 0 ? TRK.barL[i] : TRK.barR[i]) + 2.2), i0 = mb.ni;
@@ -8663,6 +8747,7 @@ function gameInit() {
   }
   GS.replayOn = Q.has('replay') && !!GS.replay; GS.ai = Q.has('auto');
   // câmeras de TV: as torres do cenário (WORLD.tvCams), ou posições calculadas do lado de fora das curvas
+  GS.tvN = 0;
   if (typeof WORLD !== 'undefined' && WORLD.tvCams && WORLD.tvCams.length) {
     const q = new Float64Array(5);
     for (const c of WORLD.tvCams) {
@@ -8670,6 +8755,15 @@ function gameInit() {
       // reta de largada: câmera no começo da reta, junto ao muro dos boxes; vê o carro sair da última curva, passar e seguir
       // para o pórtico com o sol pelas costas
       if (GS.tvN === 1) { trackPos(TRK.L - 95, 5.9, q); GS.tvData[o] = TRK.L - 95; GS.tvData[o + 1] = q[0]; GS.tvData[o + 2] = q[1] + 3.4; GS.tvData[o + 3] = q[2]; }
+    }
+  } else if (typeof TRK !== 'undefined' && TRK.idx !== 0 && TRK.tvCamsDef) {
+    const p = new Float64Array(5);
+    trackPos(TRK.L - 95, 5.9, p);
+    GS.tvData[0] = TRK.L - 95; GS.tvData[1] = p[0]; GS.tvData[2] = p[1] + 3.4; GS.tvData[3] = p[2]; GS.tvN = 1;
+    for (const [s, side, off, h] of TRK.tvCamsDef) {
+      const i = Math.round(s / TRK.ds) % TRK.N, bar = side < 0 ? TRK.barL[i] : TRK.barR[i];
+      trackPos(s, side * (bar + off - 1.4), p);
+      const o = GS.tvN++ * 4; GS.tvData[o] = s; GS.tvData[o + 1] = p[0]; GS.tvData[o + 2] = Math.max(hfAt(p[0], p[2]), p[1]) + h + 1.8; GS.tvData[o + 3] = p[2];
     }
   } else {
     const st = [[70, -1, 5.5], [262, -1, 4.5], [330, 1, 4], [430, -1, 4.2], [545, -1, 4.5], [640, 1, 4.5], [745, -1, 4], [860, 1, 4.5], [985, -1, 4.2], [1090, -1, 5], [1200, 1, 4], [1300, -1, 4.2], [1390, -1, 4], [1470, -1, 4.5], [1548, -1, 5.5]];
@@ -8757,7 +8851,10 @@ function gameStep() {
   if (unoF !== GS._unoForced) { GS._unoForced = unoF; carSyncActive(unoF); }
   if ((GS.sub & 1) === 0) {
     const t = GS.tick60 / 60; let k;
-    if (GS.replayOn && GS.tick60 < GS.replay.length) k = GS.replay[GS.tick60];
+    if (GS.replayOn && typeof TRK !== 'undefined' && TRK.idx !== 0) {
+      k = t < 0.5 ? 0 : aiKeys(t);
+      if (!GS.poseOn && GS.tick60 > 0 && GS.tick60 % 600 === 0) k |= K_C;
+    } else if (GS.replayOn && GS.replay && GS.tick60 < GS.replay.length) k = GS.replay[GS.tick60];
     else if (GS.ai) k = t < 0.5 ? 0 : aiKeys(t);
     else { k = GS.held; if (GS.padKeys) k = padMerge(k); }
     GS.prevKeys = GS.keys; GS.keys = k; GS.tick60++;
@@ -9044,7 +9141,8 @@ function poseApply(i) {
   GS.poseOn = true;
   try {
     if (P.tipo === 'carro') {
-      gameRestart(); vehicleReset(P.s, P.d, P.yaw); GS.frozen = true; GS.freeCam = true; GS.alpha = 1; gamePose();
+      const s = TRK.L > 0 ? ((P.s % TRK.L) + TRK.L) % TRK.L : P.s;
+      gameRestart(); vehicleReset(s, P.d, P.yaw); GS.frozen = true; GS.freeCam = true; GS.alpha = 1; gamePose();
       const B = GS.body, o = P.olho, a = P.alvo, q = CAMQ;
       q[0] = B[0] * o[0] + B[4] * o[1] + B[8] * o[2] + B[12]; q[1] = B[1] * o[0] + B[5] * o[1] + B[9] * o[2] + B[13]; q[2] = B[2] * o[0] + B[6] * o[1] + B[10] * o[2] + B[14];
       q[3] = B[0] * a[0] + B[4] * a[1] + B[8] * a[2] + B[12]; q[4] = B[1] * a[0] + B[5] * a[1] + B[9] * a[2] + B[13]; q[5] = B[2] * a[0] + B[6] * a[1] + B[10] * a[2] + B[14];
@@ -9070,7 +9168,8 @@ const ghWrapSpin = a => { a = (a + GH_SPIN_HALF) % GH_SPIN_PER; if (a < 0) a += 
 
 function medalOf(cs) {
   if (!(cs > 0)) return -1;
-  for (let i = 0; i < MEDALS.length; i++) if (cs <= MEDALS[i]) return i;
+  const M = (typeof TRK !== 'undefined' && TRK.medals) ? TRK.medals : MEDALS;
+  for (let i = 0; i < M.length; i++) if (cs <= M[i]) return i;
   return -1;
 }
 
@@ -9079,13 +9178,14 @@ function ghCarIdx(idx) {
   return typeof GS !== 'undefined' && GS.carIdx === 1 ? 1 : 0;
 }
 function ghStoragePrefix(idx) {
-  return ghCarIdx(idx) === 1 ? 'gol' : 'uno';
+  return (ghCarIdx(idx) === 1 ? 'gol' : 'uno') + (typeof TRK !== 'undefined' && TRK.idx === 1 ? '-il' : '');
 }
 function ghMakeSlot() {
   return {
     hasSplit: false, hasGhost: false, savePending: false, bestLen: 0, bestTime: 0,
     bestSplit: new Float32Array(2048).fill(-1),
     bestFrames: new Float32Array(10800 * 8),
+    bestCp: new Float64Array(2),
   };
 }
 const _ghSlots = [ghMakeSlot(), ghMakeSlot()];
@@ -9093,6 +9193,8 @@ const _ghSlots = [ghMakeSlot(), ghMakeSlot()];
 const GH = {
   on: true, warm: false, hasSplit: false, hasGhost: false, savePending: false,
   deltaCs: GH_NONE, vis: false, drawOn: false, qMask: 0, curLen: 0, bestLen: 0, bestTime: 0,
+  cpMask: 0, cpPrevS: 0, cpFlashIdx: 0, cpFlashTimeCs: 0, cpFlashDeltaCs: GH_NONE, cpFlashTicks: 0,
+  raceCp: new Float64Array(2), trkIdx: -1,
   slotIdx: 0, slots: _ghSlots,
   curSplit: new Float32Array(2048).fill(-1), bestSplit: _ghSlots[0].bestSplit,
   curFrames: new Float32Array(10800 * 8), bestFrames: _ghSlots[0].bestFrames,
@@ -9125,11 +9227,14 @@ function ghSyncSlot(idx) {
   if (i === GH.slotIdx) return i;
   ghFlushSlot();
   ghLoadSlot(i);
+  GH.raceCp.fill(0);
   return i;
 }
 
 function ghInit() {
   GH.warm = false;
+  GH.trkIdx = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+  GH.raceCp.fill(0);
   for (let i = 0; i < GH.slots.length; i++) {
     const S = GH.slots[i];
     S.hasSplit = false;
@@ -9138,6 +9243,7 @@ function ghInit() {
     S.bestLen = 0;
     S.bestTime = 0;
     S.bestSplit.fill(-1);
+    S.bestCp.fill(0);
   }
   ghLoadSlot(ghCarIdx());
   ghRestart();
@@ -9145,12 +9251,24 @@ function ghInit() {
 
 function ghRestart() {
   ghSyncSlot();
+  const curTrk = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+  if (GH.trkIdx !== curTrk) {
+    GH.trkIdx = curTrk;
+    GH.raceCp.fill(0);
+    for (let i = 0; i < GH.slots.length; i++) GH.slots[i].bestCp.fill(0);
+  }
   GH.curSplit.fill(-1);
   GH.curLen = 0;
   GH.qMask = 0;
   GH.deltaCs = GH_NONE;
   GH.vis = false;
   GH.drawOn = false;
+  GH.cpMask = 0;
+  GH.cpPrevS = typeof VEH !== 'undefined' ? VEH.s : 0;
+  GH.cpFlashIdx = 0;
+  GH.cpFlashTimeCs = 0;
+  GH.cpFlashDeltaCs = GH_NONE;
+  GH.cpFlashTicks = 0;
 }
 
 function ghToggle() {
@@ -9163,11 +9281,39 @@ function ghToggle() {
 function ghStep() {
   if ((GS.sub & 1) !== 1) return;
   ghSyncSlot();
-  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || GS.raceMode || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
-  const N = TRK.N, ds = TRK.ds;
+  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || LAP[3] !== 1) {
+    GH.deltaCs = GH_NONE;
+    GH.cpFlashTicks = 0;
+    return;
+  }
+  if (GH.cpFlashTicks > 0) GH.cpFlashTicks--;
+  const N = TRK.N, ds = TRK.ds, tLap = VEH.time - LAP[0];
+  const prevS = GH.cpPrevS, curS = VEH.s;
+  GH.cpPrevS = curS;
+  const cps = typeof TRK !== 'undefined' ? TRK.cps : null;
+  if (cps && curS >= prevS && (curS - prevS) < TRK.L * 0.25) {
+    const S = GH.slots[GH.slotIdx];
+    for (let c = 0; c < 2; c++) {
+      const cpS = cps[c];
+      if (!(GH.cpMask & (1 << c)) && prevS < cpS && curS >= cpS) {
+        GH.cpMask |= 1 << c;
+        const ref = S.bestCp[c] > 0 ? S.bestCp[c] : (GS.raceMode && GH.raceCp[c] > 0 ? GH.raceCp[c] : 0);
+        GH.cpFlashIdx = c + 1;
+        GH.cpFlashTimeCs = Math.round(tLap * 100);
+        GH.cpFlashDeltaCs = ref > 0 ? clamp(Math.round((tLap - ref) * 100), -9999, 9999) : GH_NONE;
+        if (!GS.raceMode) {
+          if (S.bestCp[c] <= 0 || tLap < S.bestCp[c]) S.bestCp[c] = tLap;
+        } else if (S.bestCp[c] <= 0 && (GH.raceCp[c] <= 0 || tLap < GH.raceCp[c])) {
+          GH.raceCp[c] = tLap;
+        }
+        GH.cpFlashTicks = 210;
+      }
+    }
+  }
+  if (GS.raceMode) { GH.deltaCs = GH_NONE; return; }
   const q = ((VEH.s / TRK.L) * 4) | 0;
   GH.qMask |= 1 << (q & 3);
-  const tLap = VEH.time - LAP[0], u = VEH.s / ds, iu = Math.floor(u), si = ((iu % N) + N) % N;
+  const u = VEH.s / ds, iu = Math.floor(u), si = ((iu % N) + N) % N;
   if (GH.curSplit[si] < 0) GH.curSplit[si] = tLap;
   if (GH.hasSplit && tLap >= 0.25) {
     const s0 = GH.bestSplit[si];
@@ -9206,11 +9352,23 @@ function ghFillSplits(arr, n, lt) {
   }
 }
 
+function ghSyncBestCp() {
+  const cps = typeof TRK !== 'undefined' ? TRK.cps : null;
+  if (!cps || TRK.N <= 0) return;
+  const S = GH.slots[GH.slotIdx];
+  for (let c = 0; c < 2; c++) {
+    const idx = clamp(Math.round(cps[c] / TRK.ds), 0, TRK.N - 1);
+    const v = GH.bestSplit[idx];
+    if (v > 0) S.bestCp[c] = v;
+  }
+}
+
 function ghLapCross(lt, isRecord) {
   ghSyncSlot();
   if (!GH.warm && !GS.replayOn && !GS.ai && !GS.raceMode && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (GH.bestTime === 0 || lt <= GH.bestTime + 1e-6)) {
     GH.bestSplit.set(GH.curSplit);
     ghFillSplits(GH.bestSplit, TRK.N, lt);
+    ghSyncBestCp();
     GH.hasSplit = true;
     const n = GH.curLen;
     if (n > 0) GH.bestFrames.set(GH.curFrames.subarray(0, n * 8));
@@ -9224,6 +9382,8 @@ function ghLapCross(lt, isRecord) {
   GH.curLen = 0;
   GH.qMask = 1;
   GH.deltaCs = GH_NONE;
+  GH.cpMask = 0;
+  GH.cpPrevS = typeof VEH !== 'undefined' ? VEH.s : 0;
 }
 
 // Interpola a pose do fantasma para o instante atual da volta e atualiza matrizes + fade de proximidade. Sem alocações.
@@ -9402,6 +9562,7 @@ function ghLoadData(str, expectedBestSec, carIdx) {
   GH.hasSplit = true;
   GH.hasGhost = bestLen > 30;
   GH.savePending = false;
+  ghSyncBestCp();
   ghFlushSlot();
   restore();
   return true;
@@ -9749,14 +9910,14 @@ function sndOffline(mix, mudoDe, pausaDe) {
 // (algarismos de atlas pré-coloridos), ponteiros e primitivas inteiras no minimapa, e só quando o valor quantizado mudou.
 const HUD = {
   cg: null, ct: null, cs: null, cm: null, g: null, t: null, s: null, m: null,
-  face: null, hub: null, bgT: null, bgR: null, bgS: null, bgM: null, A: null, B: null, BG: null, BR: null, C: null, medals: null,
+  face: null, hub: null, bgT: null, bgR: null, bgCp: null, bgS: null, bgM: null, A: null, B: null, BG: null, BR: null, C: null, medals: null,
   rivCol: ['#bf352f', '#e2e3e0', '#c2c5c8'],
-  L: new Int32Array(50), K: new Int32Array(28), acc: new Float64Array(4), stats: false, vis: false,
-  V: new Int32Array(25),  // km/h × 10, rpm, marcha, volta, última, melhor, deltaCs, medalha, px, py, pa, gv, gx, gy, boost, boosting, raceOn, rx0,ry0, rx1,ry1, rx2,ry2, rank, lap
+  L: new Int32Array(64), K: new Int32Array(32), acc: new Float64Array(4), stats: false, vis: false,
+  V: new Int32Array(28),  // km/h × 10, rpm, marcha, volta, última, melhor, deltaCs, medalha, px, py, pa, gv, gx, gy, boost, boosting, raceOn, rx0,ry0, rx1,ry1, rx2,ry2, rank, lap, cpOn, cpTime, cpDelta
   M: new Float64Array(3), // minimapa: ox, oy, escala
   MC: new Float64Array(64), MS: new Float64Array(64),
 };
-const HCH = '0123456789:.,-R+/';
+const HCH = '0123456789:.,-R+/CP';
 const HMED = ['#4be3ff', '#ffd23f', '#cfd6de', '#cd7f32'];
 function hudPaintHex(idx) {
   if (typeof PAINTS === 'undefined' || !PAINTS[idx]) return '#cfd6de';
@@ -9831,6 +9992,16 @@ function hudMinimapBg(r, dpr) {
     const nx = -TRK.tz[0], ny = TRK.tx[0], hl = Math.max(3.5, r * 0.052);
     g.beginPath(); g.moveTo(sx - nx * hl, sy - ny * hl); g.lineTo(sx + nx * hl, sy + ny * hl);
     g.lineWidth = Math.max(2, r * 0.028); g.strokeStyle = '#fff'; g.stroke();
+    if (TRK.cps && TRK.tx && TRK.tz) {
+      const ds = TRK.ds || 1, chl = Math.max(3, r * 0.046);
+      g.lineWidth = Math.max(2, r * 0.024); g.strokeStyle = '#eab308';
+      for (let c = 0; c < TRK.cps.length; c++) {
+        const idx = ((Math.round(TRK.cps[c] / ds) % TRK.N) + TRK.N) % TRK.N;
+        const cx = TRK.x[idx] * sc + ox, cy = TRK.z[idx] * sc + oy;
+        const cnx = -TRK.tz[idx], cny = TRK.tx[idx];
+        g.beginPath(); g.moveTo(cx - cnx * chl, cy - cny * chl); g.lineTo(cx + cnx * chl, cy + cny * chl); g.stroke();
+      }
+    }
   } else {
     M[0] = mw * 0.5; M[1] = mh * 0.5; M[2] = 0;
   }
@@ -9902,6 +10073,18 @@ function hudLayout() {
   H.bgT = hudStrip(H.ct, ['VOLTA', 'ÚLTIMA', 'MELHOR', 'DELTA'], [tw, tw, tw + mgap + msz, dw], ['', '', '', ''], B, pxB, 10);
   H.bgR = hudStrip(null, ['POS', 'VOLTAS', 'TEMPO', 'ÚLTIMA'], [fw, fw, tw, tw], ['', '', '', ''], B, pxB, 40, L[17]);
   L[14] = L[12] + tw + mgap; L[15] = Math.round((L[18] - msz) / 2);
+  const cpPad = Math.round(pxB * 0.72), cpMid = Math.round(pxB * 0.85), cpGap = Math.max(4, Math.round(pxB * 0.28));
+  const cpLblW = B.w[17] + B.w[18] + B.w[0], cpValW = Math.max(tw, dw);
+  const cpW = Math.round(cpPad * 2 + cpLblW + cpMid + cpValW), cpH = Math.round(pxB * 1.58);
+  const cpX = Math.round((L[17] - cpW) * 0.5), cpY = L[18] + cpGap, totalH = cpY + cpH;
+  const bcp = H.bgCp = document.createElement('canvas'); bcp.width = cpW; bcp.height = cpH;
+  const cg = bcp.getContext('2d');
+  cg.fillStyle = 'rgba(9,11,14,.74)'; cg.beginPath(); cg.roundRect(0, 0, cpW, cpH, cpH * 0.3); cg.fill();
+  cg.lineWidth = Math.max(1, Math.round(pxB * 0.07)); cg.strokeStyle = 'rgba(234,179,8,.55)'; cg.stroke();
+  H.ct.height = totalH; H.ct.style.height = totalH / dpr + 'px';
+  L[50] = totalH; L[51] = cpX; L[52] = cpY;
+  L[53] = cpX + cpPad; L[54] = cpX + cpW - cpPad - dw; L[55] = cpX + cpW - cpPad - tw;
+  L[56] = cpY + Math.round((cpH - B.h) * 0.5);
   H.bgS = hudStrip(H.cs, ['QPS', 'QUADRO', 'GPU'], [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
   if (typeof RIV !== 'undefined' && RIV.cars) {
     for (let i = 0; i < 3; i++) if (RIV.cars[i]) H.rivCol[i] = hudPaintHex(RIV.cars[i].paintIdx);
@@ -9997,6 +10180,11 @@ function hudRead() {
     V[17] = V[18] = V[19] = V[20] = V[21] = V[22] = -1;
     V[23] = 0; V[24] = 0;
   }
+  const cpNone = typeof GH_NONE !== 'undefined' ? GH_NONE : -999999;
+  const cpOn = hasGh && GH.cpFlashTicks > 0 && (GH.cpFlashIdx === 1 || GH.cpFlashIdx === 2) ? GH.cpFlashIdx : 0;
+  V[25] = cpOn;
+  V[26] = cpOn && GH.cpFlashTimeCs !== undefined ? (GH.cpFlashTimeCs | 0) : 0;
+  V[27] = cpOn && GH.cpFlashDeltaCs !== undefined ? (GH.cpFlashDeltaCs | 0) : cpNone;
 }
 function hudDraw() {
   const H = HUD, L = H.L, K = H.K, V = H.V, an = V[0], ki = ((an + 5) / 10) | 0, ar = (V[1] / 10) | 0, gear = V[2];
@@ -10022,10 +10210,13 @@ function hudDraw() {
   }
   const cur = V[3], last = V[4], best = V[5], delta = V[6], med = V[7];
   const ra = V[16], rank = V[23], rlap = V[24];
-  if (cur !== K[4] || last !== K[5] || best !== K[6] || delta !== K[7] || med !== K[8] || ra !== K[24] || (ra === 1 && (rank !== K[25] || rlap !== K[26]))) {
+  const cpOn = V[25], cpTime = V[26], cpDelta = V[27];
+  if (cur !== K[4] || last !== K[5] || best !== K[6] || delta !== K[7] || med !== K[8] || ra !== K[24] ||
+      (ra === 1 && (rank !== K[25] || rlap !== K[26])) || cpOn !== K[27] || cpTime !== K[28] || cpDelta !== K[29]) {
     K[4] = cur; K[5] = last; K[6] = best; K[7] = delta; K[8] = med; K[24] = ra;
+    K[27] = cpOn; K[28] = cpTime; K[29] = cpDelta;
     const t = H.t, B = H.B;
-    t.clearRect(0, 0, L[17], L[18]);
+    t.clearRect(0, 0, L[17], L[50]);
     if (ra === 1) {
       K[25] = rank; K[26] = rlap;
       const y = L[46];
@@ -10039,6 +10230,16 @@ function hudDraw() {
       t.drawImage(H.bgT, 0, 0); hudTime(t, B, cur, L[10], y); hudTime(t, B, last, L[11], y); hudTime(t, B, best, L[12], y);
       if (med >= 0 && med < 4) t.drawImage(H.medals[med], L[14], L[15]);
       hudDelta(t, delta, L[13], y);
+    }
+    if (cpOn > 0) {
+      t.drawImage(H.bgCp, L[51], L[52]);
+      const cy = L[56], cpNone = typeof GH_NONE !== 'undefined' ? GH_NONE : -999999;
+      let cx = L[53];
+      cx += hudCh(t, B, 17, cx, cy, 1);
+      cx += hudCh(t, B, 18, cx, cy, 1);
+      hudCh(t, B, cpOn === 2 ? 2 : 1, cx, cy, 1);
+      if (cpDelta !== cpNone) hudDelta(t, cpDelta, L[54], cy);
+      else hudTime(t, B, cpTime, L[55], cy);
     }
   }
   const px = V[8], py = V[9], pa = V[10], gv = V[11], gx = V[12], gy = V[13];
@@ -10095,6 +10296,13 @@ const ST = { INICIO: 0, JOGO: 1, PAUSA: 2, BENCH: 3, FITA: 4, RESULT: 5, POSE: 6
 const UI = {
   st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, med: null, cfg: null, tit: null, sub: null, b0: null, b1: null,
   bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false, raceDone: false,
+  lastNavUrl: '',
+  navTrack(url, idx) {
+    if (typeof location !== 'undefined') {
+      if (typeof location.assign === 'function') location.assign(url);
+      else location.search = '?track=' + idx;
+    }
+  },
 };
 const MED_UI = [
   { nome: 'Firma', tempo: '0:53,50', cor: '#4be3ff', sym: '★' },
@@ -10119,17 +10327,38 @@ function uiFmtTime(sec) {
 function uiSetBtn(btn, on) {
   if (btn.classList) { btn.classList.toggle('on', on); return; }
   const sw = btn.hasAttribute && btn.hasAttribute('data-paint');
-  btn.className = sw ? (on ? 'sw on' : 'sw') : (on ? 'on' : '');
+  const pl = btn.hasAttribute && btn.hasAttribute('data-track');
+  btn.className = sw ? (on ? 'sw on' : 'sw') : pl ? (on ? 'pill on' : 'pill') : (on ? 'on' : '');
 }
-function uiSavePrefs() {
+function uiSavePrefs(overrideTrackIdx) {
   try {
+    const ti = overrideTrackIdx !== undefined ? (overrideTrackIdx ? 1 : 0) : (typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0);
     localStorage.setItem('uno-prefs-v1', JSON.stringify({
       raceMode: typeof GS !== 'undefined' && !!GS.raceMode,
       carIdx: typeof GS !== 'undefined' && GS.carIdx ? 1 : 0,
       paintIdx: typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0,
       envIdx: typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0,
+      trackIdx: ti,
     }));
   } catch (e) { /* sem armazenamento local */ }
+}
+function uiSelectTrack(idx) {
+  const next = (idx | 0) === 1 ? 1 : 0;
+  const cur = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+  uiSavePrefs(next);
+  if (next === cur) {
+    uiSyncCfg();
+    return false;
+  }
+  const p = new URLSearchParams(typeof location !== 'undefined' && location.search ? location.search : '');
+  p.set('track', String(next));
+  const qs = '?' + p.toString();
+  const base = typeof location !== 'undefined' ? (location.href ? location.href.split(/[?#]/)[0] : (location.pathname || '')) : '';
+  const hash = typeof location !== 'undefined' && location.hash ? location.hash : '';
+  const targetUrl = base + qs + hash;
+  UI.lastNavUrl = targetUrl;
+  if (typeof UI.navTrack === 'function') UI.navTrack(targetUrl, next);
+  return true;
 }
 function uiRenderMed() {
   if (!UI.med) return;
@@ -10140,12 +10369,14 @@ function uiRenderMed() {
   }
   const cs = LAP[2] > 0 ? Math.round(LAP[2] * 100) : 0;
   const m = typeof medalOf === 'function' ? medalOf(cs) : -1;
+  const M = (typeof TRK !== 'undefined' && TRK.medals) ? TRK.medals : (typeof MEDALS !== 'undefined' ? MEDALS : null);
   let html = '';
   for (let i = 0; i < MED_UI.length; i++) {
     const d = MED_UI[i], hit = i === m;
+    const tempo = M && M[i] > 0 ? uiFmtTime(M[i] / 100) : d.tempo;
     if (i > 0) html += ' · ';
     html += '<span' + (hit ? ' class="on" data-hit="1" style="color:' + d.cor + '"' : ' style="opacity:.78"') + '>' +
-      '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + d.tempo + '</span>';
+      '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + tempo + '</span>';
   }
   UI.med.innerHTML = html;
 }
@@ -10153,89 +10384,123 @@ function uiSyncCfg() {
   const ci = typeof GS !== 'undefined' && GS.carIdx ? 1 : 0;
   const pi = typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0;
   const ei = typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0;
+  const ti = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+  const trkSub = typeof TRK !== 'undefined' && TRK.sub ? TRK.sub : 'Circuito da Serra · 1,64 km';
   const rm = typeof GS !== 'undefined' && !!GS.raceMode;
   if (UI.tit) UI.tit.textContent = ci ? 'Gol Quadrado' : 'Uno com escada';
-  if (UI.sub) UI.sub.textContent = ci ? 'VW Gol AP 1.8 1993 · circuito' : 'Fiat Uno Mille EP 1996 · circuito';
-  if (!UI.cfg || !UI.cfg.querySelectorAll) return;
-  const btns = UI.cfg.querySelectorAll('button');
-  for (let i = 0; i < btns.length; i++) {
-    const b = btns[i];
-    const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
-    if (dm !== null) { uiSetBtn(b, (+dm === 1) === rm); continue; }
-    const dc = b.getAttribute ? b.getAttribute('data-car') : null;
-    if (dc !== null) { uiSetBtn(b, +dc === ci); continue; }
-    const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
-    if (dp !== null) {
-      const idx = +dp | 0;
-      if (typeof PAINTS !== 'undefined' && PAINTS[idx]) {
-        b.title = PAINTS[idx].nome;
-        if (b.style) b.style.background = uiPaintCss(PAINTS[idx].rgb);
+  if (UI.sub) UI.sub.textContent = (ci ? 'VW Gol AP 1.8 1993' : 'Fiat Uno Mille EP 1996') + ' · ' + trkSub;
+  let sawTrack = false;
+  if (UI.cfg && UI.cfg.querySelectorAll) {
+    const btns = UI.cfg.querySelectorAll('button');
+    for (let i = 0; i < btns.length; i++) {
+      const b = btns[i];
+      const dt = b.getAttribute ? b.getAttribute('data-track') : null;
+      if (dt !== null) { sawTrack = true; uiSetBtn(b, (+dt | 0) === ti); continue; }
+      const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
+      if (dm !== null) { uiSetBtn(b, (+dm === 1) === rm); continue; }
+      const dc = b.getAttribute ? b.getAttribute('data-car') : null;
+      if (dc !== null) { uiSetBtn(b, +dc === ci); continue; }
+      const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
+      if (dp !== null) {
+        const idx = +dp | 0;
+        if (typeof PAINTS !== 'undefined' && PAINTS[idx]) {
+          b.title = PAINTS[idx].nome;
+          if (b.style) b.style.background = uiPaintCss(PAINTS[idx].rgb);
+        }
+        uiSetBtn(b, idx === pi);
+        continue;
       }
-      uiSetBtn(b, idx === pi);
-      continue;
+      const de = b.getAttribute ? b.getAttribute('data-env') : null;
+      if (de !== null) uiSetBtn(b, +de === ei);
     }
-    const de = b.getAttribute ? b.getAttribute('data-env') : null;
-    if (de !== null) uiSetBtn(b, +de === ei);
+  }
+  if (!sawTrack) {
+    const trkEl = $('cfgTrack');
+    if (trkEl && trkEl.querySelectorAll) {
+      const tb = trkEl.querySelectorAll('button');
+      for (let i = 0; i < tb.length; i++) {
+        const dt = tb[i].getAttribute ? tb[i].getAttribute('data-track') : null;
+        if (dt !== null) uiSetBtn(tb[i], (+dt | 0) === ti);
+      }
+    }
   }
 }
 function uiPreview() { if (typeof GAME !== 'undefined' && GAME.ready && typeof renderFrame === 'function') renderFrame(); }
 function uiBindCfg() {
-  if (!UI.cfg || !UI.cfg.querySelectorAll) return;
-  const btns = UI.cfg.querySelectorAll('button');
-  for (let i = 0; i < btns.length; i++) {
-    const b = btns[i];
-    const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
-    if (dm !== null) {
-      b.onclick = () => {
-        const next = +dm === 1;
-        if (typeof GS !== 'undefined' && 'raceMode' in GS && GS.raceMode !== next) {
-          GS.raceMode = next;
-          if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
-          if (GS.replayOn) GS.replayOn = false;
-          if (typeof gameRestart === 'function') gameRestart();
-          if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
-        }
-        uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
-      };
-      continue;
+  let sawTrack = false;
+  if (UI.cfg && UI.cfg.querySelectorAll) {
+    const btns = UI.cfg.querySelectorAll('button');
+    for (let i = 0; i < btns.length; i++) {
+      const b = btns[i];
+      const dt = b.getAttribute ? b.getAttribute('data-track') : null;
+      if (dt !== null) {
+        sawTrack = true;
+        b.onclick = () => { uiSelectTrack(+dt | 0); };
+        continue;
+      }
+      const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
+      if (dm !== null) {
+        b.onclick = () => {
+          const next = +dm === 1;
+          if (typeof GS !== 'undefined' && 'raceMode' in GS && GS.raceMode !== next) {
+            GS.raceMode = next;
+            if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
+            if (GS.replayOn) GS.replayOn = false;
+            if (typeof gameRestart === 'function') gameRestart();
+            if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
+          }
+          uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
+        };
+        continue;
+      }
+      const dc = b.getAttribute ? b.getAttribute('data-car') : null;
+      if (dc !== null) {
+        b.onclick = () => {
+          const next = +dc === 1 ? 1 : 0;
+          if (typeof GS !== 'undefined' && 'carIdx' in GS && GS.carIdx !== next) {
+            GS.carIdx = next;
+            if (typeof carSyncActive === 'function') carSyncActive(false);
+            if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
+            if (GS.replayOn) GS.replayOn = false;
+            if (typeof gameRestart === 'function') gameRestart();
+            else if (typeof ghRestart === 'function') ghRestart();
+            if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
+          }
+          uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
+        };
+        continue;
+      }
+      const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
+      if (dp !== null) {
+        b.onclick = () => {
+          const next = +dp | 0;
+          if (typeof GS !== 'undefined' && 'paintIdx' in GS) GS.paintIdx = next;
+          if (typeof carApplyPaint === 'function' && typeof CAR !== 'undefined' && CAR.slotBody) {
+            carApplyPaint(CAR.slotBody, next, CAR.bodyKind);
+          }
+          uiSavePrefs(); uiSyncCfg(); uiPreview();
+        };
+        continue;
+      }
+      const de = b.getAttribute ? b.getAttribute('data-env') : null;
+      if (de !== null) {
+        b.onclick = () => {
+          const next = +de | 0;
+          if (typeof envApply === 'function') envApply(next, { keepLights: !!(typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn)) });
+          if (typeof gamePose === 'function') gamePose();
+          uiSavePrefs(); uiSyncCfg(); uiPreview();
+        };
+      }
     }
-    const dc = b.getAttribute ? b.getAttribute('data-car') : null;
-    if (dc !== null) {
-      b.onclick = () => {
-        const next = +dc === 1 ? 1 : 0;
-        if (typeof GS !== 'undefined' && 'carIdx' in GS && GS.carIdx !== next) {
-          GS.carIdx = next;
-          if (typeof carSyncActive === 'function') carSyncActive(false);
-          if (UI.st === ST.PAUSA || UI.st === ST.RESULT) UI.back = ST.JOGO;
-          if (GS.replayOn) GS.replayOn = false;
-          if (typeof gameRestart === 'function') gameRestart();
-          else if (typeof ghRestart === 'function') ghRestart();
-          if (UI.st === ST.RESULT) { UI.raceDone = false; uiSet(ST.PAUSA); }
-        }
-        uiSavePrefs(); uiSyncCfg(); uiRenderMed(); uiPreview();
-      };
-      continue;
-    }
-    const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
-    if (dp !== null) {
-      b.onclick = () => {
-        const next = +dp | 0;
-        if (typeof GS !== 'undefined' && 'paintIdx' in GS) GS.paintIdx = next;
-        if (typeof carApplyPaint === 'function' && typeof CAR !== 'undefined' && CAR.slotBody) {
-          carApplyPaint(CAR.slotBody, next, CAR.bodyKind);
-        }
-        uiSavePrefs(); uiSyncCfg(); uiPreview();
-      };
-      continue;
-    }
-    const de = b.getAttribute ? b.getAttribute('data-env') : null;
-    if (de !== null) {
-      b.onclick = () => {
-        const next = +de | 0;
-        if (typeof envApply === 'function') envApply(next, { keepLights: !!(typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn)) });
-        if (typeof gamePose === 'function') gamePose();
-        uiSavePrefs(); uiSyncCfg(); uiPreview();
-      };
+  }
+  if (!sawTrack) {
+    const trkEl = $('cfgTrack');
+    if (trkEl && trkEl.querySelectorAll) {
+      const tb = trkEl.querySelectorAll('button');
+      for (let i = 0; i < tb.length; i++) {
+        const dt = tb[i].getAttribute ? tb[i].getAttribute('data-track') : null;
+        if (dt !== null) tb[i].onclick = () => { uiSelectTrack(+dt | 0); };
+      }
     }
   }
 }
@@ -10246,18 +10511,20 @@ function uiInit() {
   UI.b0 = $('b0'); UI.b1 = $('b1');
   hudInit(); uiWarmup();
   try {
-    const b0 = +localStorage.getItem('uno-melhor');
+    const pfx0 = typeof ghStoragePrefix === 'function' ? ghStoragePrefix(0) : 'uno';
+    const pfx1 = typeof ghStoragePrefix === 'function' ? ghStoragePrefix(1) : 'gol';
+    const b0 = +localStorage.getItem(pfx0 + '-melhor');
     if (b0 > 20 && b0 < 600) {
       if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[0] = b0;
       if (typeof GS === 'undefined' || !GS.carIdx) LAP[2] = b0;
     }
-    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('uno-ta-v1'), b0, 0);
-    const b1 = +localStorage.getItem('gol-melhor');
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem(pfx0 + '-ta-v1'), b0, 0);
+    const b1 = +localStorage.getItem(pfx1 + '-melhor');
     if (b1 > 20 && b1 < 600) {
       if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[1] = b1;
       if (typeof GS !== 'undefined' && GS.carIdx === 1) LAP[2] = b1;
     }
-    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('gol-ta-v1'), b1, 1);
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem(pfx1 + '-ta-v1'), b1, 1);
   } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
   try {
     const raw = localStorage.getItem('uno-prefs-v1');
@@ -10422,6 +10689,9 @@ function uiWarmup() {
     V[14] = (i * 7) % 101; V[15] = (j >> 1) & 1; V[16] = j % 3 === 0 ? 1 : 0;
     V[17] = 12 + (j % 70); V[18] = 12 + (j % 50); V[19] = 18 + (j % 60); V[20] = 18 + (j % 45); V[21] = 24 + (j % 50); V[22] = 24 + (j % 40);
     V[23] = 1 + (j & 3); V[24] = 1 + (j % 3);
+    V[25] = j % 4 === 0 ? 0 : (j % 2) + 1;
+    V[26] = 1500 + (i * 13) % 4500;
+    V[27] = dc === 0 ? -999999 : dc === 1 ? 0 : dc === 2 ? -145 : dc === 3 ? 215 : dc === 4 ? -1120 : 1120;
     hudDraw(); hudRead();
     RT[3] = 300 + i % 300; PERF.live[0] = i % 4 ? i % 40 : 0; hudStatsFrame();
   }
