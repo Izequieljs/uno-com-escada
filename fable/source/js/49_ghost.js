@@ -99,7 +99,7 @@ function ghToggle() {
 function ghStep() {
   if ((GS.sub & 1) !== 1) return;
   ghSyncSlot();
-  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
+  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || GS.raceMode || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
   const N = TRK.N, ds = TRK.ds;
   const q = ((VEH.s / TRK.L) * 4) | 0;
   GH.qMask |= 1 << (q & 3);
@@ -144,7 +144,7 @@ function ghFillSplits(arr, n, lt) {
 
 function ghLapCross(lt, isRecord) {
   ghSyncSlot();
-  if (!GH.warm && !GS.replayOn && !GS.ai && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (GH.bestTime === 0 || lt <= GH.bestTime + 1e-6)) {
+  if (!GH.warm && !GS.replayOn && !GS.ai && !GS.raceMode && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (GH.bestTime === 0 || lt <= GH.bestTime + 1e-6)) {
     GH.bestSplit.set(GH.curSplit);
     ghFillSplits(GH.bestSplit, TRK.N, lt);
     GH.hasSplit = true;
@@ -165,7 +165,7 @@ function ghLapCross(lt, isRecord) {
 // Interpola a pose do fantasma para o instante atual da volta e atualiza matrizes + fade de proximidade. Sem alocações.
 function ghPose() {
   ghSyncSlot();
-  let vis = GH.on && GH.hasGhost && LAP[3] === 1 && !GS.replayOn && !GS.ai && !GS.frozen;
+  let vis = GH.on && GH.hasGhost && LAP[3] === 1 && !GS.replayOn && !GS.ai && !GS.frozen && !GS.raceMode;
   if (vis) {
     const f = (VEH.time - LAP[0]) * 60;
     if (f < 0 || f >= GH.bestLen - 1) {

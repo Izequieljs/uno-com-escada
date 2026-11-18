@@ -20,7 +20,7 @@ const GS = {
   tvData: new Float32Array(64 * 4), tvN: 0, tvCur: -1, tvAim: new Float32Array(3), tvFov: 0.3, pl: new Float64Array(2),
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
-  paintIdx: 0, carIdx: 0, carBest: new Float64Array(2), _bestCar: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false, boostF: 0,
+  paintIdx: 0, carIdx: 0, carBest: new Float64Array(2), _bestCar: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false, boostF: 0, raceMode: false, _warm: false,
 };
 // Cronômetro: LAP[0] instante (s de simulação) em que a volta atual começou, [1] última volta, [2] melhor volta, [3] 1 = cronômetro correndo
 const LAP = new Float64Array(4);
@@ -117,7 +117,7 @@ function gameInit() {
 // três câmeras, ré, freio de mão, fora da pista, reposição — para o V8 otimizar o laço com informação de tipos completa.
 // Sem isso, a primeira troca de câmera ou a primeira ré desotimizaria funções do laço e geraria lixo temporário.
 function gameWarmup() {
-  const fx = GS.fxOn, rp = GS.replayOn; GS.replayOn = false; GS.ai = false; GS._unoForced = false; RT[2] = 1 / 120;
+  const fx = GS.fxOn, rp = GS.replayOn; GS.replayOn = false; GS.ai = false; GS._unoForced = false; GS._warm = true; RT[2] = 1 / 120;
   carSyncActive(true);
   if (typeof GH !== 'undefined') GH.warm = true;
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0);
@@ -144,7 +144,7 @@ function gameWarmup() {
     }
   }
   if (typeof GH !== 'undefined') GH.warm = false;
-  GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; GS.boostF = 0; LAP[2] = 0; GS.carBest.fill(0); GS._bestCar = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
+  GS._warm = false; GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; GS.boostF = 0; LAP[2] = 0; GS.carBest.fill(0); GS._bestCar = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
 }
 // Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas cinco câmeras (com fumaça e marcas),
 // para o driver compilar todas as variantes de pipeline e carregar todas as texturas agora, e não no meio da volta.
@@ -165,15 +165,17 @@ async function gamePrewarm() {
 }
 function gameRestart() {
   const unoF = GS.replayOn || GS.poseOn;
+  const raceOn = !!(GS.raceMode && !unoF && !GS._warm);
   GS._unoForced = unoF;
   carSyncActive(unoF);
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   const qCam = +(Q.get('cam') || 0);
-  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = (!unoF && typeof ENV !== 'undefined') ? ENV.idx > 0 : false; GS.hazardOn = false; GS.boostF = 0;
+  vehicleReset(raceOn ? TRK.L - 32 : TRK.L + TRK.startS, raceOn ? 1.8 : TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = (!unoF && typeof ENV !== 'undefined') ? ENV.idx > 0 : false; GS.hazardOn = false; GS.boostF = 0;
   GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 || qCam === 4 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
   if (typeof ghRestart === 'function') ghRestart();
+  if (typeof rivRestart === 'function') rivRestart();
   GS.alpha = 1; gamePose(); gameCamera();
 }
 // um passo de física; a cada 2 passos (1/60 s) lê as teclas (gravadas, piloto automático ou teclado)
@@ -196,6 +198,7 @@ function gameStep() {
   GS.sub++;
   vehicleStep(GS.keys);
   if (VEH.laps !== GS.lapSeen) lapCross();
+  if (typeof rivStep === 'function') rivStep();
   if (typeof ghStep === 'function') ghStep();
   if (GS.fxOn && typeof fxStep === 'function') fxStep();
 }
@@ -286,6 +289,7 @@ function gamePose() {
   f[FO.car2 + 1] = (!unoF && typeof ENV !== 'undefined') ? ENV.wet : 0;
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
   if (typeof ghPose === 'function') ghPose();
+  if (typeof rivPose === 'function') rivPose();
 }
 // rotações lendo o ângulo do registrador ROTQ[0] (sem números por argumento)
 const ROTQ = new Float64Array(1);
