@@ -2,18 +2,29 @@
 const CAR = {
   wheelbase: 2.362, trackF: 1.34, trackR: 1.30, wheelR: 0.281,
   hubs: [[1.181, 0.281, -0.67], [1.181, 0.281, 0.67], [-1.181, 0.281, -0.65], [-1.181, 0.281, 0.65]],
+  eyePos: [-0.10, 1.175, -0.355],
   slotBody: 0, slotWheel: [0, 0, 0, 0], slotSteer: 0,
   steerMat: m4(), tris: 0, _t: m4(), _t2: m4(), _t3: m4(), set: null, glass: null, atlasBG: null, fam: null, bodyMesh: null, wheelMesh: null,
+  driverItems: [], driverVisible: true,
+  setDriverVis(vis) {
+    const v = !!vis; CAR.driverVisible = v;
+    for (let i = 0; i < CAR.driverItems.length; i++) CAR.driverItems[i].on = v;
+  },
   build() {
     carShapeInit(); carWindowsInit(); carSeamInit();
     const fam = CAR.fam = mkFamily('car', { src: 'mat_car', noCube: true });
     CAR.slotBody = objSlot(); for (let i = 0; i < 4; i++) CAR.slotWheel[i] = objSlot(); CAR.slotSteer = objSlot();
     const set = CAR.set = new MeshSet(fam), glass = CAR.glass = new GlassSet();
+    CAR.driverItems.length = 0; CAR.driverVisible = true;
     const mb = new MeshBuilder(1 << 17), gl = new MeshBuilder(1 << 14);
     carBuildBody(mb, gl);
     if (typeof carBuildParts === 'function') carBuildParts(mb, gl);
     CAR.tris = mb.ni / 3 + gl.ni / 3;
     const bm = CAR.bodyMesh = mb.upload(); set.add(bm, CAR.slotBody, 3); glass.add_(gl.upload(), CAR.slotBody);
+    if (typeof carBuildDriver === 'function') {
+      const dm = new MeshBuilder(1 << 13); carBuildDriver(dm); CAR.tris += dm.ni / 3;
+      CAR.driverItems.push(set.add(dm.upload(), CAR.slotBody, 3));
+    }
     if (typeof carBuildWheel === 'function') {
       const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); const wm = CAR.wheelMesh = w.upload(), wbm = wb.upload(); CAR.tris += 4 * (w.ni + wb.ni) / 3;
       for (let i = 0; i < 4; i++) { set.add(wm, CAR.slotWheel[i], 3); set.add(wbm, CAR.slotWheel[i], 1); }   // disco de borrão: só no passe principal

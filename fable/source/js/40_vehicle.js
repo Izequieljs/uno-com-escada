@@ -2,7 +2,7 @@
 // tração dianteira, câmbio automático, freio de mão, relevo/inclinação da pista e colisão com barreiras.
 // Passo fixo de 1/120 s. Nenhuma alocação durante a simulação.
 const PHYS_DT = 1 / 120;
-const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512;
+const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512, K_HORN = 2048;
 // Entrada analógica do controle: VIN[0] acelerador 0..1, VIN[1] freio 0..1 (valem quando as teclas trazem K_PAD), VIN[2] direção -1..1 (K_PADS).
 // As teclas gravadas da volta roteirizada nunca trazem esses bits: a via digital fica exatamente como era.
 const VIN = new Float64Array(3);

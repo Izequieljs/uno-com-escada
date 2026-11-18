@@ -1,4 +1,17 @@
 // Jogo: entrada, laço de passo fixo, reprodução dos comandos gravados, câmeras e pose do carro.
+const PAINTS = [
+  { nome: 'Azul Metálico',   rgb: [0.168, 0.275, 0.425], metal: 0.58 },
+  { nome: 'Branco de Firma', rgb: [0.76, 0.77, 0.75],    metal: 0.08 },
+  { nome: 'Vermelho Flash',  rgb: [0.52, 0.035, 0.028],  metal: 0.16 },
+  { nome: 'Prata Lunar',     rgb: [0.54, 0.56, 0.58],    metal: 0.78 },
+  { nome: 'Cinza Chumbo',    rgb: [0.11, 0.12, 0.135],   metal: 0.68 },
+  { nome: 'Vinho Clássico',  rgb: [0.24, 0.022, 0.045],  metal: 0.52 },
+];
+function carApplyPaint(slot, paintIdx, bodyKind) {
+  const n = PAINTS.length, idx = ((paintIdx | 0) % n + n) % n, p = PAINTS[idx], par = objParams(slot);
+  par[4] = p.rgb[0]; par[5] = p.rgb[1]; par[6] = p.rgb[2]; par[7] = p.metal;
+  if (bodyKind !== undefined) par[8] = bodyKind;
+}
 const GS = {
   held: 0, keys: 0, prevKeys: 0, cam: 0, replay: null, replayOn: false, ai: false, tick60: 0, acc: 0, sub: 0, alpha: 1, cut: true,
   body: m4(), tmp: m4(), tmp2: m4(), ground: m4(), spin: new Float32Array(4), susp: new Float32Array(4),
@@ -7,19 +20,27 @@ const GS = {
   tvData: new Float32Array(64 * 4), tvN: 0, tvCur: -1, tvAim: new Float32Array(3), tvFov: 0.3, pl: new Float64Array(2),
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
+  paintIdx: 0, lightsOn: false, hazardOn: false,
 };
 // Cronômetro: LAP[0] instante (s de simulação) em que a volta atual começou, [1] última volta, [2] melhor volta, [3] 1 = cronômetro correndo
 const LAP = new Float64Array(4);
 // Controle (Gamepad API): PADV[0] gatilho direito, [1] gatilho esquerdo, [2] analógico esquerdo já com zona morta e curva. Preenchido por padPoll.
 const PADV = new Float64Array(3);
-const KEYMAP = { KeyW: K_W, ArrowUp: K_W, KeyS: K_S, ArrowDown: K_S, KeyA: K_A, ArrowLeft: K_A, KeyD: K_D, ArrowRight: K_D, Space: K_SPACE, KeyC: K_C, KeyR: K_R, KeyV: K_V };
-function onKeyDown(e) { const k = KEYMAP[e.code]; if (k) { GS.held |= k; e.preventDefault(); } }
-function onKeyUp(e) { const k = KEYMAP[e.code]; if (k) { GS.held &= ~k; e.preventDefault(); } }
+const KEYMAP = { KeyW: K_W, ArrowUp: K_W, KeyS: K_S, ArrowDown: K_S, KeyA: K_A, ArrowLeft: K_A, KeyD: K_D, ArrowRight: K_D, Space: K_SPACE, KeyC: K_C, KeyR: K_R, KeyV: K_V, KeyE: K_HORN };
+function onKeyDown(e) {
+  const c = e.code, k = KEYMAP[c];
+  if (k) { GS.held |= k; if (e.preventDefault) e.preventDefault(); return; }
+  if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (c === 'KeyL') { GS.lightsOn = !GS.lightsOn; if (e.preventDefault) e.preventDefault(); }
+    else if (c === 'KeyK') { GS.hazardOn = !GS.hazardOn; if (e.preventDefault) e.preventDefault(); }
+  }
+}
+function onKeyUp(e) { const k = KEYMAP[e.code]; if (k) { GS.held &= ~k; if (e.preventDefault) e.preventDefault(); } }
 function onBlur() { GS.held = 0; }
 
 // carro provisório (caixa) com o mesmo contrato do modelo real, usado enquanto CAR não existe
 const CARP = {
-  wheelR: VP.R, hubs: [[VP.L / 2, VP.R, -0.67], [VP.L / 2, VP.R, 0.67], [-VP.L / 2, VP.R, -0.65], [-VP.L / 2, VP.R, 0.65]], slotBody: 0, slotWheel: [0, 0, 0, 0], _t: m4(), _u: m4(),
+  wheelR: VP.R, hubs: [[VP.L / 2, VP.R, -0.67], [VP.L / 2, VP.R, 0.67], [-VP.L / 2, VP.R, -0.65], [-VP.L / 2, VP.R, 0.65]], eyePos: [-0.10, 1.175, -0.355], slotBody: 0, slotWheel: [0, 0, 0, 0], _t: m4(), _u: m4(),
   build() {
     const fam = R.families.test || mkFamily('test', { src: 'mat_test' }), set = new MeshSet(fam); R.drawables.push(set);
     this.slotBody = objSlot(); for (let i = 0; i < 4; i++) this.slotWheel[i] = objSlot();
@@ -85,11 +106,12 @@ function gameWarmup() {
   for (let i = 0; i < 9000; i++) {
     const ph = (i / 300) | 0, t = i / 120; let k = aiKeys(t);
     if (ph % 7 === 3) k = K_S; else if (ph % 7 === 5) k = K_W | K_D | (i % 60 < 30 ? K_SPACE : 0); else if (ph % 11 === 9) k = K_W | K_A;
-    if (i % 1500 === 1499) k |= K_R; if (i % 400 === 399) k |= K_C;
+    if (i % 1500 === 1499) k |= K_R; if (i % 400 === 399) k |= K_C; if (ph % 5 === 2) k |= K_HORN;
+    GS.lightsOn = (ph & 2) !== 0; GS.hazardOn = (ph & 4) !== 0;
     // metade das fases com as mesmas manobras vindas do controle (gatilhos e alavanca analógicos, olhar para trás)
-    if (ph & 1) { const f = 0.3 + (i % 71) / 100; GS.padKeys = K_PAD | K_PADS | (ph % 4 === 1 ? K_V : 0) | (k & (K_W | K_S | K_SPACE | K_C | K_R)); PADV[0] = (k & K_W) ? f : 0; PADV[1] = (k & K_S) ? f : 0; PADV[2] = (((k & K_D) ? 1 : 0) - ((k & K_A) ? 1 : 0)) * f; k = i % 9 === 0 ? k & (K_A | K_D) : 0; } else GS.padKeys = 0;
+    if (ph & 1) { const f = 0.3 + (i % 71) / 100; GS.padKeys = K_PAD | K_PADS | (ph % 4 === 1 ? K_V : 0) | (k & (K_W | K_S | K_SPACE | K_C | K_R | K_HORN)); PADV[0] = (k & K_W) ? f : 0; PADV[1] = (k & K_S) ? f : 0; PADV[2] = (((k & K_D) ? 1 : 0) - ((k & K_A) ? 1 : 0)) * f; k = i % 9 === 0 ? k & (K_A | K_D) : 0; } else GS.padKeys = 0;
     GS.held = k; GS.acc = PHYS_DT * (1 + (i % 3 === 0 ? 0.5 : 0)); gameTick(i % 4 === 0); sndControl();
-    for (let q = 0; q < 3; q++) cascadeSetup(q);   // cascatas de sombra das três câmeras (inclusive o modo foco da TV): só contas, refeitas a cada quadro
+    for (let q = 0; q < 3; q++) cascadeSetup(q);   // cascatas de sombra das cinco câmeras (inclusive o modo foco da TV): só contas, refeitas a cada quadro
   }
   // Cascatas de sombra: o encaixe em texel tem um ramo para coordenada de luz positiva e outro para negativa (e um caso em que
   // o arredondamento dá -0). A volta de aquecimento quase só passa por um deles; aqui os dois modos (normal e foco da TV)
@@ -104,9 +126,9 @@ function gameWarmup() {
     }
   }
   if (typeof GH !== 'undefined') GH.warm = false;
-  GS.held = 0; GS.padKeys = 0; LAP[2] = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
+  GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; LAP[2] = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
 }
-// Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas três câmeras (com fumaça e marcas),
+// Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas cinco câmeras (com fumaça e marcas),
 // para o driver compilar todas as variantes de pipeline e carregar todas as texturas agora, e não no meio da volta.
 // De quebra mede o custo de GPU de cada vista (tempo de parede para a GPU concluir 4 quadros seguidos) e devolve o pior caso
 // em ms por quadro: main() usa esse número para escolher a cadência (120 ou 60 quadros por segundo).
@@ -114,7 +136,7 @@ async function gamePrewarm() {
   RT[2] = 1 / 60; GS.frozen = true; let worst = 0;
   for (let i = 0; i < 36; i++) {
     vehicleReset(i * TRK.L / 36, (i % 3) - 1, 0); VEH.slip.fill(1); VEH.vx = 25; for (let k = 0; k < 6; k++) fxStep(); VEH.slip.fill(0); VEH.vx = 0;   // com velocidade: emite fumaça (estreia o pipeline de partículas)
-    GS.cam = i % 4; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true; gameTick(true); renderFrame(); gameTick(true); renderFrame();
+    GS.cam = i % 5; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true; gameTick(true); renderFrame(); gameTick(true); renderFrame();
     if (i >= 6) {   // as primeiras vistas ainda pagam compilação de pipelines: não entram na medida
       await G.dev.queue.onSubmittedWorkDone(); const t0 = performance.now();
       for (let k = 0; k < 4; k++) { gameTick(true); renderFrame(); }
@@ -126,7 +148,8 @@ async function gamePrewarm() {
 function gameRestart() {
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   const qCam = +(Q.get('cam') || 0);
-  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
+  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = false; GS.hazardOn = false;
+  GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 || qCam === 4 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
   if (typeof ghRestart === 'function') ghRestart();
@@ -142,7 +165,7 @@ function gameStep() {
     GS.prevKeys = GS.keys; GS.keys = k; GS.tick60++;
     const edge = k & ~GS.prevKeys;
     if ((k ^ GS.prevKeys) & K_V) { GS.cut = true; GS.chaseInit = false; }   // olhar para trás é um corte de câmera
-    if (edge & K_C) { GS.cam = GS.replayOn ? (GS.cam + 1) % 3 : (GS.cam === 0 ? 3 : GS.cam === 3 ? 1 : GS.cam === 1 ? 2 : 0); GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
+    if (edge & K_C) { GS.cam = GS.replayOn ? (GS.cam + 1) % 3 : (GS.cam === 0 ? 3 : GS.cam === 3 ? 4 : GS.cam === 4 ? 1 : GS.cam === 1 ? 2 : 0); GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
     if (edge & K_R) { // devolve o carro à pista: no eixo, alinhado, parado
       const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0); GS.cut = true; GS.chaseInit = false;
     }
@@ -217,13 +240,19 @@ function gamePose() {
     GS.susp[i] = su; GS.spin[i] = V.pspin[i] + (V.spin[i] - V.pspin[i]) * al;
   }
   C.inp[0] = GS.steer; C.inp[1] = GS.steer * 14; C.place(B, GS.spin, GS.susp);
-  const bp = objParams(C.slotBody), k = GS.keys; bp[0] = ((k & K_S) && V.gear !== 0) || ((k & K_W) && V.gear === 0) ? 1 : 0; bp[1] = V.gear === 0 ? 1 : 0; bp[2] = 1;
+  if (C.setDriverVis) C.setDriverVis(GS.freeCam || GS.cam !== 4);
+  const bp = objParams(C.slotBody), k = GS.keys;
+  bp[0] = ((k & K_S) && V.gear !== 0) || ((k & K_W) && V.gear === 0) ? 1 : 0;
+  bp[1] = V.gear === 0 ? 1 : 0;
+  bp[2] = GS.lightsOn ? 1 : 0;
+  bp[3] = GS.hazardOn ? (((RT[0] * 3.2) | 0) & 1) : 0;
+  carApplyPaint(C.slotBody, GS.paintIdx, GS.carIdx !== undefined ? GS.carIdx : 0);
   for (let i = 0; i < 4; i++) { const w = V.omega[i]; objParams(C.slotWheel[i])[0] = w < 0 ? -w : w; }
   FR.data.set(B, FO.carMat); m4inv(T, B); FR.data.set(T, FO.carInv);
   // rodas: a matriz anterior passa a ser a roda atual levada pelo deslocamento rígido da carroceria (anterior × atual⁻¹).
   // Assim o desfoque de movimento não espalha o pneu pelo asfalto por causa do giro; a rotação é mostrada pelo material.
   if (C.slotWheel[0] !== C.slotBody) { const D2 = GS.tmp2; m4mul(D2, objPrev(C.slotBody), T); for (let i = 0; i < 4; i++) m4mul(objPrev(C.slotWheel[i]), D2, objModel(C.slotWheel[i])); }
-  const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = 0;
+  const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = bp[2];
   f[FO.car2] = (GS.tick60 < 30 && GS.speed < 0.5) ? 1 : 0;   // luzes de largada: acesas só enquanto o carro espera no grid
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
   if (typeof ghPose === 'function') ghPose();
@@ -260,6 +289,18 @@ function gameCamera() {
       q[0] = B[0] * -2.0 + B[4] * 1.05 + B[12]; q[1] = B[1] * -2.0 + B[5] * 1.05 + B[13]; q[2] = B[2] * -2.0 + B[6] * 1.05 + B[14];
       q[3] = B[0] * -9 + B[4] * 0.6 + B[12]; q[4] = B[1] * -9 + B[5] * 0.6 + B[13]; q[5] = B[2] * -9 + B[6] * 0.6 + B[14]; q[7] = -q[7];
     }
+  } else if (GS.cam === 4) {
+    // cockpit: nos olhos do motorista, vendo painel, volante e capô
+    const B = GS.body, C = carObj(), ep = C.eyePos;
+    const ex0 = ep ? ep[0] : -0.10, ey0 = ep ? ep[1] : 1.175, ez0 = ep ? ep[2] : -0.355;
+    const tx0 = lb < 0 ? -6.0 : 4.5, ty0 = lb < 0 ? 1.05 : 0.96, tz0 = lb < 0 ? 0.0 : -0.355;
+    q[0] = B[0] * ex0 + B[4] * ey0 + B[8] * ez0 + B[12];
+    q[1] = B[1] * ex0 + B[5] * ey0 + B[9] * ez0 + B[13];
+    q[2] = B[2] * ex0 + B[6] * ey0 + B[10] * ez0 + B[14];
+    q[3] = B[0] * tx0 + B[4] * ty0 + B[8] * tz0 + B[12];
+    q[4] = B[1] * tx0 + B[5] * ty0 + B[9] * tz0 + B[13];
+    q[5] = B[2] * tx0 + B[6] * ty0 + B[10] * tz0 + B[14];
+    q[6] = 1.02; q[7] = -(V.gRoll + V.roll) * 0.8 * lb;
   } else {
     // TV: câmera fixa à beira da pista mais próxima à frente do carro, com lente longa
     let best = GS.tvCur, bd = 1e9; const n = GS.tvN, TV = GS.tvData;
@@ -272,6 +313,7 @@ function gameCamera() {
     const k = 1 - Math.exp(-dt * 16); GS.tvAim[0] += (ax - GS.tvAim[0]) * k; GS.tvAim[1] += (ay - GS.tvAim[1]) * k; GS.tvAim[2] += (az - GS.tvAim[2]) * k; GS.tvFov += (fov - GS.tvFov) * (1 - Math.exp(-dt * 3));
     q[0] = tx; q[1] = ty; q[2] = tz; q[3] = GS.tvAim[0]; q[4] = GS.tvAim[1]; q[5] = GS.tvAim[2]; q[6] = GS.tvFov; q[7] = 0;
   }
+  const C = carObj(); if (C.setDriverVis) C.setDriverVis(GS.cam !== 4);
   // sombras: com a lente longa da TV, as cascatas acompanham o carro
   R.casc.focusOn = GS.cam === 2; if (R.casc.focusOn) { R.casc.focus[0] = GS.cx; R.casc.focus[1] = GS.cy + 0.6; R.casc.focus[2] = GS.cz; }
   setCameraQ();

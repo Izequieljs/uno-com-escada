@@ -156,6 +156,27 @@ struct LOut { @location(0) col: vec4f }
   if (coat > 0.0) { envC = mix(vec3f(lum(envC)), envC, 0.6); col += envC * min(fSchlick1(0.08, nv), 0.26) * coat * mix(specOcc, 1.0, 0.5) * 1.4; }
   // emissivo
   col += albedo * (m.z * m.z) * 16.0;
+  // faróis do carro (F.car.w > 0.5): dois cones branco-quentes projetados à frente do para-choque
+  if (F.car.w > 0.5) {
+    let cp = (F.carInv * vec4f(wp, 1.0)).xyz;
+    if (cp.x > 1.85 && cp.x < 52.0) {
+      let ln = normalize((F.carInv * vec4f(N, 0.0)).xyz);
+      let aim = normalize(vec3f(1.0, -0.055, 0.0));
+      let fadeX = smoothstep(1.85, 2.45, cp.x) * (1.0 - smoothstep(28.0, 52.0, cp.x));
+      var hAcc = 0.0;
+      for (var i = 0; i < 2; i++) {
+        let lp0 = vec3f(1.85, 0.68, select(-0.48, 0.48, i == 1));
+        let dv = cp - lp0;
+        let distH = length(dv);
+        let dirL = dv / max(distH, 0.05);
+        let cone = smoothstep(0.76, 0.96, dot(dirL, aim));
+        let attD = 1.0 / (1.0 + 0.04 * distH + 0.004 * distH * distH);
+        let face = max(sat(dot(ln, -dirL)), 0.22 * sat(ln.y));
+        hAcc += cone * attD * face;
+      }
+      col += vec3f(1.0, 0.92, 0.76) * 20.0 * F.car.w * fadeX * hAcc * (dif + spec * 0.35);
+    }
+  }
   // névoa
   let dir = -V; let od = fogOD(F.camPos.xyz, dir, dist); let T = exp(-od);
   let nearD = min(dist, VOL_DIST); let Tn = exp(-fogOD(F.camPos.xyz, dir, nearD));

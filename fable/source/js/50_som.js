@@ -3,7 +3,7 @@
 // partir de 16 controles inteiros tirados da simulação (sndControl). Nenhuma alocação por bloco de áudio nem por quadro.
 //
 // Controles (inteiros; no jogo viajam como AudioParams de taxa k, um número por bloco):
-//  0 bits: 1 = jogo andando (0 = pausa: a saída some e o estado congela), 2 = mudo, 4/8 = câmera (0 perseguição, 1 capô, 2 TV)
+//  0 bits: 1 = jogo andando (0 = pausa: a saída some e o estado congela), 2 = mudo, 4/8/16 = câmera (0..4; 4 = cockpit), 32 = buzina
 //  1 giro (rpm)   2 acelerador ×1000   3 marcha (0 = ré)   4 velocidade do carro (cm/s)
 //  5/6 canto de pneu esquerdo/direito ×1000   7 rodas na grama/brita ×1000   8 rodas na zebra ×1000
 //  9 distância do ouvinte ao carro (dm)   10 fator Doppler ×10000   11 velocidade do ouvinte (cm/s)
@@ -20,7 +20,7 @@ function sndCore(sr) {
   const L2 = mk(), R2 = mk(), L4 = mk(), R4 = mk(), L5 = mk(), R5 = mk();   // barramentos estéreo: vento, ambiente, público
   const CG = new Float64Array([1, 0.8, 0.92, 0.74]);  // cilindros desiguais: dão as meias-ordens (o "ronco" de quatro cilindros)
   // ganhos dos ressonadores do motor por câmera: [direto, 105, 235, 470, 980, 2100 Hz, admissão, tuchos]
-  const VG = new Float64Array([0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.4, 0.55, 0.7, 0.85, 0.7, 0.42, 0.7, 0.3, 0.45, 0.8, 0.8, 0.7, 0.55, 0.32, 0.4, 0.1, 0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06]);
+  const VG = new Float64Array([0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.4, 0.55, 0.7, 0.85, 0.7, 0.42, 0.7, 0.3, 0.45, 0.8, 0.8, 0.7, 0.55, 0.32, 0.4, 0.1, 0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.55, 1.15, 0.95, 0.75, 0.52, 0.28, 0.82, 0.22]);
   const kc = t => 1 - Math.exp(-NC / (sr * t)), K8 = kc(0.008), K20 = kc(0.02), K50 = kc(0.05), K200 = kc(0.2), K30 = kc(0.03);
   const fset = (k, hz, Q, g) => { F[3 * k] = 2 * Math.sin(PI * Math.min(hz, sr * 0.16) / sr); F[3 * k + 1] = 1 / Q; F[3 * k + 2] = g; };
   // filtros fixos
@@ -40,7 +40,7 @@ function sndCore(sr) {
   fset(33, 20, 0.7, 1);                               // tira o nível contínuo que a saturação do motor cria
   // índices do estado
   const MG = 0, RP = 1, LD = 2, FP = 3, AMP = 4, CYL = 5, GP = 6, SHT = 7, DG = 8, DP = 9, SPD = 10, SQ = 11, SQP = 13, SQJ = 15, LSP = 17, GUST = 18, LOO = 19, KRB = 20, KPH = 21,
-    CRW = 22, CPN = 23, HIT = 24, HITE = 25, CLK = 26, TM = 27, CRE = 28, VGS = 32, NEXT = 40, BV = 44, FOL = 41, SQA = 100, SQW = 102;
+    CRW = 22, CPN = 23, HIT = 24, HITE = 25, CLK = 26, TM = 27, CRE = 28, HRN = 29, HP1 = 30, HP2 = 31, VGS = 32, NEXT = 40, BV = 44, FOL = 41, SQA = 100, SQW = 102;
   // estado inicial (também usado para zerar o sintetizador depois do aquecimento)
   function reset() { st.fill(0, 0, PH0); Z.fill(0); BI.fill(0); ctl.fill(0); RS[0] = 0x2F6E2B1; RS[1] = 0x1B873593; st[RP] = 900; st[DG] = 1; st[DP] = 1; st[GP] = 1; st[NEXT] = sr * 0.7; for (let k = 0; k < 8; k++) st[VGS + k] = VG[k]; }
   reset();
@@ -80,7 +80,7 @@ function sndCore(sr) {
     }
   }
   function chunk(m) {
-    const fl = ctl[0] | 0, view = (fl >> 2) & 3, on = (fl & 3) === 1 ? 1 : 0, mg0 = st[MG];
+    const fl = ctl[0] | 0, vRaw = (fl >> 2) & 7, view = vRaw > 4 ? 4 : vRaw, on = (fl & 3) === 1 ? 1 : 0, mg0 = st[MG];
     if (!on && mg0 < 2e-4) { st[MG] = 0; oL.fill(0); oR.fill(0); return; }   // pausa ou mudo: saída exatamente zero, estado congelado
     const mg1 = mg0 + (on - mg0) * K8 * 1.6; st[MG] = mg1;
     noise(wA); noise(wB);
@@ -89,14 +89,18 @@ function sndCore(sr) {
     if (gear !== st[GP]) { if (gear > 0 && st[GP] > 0) st[SHT] = 0.21 * sr; st[CLK] = 1; st[GP] = gear; }
     const sht = st[SHT]; if (sht > 0) st[SHT] = sht - m;
     const rp = st[RP] += ((ctl[1] < 600 ? 600 : ctl[1]) - st[RP]) * (sht > 0 ? K50 : K20 * 1.3);
-    const ld = st[LD] += ((sht > 0 ? 0.04 : ctl[2] * 0.001) - st[LD]) * (sht > 0 ? K8 * 2 : K20);
+    const rawLd = ctl[2] < 0 ? 0 : ctl[2] > 1400 ? 1.4 : ctl[2] * 0.001;
+    const ld = st[LD] += ((sht > 0 ? 0.04 : rawLd) - st[LD]) * (sht > 0 ? K8 * 2 : K20);
     const dp = st[DP] += (ctl[10] * 1e-4 - st[DP]) * K50, dist = ctl[9] * 0.1;
     const dg = st[DG] += (Math.pow(9 / (9 + (dist > 7 ? dist - 7 : 0)), 0.85) - st[DG]) * K20;
     const spd = st[SPD] += (ctl[4] * 0.01 - st[SPD]) * K20, lsp = st[LSP] += (ctl[11] * 0.01 - st[LSP]) * K50;
     for (let k = 0; k < 8; k++) st[VGS + k] += (VG[view * 8 + k] - st[VGS + k]) * K20;
     // ---- motor: um pulso de pressão por explosão (4 por ciclo de 2 voltas), largura em tempo fixo → formantes fixos
-    const fc = rp / 30 * dp / sr, ifc = 1 / fc; let tp = (0.0035 - 0.0027 * ld) * sr; if (tp > 0.85 * ifc) tp = 0.85 * ifc;
-    const itp = 1 / tp, itk = 1 / (0.0007 * sr), idle = rp < 2500 ? (2500 - rp) / 1600 : 0, jit = 0.07 + (0.22 * (1 - ld) + 0.1) * idle + 0.1 * (1 - ld);
+    const fc = rp / 30 * dp / sr, ifc = 1 / fc;
+    let tp = (0.0035 - 0.0027 * (ld > 1 ? 1 + (ld - 1) * 0.25 : ld)) * sr;
+    if (tp < 0.0004 * sr) tp = 0.0004 * sr;
+    if (tp > 0.85 * ifc) tp = 0.85 * ifc;
+    const itp = 1 / tp, itk = 1 / (0.0007 * sr), idle = rp < 2500 ? (2500 - rp) / 1600 : 0, ldm = ld > 1 ? 1 : ld, jit = 0.07 + (0.22 * (1 - ldm) + 0.1) * idle + 0.1 * (1 - ldm);
     let fp = st[FP], amp = st[AMP], cyl = st[CYL] | 0;
     for (let i = 0; i < m; i++) {
       fp += fc; if (fp >= 1) { fp -= 1; cyl = (cyl + 1) & 3; amp = CG[cyl] * (1 + jit * (rnd16() / 32768 - 1)); }
@@ -128,7 +132,7 @@ function sndCore(sr) {
     // ---- barramento do carro visto do ouvinte: absorção do ar com a distância
     const air = 15000 / (1 + dist * 0.02); F[90] = F[93] = 2 * Math.sin(PI * (air < sr * 0.16 ? air : sr * 0.16) / sr);
     // ---- vento (velocidade do ouvinte) e rodagem (velocidade do carro)
-    const gust = st[GUST] += ((rnd16() / 65536) - st[GUST]) * 0.004, wv = lsp / 42, wg = wv * wv * (0.7 + 0.6 * gust) * (view === 1 ? 0.85 : 0.6), wf = 2 * Math.sin(PI * (260 + 21 * lsp) / sr);
+    const gust = st[GUST] += ((rnd16() / 65536) - st[GUST]) * 0.004, wv = lsp / 42, wg = wv * wv * (0.7 + 0.6 * gust) * (view === 1 ? 0.85 : view === 4 ? 0.28 : 0.6), wf = 2 * Math.sin(PI * (260 + 21 * lsp) / sr);
     F[30] = F[33] = wf; F[32] = F[35] = wg;
     svf(wA, L2, m, 10, 1, 0); svf(wB, R2, m, 11, 1, 0);
     const rv = spd / 40; F[36] = 2 * Math.sin(PI * (130 + 9 * spd) / sr); F[38] = Math.pow(rv, 1.3) * 0.5 * dg;
@@ -170,13 +174,32 @@ function sndCore(sr) {
       const dn = 0.0035 * (0.4 + sw); for (let i = 0; i < m; i++) t1[i] = wA[i] < -1 + dn ? 9 * (0.3 + wB[i] * wB[i]) : 0;
       svf(t1, t2, m, 29, 1, 0); for (let i = 0; i < m; i++) { L5[i] += t2[i] * gl; R5[i] += t2[i] * gr; }
     } else { L5.fill(0); R5.fill(0); }
-    // ---- mistura, absorção do ar no barramento do carro, limitador suave
-    const m0 = mix[0], m1 = mix[1], m2 = mix[2], m3 = mix[3], m4 = mix[4] * AMB, m5 = mix[5] * AMB, near = view === 1 ? 1.25 : 1;
+    // ---- mistura, absorção do ar no barramento do carro, buzina bitonal, limitador suave
+    const m0 = mix[0], m1 = mix[1], m2 = mix[2], m3 = mix[3], m4 = mix[4] * AMB, m5 = mix[5] * AMB, near = view === 1 ? 1.25 : view === 4 ? 1.15 : 1;
     for (let i = 0; i < m; i++) { const e = eg[i] * m0 * near, c = cb[i] * m3; t1[i] = e + c + (sL[i] * 0.85 + sR[i] * 0.4) * m1; t2[i] = e + c + (sL[i] * 0.4 + sR[i] * 0.85) * m1; }
     svf(t1, t1, m, 30, 0, 0); svf(t2, t2, m, 31, 0, 0);
+    const hornOn = (fl & 32) !== 0 ? 1 : 0; let hrn = st[HRN], hornAct = 0;
+    if (hornOn || hrn > 1e-4) {
+      hornAct = 1;
+      hrn += (hornOn - hrn) * (hornOn ? K8 * 2 : K20);
+      if (!hornOn && hrn < 1e-4) hrn = 0;
+      st[HRN] = hrn;
+      const dpH = dp > 0.2 ? dp : 1, f1 = 415 * dpH / sr, f2 = 500 * dpH / sr, hg = hrn * dg * (view === 4 ? 0.18 : 0.26);
+      let hp1 = st[HP1], hp2 = st[HP2];
+      for (let i = 0; i < m; i++) {
+        hp1 += f1; if (hp1 >= 1) hp1 -= 1;
+        hp2 += f2; if (hp2 >= 1) hp2 -= 1;
+        const a1 = 6.283185307 * hp1, a2 = 6.283185307 * hp2;
+        const w1 = Math.sin(a1) + 0.32 * Math.sin(2 * a1) + 0.16 * Math.sin(3 * a1) + 0.06 * Math.sin(4 * a1);
+        const w2 = Math.sin(a2) + 0.32 * Math.sin(2 * a2) + 0.16 * Math.sin(3 * a2) + 0.06 * Math.sin(4 * a2);
+        ex[i] = (w1 + w2) * 0.5 * hg;
+      }
+      st[HP1] = hp1; st[HP2] = hp2;
+    }
     const dm = (mg1 - mg0) / m;
     for (let i = 0; i < m; i++) {
-      const g = mg0 + dm * (i + 1); let l = (t1[i] + L2[i] * m2 + L4[i] * m4 + L5[i] * m5) * g, r = (t2[i] + R2[i] * m2 + R4[i] * m4 + R5[i] * m5) * g;
+      const g = mg0 + dm * (i + 1), hi = hornAct ? ex[i] : 0;
+      let l = (t1[i] + hi + L2[i] * m2 + L4[i] * m4 + L5[i] * m5) * g, r = (t2[i] + hi + R2[i] * m2 + R4[i] * m4 + R5[i] * m5) * g;
       let a = l < 0 ? -l : l; if (a > 0.55) { a = 0.55 + (a - 0.55) / (1 + (a - 0.55) / 0.42); l = l < 0 ? -a : a; }
       a = r < 0 ? -r : r; if (a > 0.55) { a = 0.55 + (a - 0.55) / (1 + (a - 0.55) / 0.42); r = r < 0 ? -a : a; }
       oL[i] = l * VOL; oR[i] = r * VOL;
@@ -212,7 +235,8 @@ function sndControl() {
   // público: distância do ouvinte ao eixo da arquibancada e de que lado ela fica
   const A = SND.stand, bx = A[2] - A[0], bz = A[3] - A[1]; let t = ((cp[0] - A[0]) * bx + (cp[2] - A[1]) * bz) / (bx * bx + bz * bz); t = t < 0 ? 0 : t > 1 ? 1 : t;
   const px = A[0] + bx * t - cp[0], pz = A[1] + bz * t - cp[2], pd = Math.sqrt(px * px + pz * pz) + 0.01, fw = cam.fwd, fl = Math.sqrt(fw[0] * fw[0] + fw[2] * fw[2]) + 1e-6;
-  c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | (view << 2);
+  const horn = (typeof K_HORN !== 'undefined' && (GS.keys & K_HORN)) ? 32 : 0;
+  c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | ((view & 7) << 2) | horn;
   c[1] = V.rpm; c[2] = V.ctl[0] * 1000; c[3] = V.gear; c[4] = sp * 100; c[5] = sl * 1000; c[6] = sr * 1000; c[7] = loose * kv * 1000; c[8] = kerb * kv * 1000;
   c[9] = dist * 10; c[10] = dop * 10000; c[11] = lsp * 100; c[12] = 1000 / (1 + pd * pd / 2025); c[13] = (px * -fw[2] + pz * fw[0]) / (pd * fl) * 1000; c[14] = V.hits & 1023;
 }
@@ -228,7 +252,7 @@ function sndStart() {
   if (!ctx.audioWorklet) { fallback(); return; }
   // (o construtor do processador roda ~4 s de áudio com controles variados e zera o estado: o V8 otimiza o sintetizador
   // antes do primeiro bloco de verdade, em vez de passar o primeiro segundo no interpretador, alocando)
-  const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;for(let i=0;i<1600;i++){c[0]=1|((i>>8)&3)<<2;c[1]=900+i*37%5600;c[2]=i*13%1001;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
+  const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;for(let i=0;i<1600;i++){c[0]=1|((((i>>7)%5)&7)<<2)|((i&64)?32:0);c[1]=900+i*37%5600;c[2]=i*13%1401;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
   // O módulo vai por URL data: — aberto como arquivo (file://) a página tem origem opaca e o Chrome recusa módulo por URL blob:.
   // Se o navegador recusar data:, tenta blob:; se não houver worklet de jeito nenhum, cai no ScriptProcessor.
   const mod = u => ctx.audioWorklet.addModule(u);
@@ -244,7 +268,7 @@ function sndFrame() {
   const P = SND.P; if (!P) return; const c = SND.sc, l = SND.last;
   for (let i = 0; i < 16; i++) { const v = c[i]; if (v !== l[i]) { l[i] = v; P[i].value = v; } }
 }
-function sndFlags() { const c = SND.sc; c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | (c[0] & 12); if (SND.P) { SND.P[0].value = c[0]; SND.last[0] = c[0]; } }
+function sndFlags() { const c = SND.sc; c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | (c[0] & 60); if (SND.P) { SND.P[0].value = c[0]; SND.last[0] = c[0]; } }
 // pausa (menu) e retomada: o sintetizador some em poucos milissegundos e o contexto de áudio é suspenso em seguida
 function sndRun(on) {
   SND.run = on; if (!SND.ctx) return; sndFlags();
