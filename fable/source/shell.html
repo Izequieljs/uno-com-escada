@@ -17,33 +17,47 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 #tag{left:50%;bottom:2.2vh;transform:translateX(-50%);padding:.45em 1.1em;border-radius:1.2em;background:rgba(9,11,14,.62);color:#fff;white-space:nowrap}
 #ui{inset:0;pointer-events:auto;align-items:center;justify-content:center;background:rgba(6,8,10,.62);font-size:clamp(11px,1.72vh,17px)}
 #ui.ini{background:linear-gradient(rgba(6,8,10,.5),rgba(6,8,10,.82))}
-#ui>div{max-width:94vw;max-height:96vh;overflow:auto;padding:1.4em 2.2em;box-sizing:border-box;text-align:center}
-#ui h1{margin:0;font-size:3.1em;line-height:1.1;letter-spacing:.02em;color:#fff}
-#ui .sub{margin:.3em 0 1.3em;opacity:.8;letter-spacing:.12em;text-transform:uppercase;font-size:.9em}
-#ui h2{margin:0 0 .5em;font-size:1.05em;letter-spacing:.1em;text-transform:uppercase;color:#ff8a6a}
-#ui .cols{display:flex;gap:3.2em;justify-content:center;flex-wrap:wrap;text-align:left}
+#ui>div{max-width:94vw;max-height:96vh;overflow:auto;padding:1.1em 2.1em;box-sizing:border-box;text-align:center}
+#ui h1{margin:0;font-size:2.85em;line-height:1.1;letter-spacing:.02em;color:#fff}
+#ui .sub{margin:.25em 0 .9em;opacity:.8;letter-spacing:.12em;text-transform:uppercase;font-size:.9em}
+#ui h2{margin:0 0 .45em;font-size:1.02em;letter-spacing:.1em;text-transform:uppercase;color:#ff8a6a}
+#ui .cols{display:flex;gap:3em;justify-content:center;flex-wrap:wrap;text-align:left}
 #ui table{border-collapse:collapse}
-#ui td,#ui th{padding:.13em .7em .13em 0;font-weight:400;text-align:left}
+#ui td,#ui th{padding:.12em .7em .12em 0;font-weight:400;text-align:left}
 #ui td:first-child{color:#fff;font-weight:600;white-space:nowrap;padding-right:1.3em}
-#med{margin:0 0 1.1em;font-size:.9em;color:rgba(255,255,255,.72)}
+#med{margin:0 0 .85em;font-size:.9em;color:rgba(255,255,255,.72)}
 #med .on{font-weight:700;padding:.14em .55em;border-radius:.8em;background:rgba(255,255,255,.11);border:1px solid currentColor}
-#res{display:none;margin:0 0 1.4em;padding:1em 1.4em;border-radius:.8em;background:rgba(255,255,255,.07)}
-#res table{margin:0 auto}#res th,#res td{padding:.2em 1.1em;text-align:right}#res td{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}#res p{margin:.7em 0 0}
-#ui .bt{margin-top:1.5em}
-#ui button{font:inherit;font-size:1.15em;font-weight:600;color:#fff;background:#d8351c;border:0;border-radius:.5em;padding:.6em 2em;margin:0 .4em;cursor:pointer}
-#ui button+button{background:rgba(255,255,255,.16)}
+#cfg{display:flex;flex-wrap:wrap;gap:.45em 1.3em;justify-content:center;align-items:center;margin:0 0 1em;padding:.6em .95em;border-radius:.8em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+#cfg .cg{display:flex;align-items:center;gap:.35em;flex-wrap:wrap;justify-content:center}
+#cfg .cl{font-size:.78em;letter-spacing:.09em;text-transform:uppercase;color:#ff8a6a;font-weight:700;margin-right:.2em}
+#cfg button{font:inherit;font-size:.86em;font-weight:600;color:rgba(255,255,255,.82);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:99em;padding:.24em .78em;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+#cfg button:hover{background:rgba(255,255,255,.2);color:#fff}
+#cfg button.on{background:#d8351c;border-color:#ff7b61;color:#fff}
+#cfg button.sw{width:1.45em;height:1.45em;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.35)}
+#cfg button.sw.on{border-color:#fff;box-shadow:0 0 0 2px #d8351c;transform:scale(1.12)}
+#res{display:none;margin:0 0 1.1em;padding:.9em 1.3em;border-radius:.8em;background:rgba(255,255,255,.07)}
+#res table{margin:0 auto}#res th,#res td{padding:.2em 1.1em;text-align:right}#res td{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}#res tr.me td{color:#ffd23f}#res p{margin:.7em 0 0}
+#ui .bt{margin-top:1.2em}
+#ui .bt button{font:inherit;font-size:1.15em;font-weight:600;color:#fff;background:#d8351c;border:0;border-radius:.5em;padding:.6em 2em;margin:0 .4em;cursor:pointer}
+#ui .bt button+button{background:rgba(255,255,255,.16)}
 #ui button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="msg">carregando…</div>
-<div id="hint">W acelera · S freia/ré · A/D faz curvas · Espaço freio de mão · C câmera · R volta à pista</div>
+<div id="hint">W acelera · S freia/ré · A/D faz curvas · Espaço freio de mão · Shift turbo · E buzina · L faróis · C câmera · R volta à pista</div>
 <canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas><canvas id="hm"></canvas><div id="tag"></div>
 <div id="ui"><div>
-<h1>Uno com escada</h1>
-<p class="sub">Fiat Uno Mille EP 1996 · circuito</p>
+<h1 id="tit">Uno com escada</h1>
+<p class="sub" id="sub">Fiat Uno Mille EP 1996 · circuito</p>
 <div id="med"></div>
+<div id="cfg">
+<div class="cg"><span class="cl">Modo</span><button type="button" data-mode="0">Volta Livre</button><button type="button" data-mode="1">Corrida (3 voltas)</button></div>
+<div class="cg"><span class="cl">Carro</span><button type="button" data-car="0">Uno Mille EP (escada)</button><button type="button" data-car="1">Gol Quadrado AP 1.8</button></div>
+<div class="cg"><span class="cl">Pintura</span><button type="button" class="sw" data-paint="0" title="Azul Metálico" aria-label="Azul Metálico" style="background:#728fae"></button><button type="button" class="sw" data-paint="1" title="Branco de Firma" aria-label="Branco de Firma" style="background:#e2e3e0"></button><button type="button" class="sw" data-paint="2" title="Vermelho Flash" aria-label="Vermelho Flash" style="background:#bf352f"></button><button type="button" class="sw" data-paint="3" title="Prata Lunar" aria-label="Prata Lunar" style="background:#c2c5c8"></button><button type="button" class="sw" data-paint="4" title="Cinza Chumbo" aria-label="Cinza Chumbo" style="background:#5c6066"></button><button type="button" class="sw" data-paint="5" title="Vinho Clássico" aria-label="Vinho Clássico" style="background:#86293c"></button></div>
+<div class="cg"><span class="cl">Clima</span><button type="button" data-env="0">Sol</button><button type="button" data-env="1">Pôr do Sol</button><button type="button" data-env="2">Pista Molhada</button></div>
+</div>
 <div id="res"></div>
 <div class="cols">
 <div><h2>Teclado</h2><table>
@@ -51,6 +65,10 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <tr><td>S ou ↓</td><td>freia e dá ré</td></tr>
 <tr><td>A D ou ← →</td><td>faz curvas</td></tr>
 <tr><td>Espaço</td><td>freio de mão</td></tr>
+<tr><td>Shift</td><td>turbo</td></tr>
+<tr><td>E (segurar)</td><td>buzina</td></tr>
+<tr><td>L</td><td>faróis</td></tr>
+<tr><td>K</td><td>pisca-alerta</td></tr>
 <tr><td>C</td><td>troca a câmera</td></tr>
 <tr><td>V (segurar)</td><td>olha para trás</td></tr>
 <tr><td>R</td><td>devolve o carro à pista</td></tr>
@@ -61,6 +79,8 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <tr><td>Gatilho esquerdo</td><td>freia e dá ré</td></tr>
 <tr><td>Analógico esquerdo</td><td>faz curvas</td></tr>
 <tr><td>A</td><td>freio de mão</td></tr>
+<tr><td>B</td><td>turbo</td></tr>
+<tr><td>L3</td><td>buzina</td></tr>
 <tr><td>Y</td><td>troca a câmera</td></tr>
 <tr><td>RB (segurar)</td><td>olha para trás</td></tr>
 <tr><td>X</td><td>devolve o carro à pista</td></tr>

@@ -1,8 +1,11 @@
-// Interface do jogo aberto por uma pessoa (GAME.ui): tela de início, pausa, benchmark, volta roteirizada para assistir,
+// Interface do jogo aberto por uma pessoa (GAME.ui): tela de início, pausa, seletores, benchmark, volta roteirizada para assistir,
 // poses, teclas de ferramenta e leitura do controle. Nas ferramentas de trabalho/ (captura, poses, teste, medição) nada
 // disto é ligado: sem menu, sem painel, sem som.
 const ST = { INICIO: 0, JOGO: 1, PAUSA: 2, BENCH: 3, FITA: 4, RESULT: 5, POSE: 6 };
-const UI = { st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, med: null, b0: null, b1: null, bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false };
+const UI = {
+  st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, med: null, cfg: null, tit: null, sub: null, b0: null, b1: null,
+  bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false, raceDone: false,
+};
 const MED_UI = [
   { nome: 'Firma', tempo: '0:53,50', cor: '#4be3ff', sym: '★' },
   { nome: 'Ouro',  tempo: '0:56,00', cor: '#ffd23f', sym: '●' },
@@ -10,16 +13,190 @@ const MED_UI = [
   { nome: 'Bronze', tempo: '1:06,00', cor: '#cd7f32', sym: '●' },
 ];
 const $ = id => document.getElementById(id);
+function uiPaintCss(rgb) {
+  let s = 'rgb(';
+  for (let c = 0; c < 3; c++) {
+    const v = rgb[c] <= 0.0031308 ? 12.92 * rgb[c] : 1.055 * Math.pow(rgb[c], 1 / 2.4) - 0.055;
+    s += (c ? ',' : '') + Math.max(0, Math.min(255, Math.round(v * 255)));
+  }
+  return s + ')';
+}
+function uiFmtTime(sec) {
+  const cs = Math.max(0, Math.round(sec * 100));
+  const m = (cs / 6000) | 0, s = ((cs / 100) | 0) % 60, c = cs % 100;
+  return m + ':' + (s < 10 ? '0' : '') + s + ',' + (c < 10 ? '0' : '') + c;
+}
+function uiSetBtn(btn, on) {
+  if (btn.classList) { btn.classList.toggle('on', on); return; }
+  const sw = btn.hasAttribute && btn.hasAttribute('data-paint');
+  btn.className = sw ? (on ? 'sw on' : 'sw') : (on ? 'on' : '');
+}
+function uiSavePrefs() {
+  try {
+    localStorage.setItem('uno-prefs-v1', JSON.stringify({
+      raceMode: typeof GS !== 'undefined' && !!GS.raceMode,
+      carIdx: typeof GS !== 'undefined' && GS.carIdx ? 1 : 0,
+      paintIdx: typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0,
+      envIdx: typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0,
+    }));
+  } catch (e) { /* sem armazenamento local */ }
+}
+function uiRenderMed() {
+  if (!UI.med) return;
+  if (typeof GS !== 'undefined' && GS.raceMode) {
+    const laps = typeof RACE_LAPS !== 'undefined' ? RACE_LAPS : 3;
+    UI.med.innerHTML = 'Corrida de ' + laps + ' voltas · Grid com 3 rivais (largada em 4º)';
+    return;
+  }
+  const cs = LAP[2] > 0 ? Math.round(LAP[2] * 100) : 0;
+  const m = typeof medalOf === 'function' ? medalOf(cs) : -1;
+  let html = '';
+  for (let i = 0; i < MED_UI.length; i++) {
+    const d = MED_UI[i], hit = i === m;
+    if (i > 0) html += ' · ';
+    html += '<span' + (hit ? ' class="on" data-hit="1" style="color:' + d.cor + '"' : ' style="opacity:.78"') + '>' +
+      '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + d.tempo + '</span>';
+  }
+  UI.med.innerHTML = html;
+}
+function uiSyncCfg() {
+  const ci = typeof GS !== 'undefined' && GS.carIdx ? 1 : 0;
+  const pi = typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0;
+  const ei = typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0;
+  const rm = typeof GS !== 'undefined' && !!GS.raceMode;
+  if (UI.tit) UI.tit.textContent = ci ? 'Gol Quadrado' : 'Uno com escada';
+  if (UI.sub) UI.sub.textContent = ci ? 'VW Gol AP 1.8 1993 · circuito' : 'Fiat Uno Mille EP 1996 · circuito';
+  if (!UI.cfg || !UI.cfg.querySelectorAll) return;
+  const btns = UI.cfg.querySelectorAll('button');
+  for (let i = 0; i < btns.length; i++) {
+    const b = btns[i];
+    const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
+    if (dm !== null) { uiSetBtn(b, (+dm === 1) === rm); continue; }
+    const dc = b.getAttribute ? b.getAttribute('data-car') : null;
+    if (dc !== null) { uiSetBtn(b, +dc === ci); continue; }
+    const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
+    if (dp !== null) {
+      const idx = +dp | 0;
+      if (typeof PAINTS !== 'undefined' && PAINTS[idx]) {
+        b.title = PAINTS[idx].nome;
+        if (b.style) b.style.background = uiPaintCss(PAINTS[idx].rgb);
+      }
+      uiSetBtn(b, idx === pi);
+      continue;
+    }
+    const de = b.getAttribute ? b.getAttribute('data-env') : null;
+    if (de !== null) uiSetBtn(b, +de === ei);
+  }
+}
+function uiBindCfg() {
+  if (!UI.cfg || !UI.cfg.querySelectorAll) return;
+  const btns = UI.cfg.querySelectorAll('button');
+  for (let i = 0; i < btns.length; i++) {
+    const b = btns[i];
+    const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
+    if (dm !== null) {
+      b.onclick = () => {
+        const next = +dm === 1;
+        if (typeof GS !== 'undefined' && 'raceMode' in GS && GS.raceMode !== next) {
+          GS.raceMode = next;
+          if (UI.st === ST.PAUSA) UI.back = ST.JOGO;
+          if (GS.replayOn) GS.replayOn = false;
+          if (typeof gameRestart === 'function') gameRestart();
+        }
+        uiSavePrefs(); uiSyncCfg(); uiRenderMed();
+      };
+      continue;
+    }
+    const dc = b.getAttribute ? b.getAttribute('data-car') : null;
+    if (dc !== null) {
+      b.onclick = () => {
+        const next = +dc === 1 ? 1 : 0;
+        if (typeof GS !== 'undefined' && 'carIdx' in GS && GS.carIdx !== next) {
+          GS.carIdx = next;
+          if (typeof carSyncActive === 'function') carSyncActive(false);
+          if (UI.st === ST.PAUSA) UI.back = ST.JOGO;
+          if (GS.replayOn) GS.replayOn = false;
+          if (typeof gameRestart === 'function') gameRestart();
+          else if (typeof ghRestart === 'function') ghRestart();
+        }
+        uiSavePrefs(); uiSyncCfg(); uiRenderMed();
+      };
+      continue;
+    }
+    const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
+    if (dp !== null) {
+      b.onclick = () => {
+        const next = +dp | 0;
+        if (typeof GS !== 'undefined' && 'paintIdx' in GS) GS.paintIdx = next;
+        if (typeof carApplyPaint === 'function' && typeof CAR !== 'undefined' && CAR.slotBody) {
+          carApplyPaint(CAR.slotBody, next, CAR.bodyKind);
+        }
+        uiSavePrefs(); uiSyncCfg();
+      };
+      continue;
+    }
+    const de = b.getAttribute ? b.getAttribute('data-env') : null;
+    if (de !== null) {
+      b.onclick = () => {
+        const next = +de | 0;
+        if (typeof envApply === 'function') envApply(next);
+        if (typeof gamePose === 'function') gamePose();
+        uiSavePrefs(); uiSyncCfg();
+      };
+    }
+  }
+}
 function uiInit() {
-  UI.el = $('ui'); UI.tag = $('tag'); UI.res = $('res'); UI.med = $('med'); UI.b0 = $('b0'); UI.b1 = $('b1');
+  UI.el = $('ui'); UI.tag = $('tag'); UI.res = $('res'); UI.med = $('med'); UI.cfg = $('cfg');
+  UI.tit = $('tit') || (document.querySelector ? document.querySelector('#ui h1') : null);
+  UI.sub = $('sub') || (document.querySelector ? document.querySelector('#ui .sub') : null);
+  UI.b0 = $('b0'); UI.b1 = $('b1');
   hudInit(); uiWarmup();
   try {
-    const b = +localStorage.getItem('uno-melhor');
-    if (b > 20 && b < 600) LAP[2] = b;
-    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('uno-ta-v1'), LAP[2]);
+    const b0 = +localStorage.getItem('uno-melhor');
+    if (b0 > 20 && b0 < 600) {
+      if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[0] = b0;
+      if (typeof GS === 'undefined' || !GS.carIdx) LAP[2] = b0;
+    }
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('uno-ta-v1'), b0, 0);
+    const b1 = +localStorage.getItem('gol-melhor');
+    if (b1 > 20 && b1 < 600) {
+      if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[1] = b1;
+      if (typeof GS !== 'undefined' && GS.carIdx === 1) LAP[2] = b1;
+    }
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('gol-ta-v1'), b1, 1);
   } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
+  try {
+    const raw = localStorage.getItem('uno-prefs-v1');
+    if (raw) {
+      const pr = JSON.parse(raw);
+      if (pr && typeof pr === 'object' && typeof GS !== 'undefined') {
+        if (typeof pr.raceMode === 'boolean' && 'raceMode' in GS) GS.raceMode = pr.raceMode;
+        if (typeof pr.carIdx === 'number' && 'carIdx' in GS) GS.carIdx = pr.carIdx === 1 ? 1 : 0;
+        if (typeof pr.paintIdx === 'number' && typeof PAINTS !== 'undefined' && PAINTS.length) {
+          const pn = PAINTS.length;
+          GS.paintIdx = ((pr.paintIdx | 0) % pn + pn) % pn;
+        }
+        const activeOk = !GS.replayOn && !GS.poseOn;
+        if (typeof carSyncActive === 'function' && activeOk) carSyncActive(false);
+        if (typeof pr.envIdx === 'number' && typeof envApply === 'function' && typeof ENV !== 'undefined' && activeOk) {
+          const en = ENV.presets.length, ei = ((pr.envIdx | 0) % en + en) % en;
+          if (ei > 0 || ei !== ENV.idx) envApply(ei);
+        }
+        if (typeof gameRestart === 'function' && activeOk) gameRestart();
+      }
+    }
+  } catch (e) { /* ignora preferências inválidas */ }
+  uiBindCfg();
   UI.b0.onclick = () => { if (UI.st === ST.INICIO) { sndStart(); uiSet(ST.JOGO); } else uiResume(); };
-  UI.b1.onclick = () => benchStart();
+  UI.b1.onclick = () => {
+    if (UI.st === ST.RESULT && UI.raceDone) {
+      if (typeof GS !== 'undefined' && 'raceMode' in GS) GS.raceMode = false;
+      uiSavePrefs(); uiSyncCfg(); uiDrive();
+    } else {
+      benchStart();
+    }
+  };
   addEventListener('keydown', uiKey);
   document.addEventListener('visibilitychange', () => { if (document.hidden && (UI.st === ST.JOGO || UI.st === ST.FITA || UI.st === ST.BENCH)) uiPause(); });
   addEventListener('gamepadconnected', padCount); addEventListener('gamepaddisconnected', padCount);
@@ -29,22 +206,13 @@ function uiInit() {
 // troca de estado: mostra/esconde menu, painel e etiqueta, pausa/retoma o som
 function uiSet(st) {
   const menu = st === ST.INICIO || st === ST.PAUSA || st === ST.RESULT;
+  if (st !== ST.RESULT) UI.raceDone = false;
   UI.st = st; UI.el.style.display = menu ? 'flex' : 'none'; UI.el.className = st === ST.INICIO ? 'ini' : '';
-  UI.b0.textContent = st === ST.INICIO ? 'Começar' : st === ST.RESULT ? 'Voltar a dirigir' : 'Continuar';
-  UI.b1.style.display = st === ST.INICIO ? 'none' : ''; UI.b1.textContent = st === ST.RESULT ? 'Repetir benchmark' : 'Benchmark';
+  UI.b0.textContent = st === ST.INICIO ? 'Começar' : st === ST.RESULT ? (UI.raceDone ? 'Correr novamente' : 'Voltar a dirigir') : 'Continuar';
+  UI.b1.style.display = st === ST.INICIO ? 'none' : '';
+  UI.b1.textContent = st === ST.RESULT ? (UI.raceDone ? 'Volta livre' : 'Repetir benchmark') : 'Benchmark';
   UI.res.style.display = st === ST.RESULT ? 'block' : 'none';
-  if (menu && UI.med) {
-    const cs = LAP[2] > 0 ? Math.round(LAP[2] * 100) : 0;
-    const m = typeof medalOf === 'function' ? medalOf(cs) : -1;
-    let html = '';
-    for (let i = 0; i < MED_UI.length; i++) {
-      const d = MED_UI[i], hit = i === m;
-      if (i > 0) html += ' · ';
-      html += '<span' + (hit ? ' class="on" data-hit="1" style="color:' + d.cor + '"' : ' style="opacity:.78"') + '>' +
-        '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + d.tempo + '</span>';
-    }
-    UI.med.innerHTML = html;
-  }
+  if (menu) { uiSyncCfg(); uiRenderMed(); }
   UI.tag.textContent = st === ST.BENCH ? 'Benchmark: volta roteirizada de 60 s · Esc cancela' : st === ST.FITA ? 'Volta roteirizada · R assume o volante · Esc menu' : st === ST.POSE ? 'Pose ' + (UI.pose + 1) + ' · ' + POSES[UI.pose].nome + ' · 1 a 6 trocam · Esc volta a dirigir' : '';
   UI.tag.style.display = UI.tag.textContent ? 'block' : 'none';
   hudShow(st === ST.JOGO || st === ST.FITA || (st === ST.PAUSA && UI.back !== ST.BENCH));
@@ -73,6 +241,21 @@ function uiKey(e) {
   else if (c === 'KeyR' && st === ST.FITA) uiDrive();
   else if (c.length === 6 && c.startsWith('Digit') && c[5] >= '1' && c[5] <= '6') uiPose(+c[5] - 1);
 }
+function raceEnd() {
+  const ci = typeof GS !== 'undefined' && GS.carIdx ? 1 : 0;
+  const carName = typeof VEH_SPECS !== 'undefined' && VEH_SPECS[ci] ? VEH_SPECS[ci].name : (ci ? 'Gol Quadrado AP 1.8' : 'Uno Mille EP');
+  const laps = typeof RACE_LAPS !== 'undefined' ? RACE_LAPS : 3;
+  let rows = '';
+  for (let k = 0; k < 4; k++) {
+    const id = RIV.finishOrder[k], isMe = id === 0;
+    const nome = isMe ? ('Você (' + carName + ')') : (RIV.cars[id - 1] ? RIV.cars[id - 1].nome : ('Rival ' + id));
+    rows += '<tr' + (isMe ? ' class="me"' : '') + '><td>' + (k + 1) + 'º</td><td style="text-align:left">' + nome + '</td><td>' + uiFmtTime(RIV.finishTime[k]) + '</td></tr>';
+  }
+  UI.res.innerHTML = '<h2>Corrida encerrada · ' + laps + ' voltas · ' + RIV.playerRank + 'º lugar</h2>' +
+    '<table><tr><th>Pos.</th><th style="text-align:left">Piloto / Carro</th><th>Tempo</th></tr>' + rows + '</table>';
+  UI.raceDone = true;
+  uiSet(ST.RESULT);
+}
 // ---- benchmark: a volta roteirizada de 60 s em tempo real, sem painel, medindo tempo de quadro e (se houver) tempo de GPU
 function benchStart() {
   if (!GS.replay || UI.st === ST.INICIO) return;
@@ -81,7 +264,7 @@ function benchStart() {
 }
 function benchStop() { PERF.rec = false; perfAttach(UI.stats, 12); GS.replayOn = false; }
 function benchEnd() {
-  const id = UI.benchN; PERF.rec = false; uiSet(ST.RESULT);
+  const id = UI.benchN; PERF.rec = false; UI.raceDone = false; uiSet(ST.RESULT);
   setTimeout(() => {   // espera as últimas leituras de tempo de GPU chegarem
     if (id !== UI.benchN || UI.st !== ST.RESULT) return;
     const r = perfReport(), stat = a => { a = a.slice(5).filter(x => x > 0).sort((p, q) => p - q); const n = a.length; return n ? { n, media: a.reduce((p, q) => p + q, 0) / n, p99: a[Math.min(n - 1, Math.round(0.99 * (n - 1)))], max: a[n - 1], acima: a.filter(x => Math.round(x * 10) > 167).length } : null; };   // acima: quadros que passaram de 16,7 ms (na resolução de 0,1 ms do relógio)
@@ -114,6 +297,8 @@ function padApply() {
   PADV[2] = x;
   if (rt > 0.06) k |= K_W; if (lt > 0.06) k |= K_S;
   if (m & 1) k |= K_SPACE; if (m & 8) k |= K_C; if (m & 4) k |= K_R; if (m & 32) k |= K_V;
+  if (typeof K_BOOST !== 'undefined' && (m & 2)) k |= K_BOOST;
+  if (typeof K_HORN !== 'undefined' && (m & 1024)) k |= K_HORN;
   GS.padKeys = k;
   const edge = m & ~UI.padPrev; UI.padPrev = m;
   if (edge & 516) padMenu(edge);
@@ -137,10 +322,13 @@ function uiWarmup() {
     V[0] = (i * 7) % 2100; V[1] = (i * 13) % 7400; V[2] = j % 6; V[3] = (i * 331) % 70000; V[4] = i % 5 ? (i * 17) % 9000 : -1; V[5] = i % 3 ? (i * 19) % 9000 : -1;
     V[6] = dc === 0 ? -999999 : dc === 1 ? 0 : dc === 2 ? -245 : dc === 3 ? 245 : dc === 4 ? -1234 : 1234;
     V[7] = (j % 5) - 1; V[8] = 10 + (j % 80); V[9] = 10 + (j % 60); V[10] = j & 63; V[11] = j & 1; V[12] = 15 + (j % 70); V[13] = 15 + (j % 50);
+    V[14] = (i * 7) % 101; V[15] = (j >> 1) & 1; V[16] = j % 3 === 0 ? 1 : 0;
+    V[17] = 12 + (j % 70); V[18] = 12 + (j % 50); V[19] = 18 + (j % 60); V[20] = 18 + (j % 45); V[21] = 24 + (j % 50); V[22] = 24 + (j % 40);
+    V[23] = 1 + (j & 3); V[24] = 1 + (j % 3);
     hudDraw(); hudRead();
     RT[3] = 300 + i % 300; PERF.live[0] = i % 4 ? i % 40 : 0; hudStatsFrame();
   }
-  H.g = g; H.t = t; H.s = s; H.m = m; H.K.fill(-1000001); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
+  H.g = g; H.t = t; H.s = s; H.m = m; H.K.fill(-1000001); H.V.fill(0); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
 }
 // chamado no começo de cada quadro; devolve true quando o jogo está parado num menu (não simula nem renderiza)
 function uiFrame() {
@@ -155,8 +343,18 @@ function uiAfter() {
   else {
     if (st === ST.FITA && GS.tick60 >= GS.replay.length) { GS.replayOn = false; uiSet(ST.JOGO); }
     if (HUD.vis) hudFrame();
-    if (GS.lapNew) { GS.lapNew = false; try { localStorage.setItem('uno-melhor', LAP[2].toFixed(3)); } catch (e) { /* idem */ } }
-    if (typeof GH !== 'undefined' && GH.savePending) { GH.savePending = false; const d = ghSaveData(); if (d) { try { localStorage.setItem('uno-ta-v1', d); } catch (e) { /* idem */ } } }
+    if (GS.lapNew) {
+      GS.lapNew = false;
+      const pfx = typeof ghStoragePrefix === 'function' ? ghStoragePrefix() : 'uno';
+      try { localStorage.setItem(pfx + '-melhor', LAP[2].toFixed(3)); } catch (e) { /* idem */ }
+    }
+    if (typeof GH !== 'undefined' && GH.savePending) {
+      GH.savePending = false;
+      const pfx = typeof ghStoragePrefix === 'function' ? ghStoragePrefix() : 'uno';
+      const d = ghSaveData();
+      if (d) { try { localStorage.setItem(pfx + '-ta-v1', d); } catch (e) { /* idem */ } }
+    }
+    if (st === ST.JOGO && typeof GS !== 'undefined' && GS.raceMode && typeof RIV !== 'undefined' && RIV.finished) raceEnd();
   }
   if (HUD.stats) hudStatsFrame();
   sndFrame();

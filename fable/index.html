@@ -17,33 +17,47 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 #tag{left:50%;bottom:2.2vh;transform:translateX(-50%);padding:.45em 1.1em;border-radius:1.2em;background:rgba(9,11,14,.62);color:#fff;white-space:nowrap}
 #ui{inset:0;pointer-events:auto;align-items:center;justify-content:center;background:rgba(6,8,10,.62);font-size:clamp(11px,1.72vh,17px)}
 #ui.ini{background:linear-gradient(rgba(6,8,10,.5),rgba(6,8,10,.82))}
-#ui>div{max-width:94vw;max-height:96vh;overflow:auto;padding:1.4em 2.2em;box-sizing:border-box;text-align:center}
-#ui h1{margin:0;font-size:3.1em;line-height:1.1;letter-spacing:.02em;color:#fff}
-#ui .sub{margin:.3em 0 1.3em;opacity:.8;letter-spacing:.12em;text-transform:uppercase;font-size:.9em}
-#ui h2{margin:0 0 .5em;font-size:1.05em;letter-spacing:.1em;text-transform:uppercase;color:#ff8a6a}
-#ui .cols{display:flex;gap:3.2em;justify-content:center;flex-wrap:wrap;text-align:left}
+#ui>div{max-width:94vw;max-height:96vh;overflow:auto;padding:1.1em 2.1em;box-sizing:border-box;text-align:center}
+#ui h1{margin:0;font-size:2.85em;line-height:1.1;letter-spacing:.02em;color:#fff}
+#ui .sub{margin:.25em 0 .9em;opacity:.8;letter-spacing:.12em;text-transform:uppercase;font-size:.9em}
+#ui h2{margin:0 0 .45em;font-size:1.02em;letter-spacing:.1em;text-transform:uppercase;color:#ff8a6a}
+#ui .cols{display:flex;gap:3em;justify-content:center;flex-wrap:wrap;text-align:left}
 #ui table{border-collapse:collapse}
-#ui td,#ui th{padding:.13em .7em .13em 0;font-weight:400;text-align:left}
+#ui td,#ui th{padding:.12em .7em .12em 0;font-weight:400;text-align:left}
 #ui td:first-child{color:#fff;font-weight:600;white-space:nowrap;padding-right:1.3em}
-#med{margin:0 0 1.1em;font-size:.9em;color:rgba(255,255,255,.72)}
+#med{margin:0 0 .85em;font-size:.9em;color:rgba(255,255,255,.72)}
 #med .on{font-weight:700;padding:.14em .55em;border-radius:.8em;background:rgba(255,255,255,.11);border:1px solid currentColor}
-#res{display:none;margin:0 0 1.4em;padding:1em 1.4em;border-radius:.8em;background:rgba(255,255,255,.07)}
-#res table{margin:0 auto}#res th,#res td{padding:.2em 1.1em;text-align:right}#res td{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}#res p{margin:.7em 0 0}
-#ui .bt{margin-top:1.5em}
-#ui button{font:inherit;font-size:1.15em;font-weight:600;color:#fff;background:#d8351c;border:0;border-radius:.5em;padding:.6em 2em;margin:0 .4em;cursor:pointer}
-#ui button+button{background:rgba(255,255,255,.16)}
+#cfg{display:flex;flex-wrap:wrap;gap:.45em 1.3em;justify-content:center;align-items:center;margin:0 0 1em;padding:.6em .95em;border-radius:.8em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+#cfg .cg{display:flex;align-items:center;gap:.35em;flex-wrap:wrap;justify-content:center}
+#cfg .cl{font-size:.78em;letter-spacing:.09em;text-transform:uppercase;color:#ff8a6a;font-weight:700;margin-right:.2em}
+#cfg button{font:inherit;font-size:.86em;font-weight:600;color:rgba(255,255,255,.82);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:99em;padding:.24em .78em;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+#cfg button:hover{background:rgba(255,255,255,.2);color:#fff}
+#cfg button.on{background:#d8351c;border-color:#ff7b61;color:#fff}
+#cfg button.sw{width:1.45em;height:1.45em;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.35)}
+#cfg button.sw.on{border-color:#fff;box-shadow:0 0 0 2px #d8351c;transform:scale(1.12)}
+#res{display:none;margin:0 0 1.1em;padding:.9em 1.3em;border-radius:.8em;background:rgba(255,255,255,.07)}
+#res table{margin:0 auto}#res th,#res td{padding:.2em 1.1em;text-align:right}#res td{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}#res tr.me td{color:#ffd23f}#res p{margin:.7em 0 0}
+#ui .bt{margin-top:1.2em}
+#ui .bt button{font:inherit;font-size:1.15em;font-weight:600;color:#fff;background:#d8351c;border:0;border-radius:.5em;padding:.6em 2em;margin:0 .4em;cursor:pointer}
+#ui .bt button+button{background:rgba(255,255,255,.16)}
 #ui button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="msg">carregando…</div>
-<div id="hint">W acelera · S freia/ré · A/D faz curvas · Espaço freio de mão · C câmera · R volta à pista</div>
+<div id="hint">W acelera · S freia/ré · A/D faz curvas · Espaço freio de mão · Shift turbo · E buzina · L faróis · C câmera · R volta à pista</div>
 <canvas id="hg"></canvas><canvas id="ht"></canvas><canvas id="hs"></canvas><canvas id="hm"></canvas><div id="tag"></div>
 <div id="ui"><div>
-<h1>Uno com escada</h1>
-<p class="sub">Fiat Uno Mille EP 1996 · circuito</p>
+<h1 id="tit">Uno com escada</h1>
+<p class="sub" id="sub">Fiat Uno Mille EP 1996 · circuito</p>
 <div id="med"></div>
+<div id="cfg">
+<div class="cg"><span class="cl">Modo</span><button type="button" data-mode="0">Volta Livre</button><button type="button" data-mode="1">Corrida (3 voltas)</button></div>
+<div class="cg"><span class="cl">Carro</span><button type="button" data-car="0">Uno Mille EP (escada)</button><button type="button" data-car="1">Gol Quadrado AP 1.8</button></div>
+<div class="cg"><span class="cl">Pintura</span><button type="button" class="sw" data-paint="0" title="Azul Metálico" aria-label="Azul Metálico" style="background:#728fae"></button><button type="button" class="sw" data-paint="1" title="Branco de Firma" aria-label="Branco de Firma" style="background:#e2e3e0"></button><button type="button" class="sw" data-paint="2" title="Vermelho Flash" aria-label="Vermelho Flash" style="background:#bf352f"></button><button type="button" class="sw" data-paint="3" title="Prata Lunar" aria-label="Prata Lunar" style="background:#c2c5c8"></button><button type="button" class="sw" data-paint="4" title="Cinza Chumbo" aria-label="Cinza Chumbo" style="background:#5c6066"></button><button type="button" class="sw" data-paint="5" title="Vinho Clássico" aria-label="Vinho Clássico" style="background:#86293c"></button></div>
+<div class="cg"><span class="cl">Clima</span><button type="button" data-env="0">Sol</button><button type="button" data-env="1">Pôr do Sol</button><button type="button" data-env="2">Pista Molhada</button></div>
+</div>
 <div id="res"></div>
 <div class="cols">
 <div><h2>Teclado</h2><table>
@@ -51,6 +65,10 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <tr><td>S ou ↓</td><td>freia e dá ré</td></tr>
 <tr><td>A D ou ← →</td><td>faz curvas</td></tr>
 <tr><td>Espaço</td><td>freio de mão</td></tr>
+<tr><td>Shift</td><td>turbo</td></tr>
+<tr><td>E (segurar)</td><td>buzina</td></tr>
+<tr><td>L</td><td>faróis</td></tr>
+<tr><td>K</td><td>pisca-alerta</td></tr>
 <tr><td>C</td><td>troca a câmera</td></tr>
 <tr><td>V (segurar)</td><td>olha para trás</td></tr>
 <tr><td>R</td><td>devolve o carro à pista</td></tr>
@@ -61,6 +79,8 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px/1.4 -ap
 <tr><td>Gatilho esquerdo</td><td>freia e dá ré</td></tr>
 <tr><td>Analógico esquerdo</td><td>faz curvas</td></tr>
 <tr><td>A</td><td>freio de mão</td></tr>
+<tr><td>B</td><td>turbo</td></tr>
+<tr><td>L3</td><td>buzina</td></tr>
 <tr><td>Y</td><td>troca a câmera</td></tr>
 <tr><td>RB (segurar)</td><td>olha para trás</td></tr>
 <tr><td>X</td><td>devolve o carro à pista</td></tr>
@@ -759,6 +779,35 @@ struct LOut { @location(0) col: vec4f }
   if (coat > 0.0) { envC = mix(vec3f(lum(envC)), envC, 0.6); col += envC * min(fSchlick1(0.08, nv), 0.26) * coat * mix(specOcc, 1.0, 0.5) * 1.4; }
   // emissivo
   col += albedo * (m.z * m.z) * 16.0;
+  // faróis do carro (F.car.w > 0.5): dois cones branco-quentes projetados à frente do para-choque
+  if (F.car.w > 0.5) {
+    let cp = (F.carInv * vec4f(wp, 1.0)).xyz;
+    if (cp.x > 1.85 && cp.x < 52.0) {
+      let ln = normalize((F.carInv * vec4f(N, 0.0)).xyz);
+      let lv = normalize((F.carInv * vec4f(V, 0.0)).xyz);
+      let aim = normalize(vec3f(1.0, -0.055, 0.0));
+      let fadeX = smoothstep(1.85, 2.45, cp.x) * (1.0 - smoothstep(28.0, 52.0, cp.x));
+      var hlCol = vec3f(0.0);
+      for (var i = 0; i < 2; i++) {
+        let lp0 = vec3f(1.85, 0.68, select(-0.48, 0.48, i == 1));
+        let dv = cp - lp0;
+        let distH = length(dv);
+        let dirL = dv / max(distH, 0.05);
+        let hlVec = -dirL;
+        let cone = smoothstep(0.76, 0.96, dot(dirL, aim));
+        let attD = 1.0 / (1.0 + 0.04 * distH + 0.004 * distH * distH);
+        let nlH = sat(dot(ln, hlVec));
+        let face = max(nlH, 0.22 * sat(ln.y));
+        let hvRaw = hlVec + lv;
+        let hVec = hvRaw * inverseSqrt(max(dot(hvRaw, hvRaw), 1e-5));
+        let nhH = sat(dot(ln, hVec));
+        let vhH = sat(dot(lv, hVec));
+        let spH = fSchlick(f0, vhH) * min(dGGX(nhH, al) * vSmith(nv, nlH, al), 4.0) * nlH;
+        hlCol += (dif * face + spH * 0.35) * (cone * attD);
+      }
+      col += vec3f(1.0, 0.92, 0.76) * 20.0 * F.car.w * fadeX * hlCol;
+    }
+  }
   // névoa
   let dir = -V; let od = fogOD(F.camPos.xyz, dir, dist); let T = exp(-od);
   let nearD = min(dist, VOL_DIST); let Tn = exp(-fogOD(F.camPos.xyz, dir, nearD));
@@ -772,7 +821,8 @@ WGSL["mat_car"] = `// Materiais do carro (Fiat Uno Mille EP): pintura metálica 
 // id (mat.x): 1 pintura | 2 plástico preto | 3 borracha | 4 pneu | 5 calota | 6 aço | 7 cromado | 8 interior | 9 lente opaca
 //             10 alumínio | 11 cinta | 12 decalque do atlas | 13 fundo | 14 refletor do farol | 15 espelho | 16 palhetas da grade
 //             17 pintura lisa brilhante (capacete; a=1 preto vítreo)
-// O.p0 da carroceria: x = luz de freio, y = luz de ré, z = faróis. O.p0.x das rodas = |velocidade angular|.
+// O.p0 da carroceria: x = luz de freio, y = luz de ré, z = faróis, w = pisca-alerta. O.p0.x das rodas = |velocidade angular|.
+// O.p1 = pintura (rgb, metal); O.p2.x = tipo de carroceria (0 = Uno, 1 = Gol).
 #include mesh_vert
 @group(3) @binding(0) var tAtlas: texture_2d<f32>;
 const PAINT_COL = vec3f(0.168, 0.275, 0.425);   // azul-claro metálico de estúdio: mais escuro e acinzentado (o sol do jogo é forte)
@@ -789,35 +839,42 @@ fn surf(in: V2F, ff: bool) -> Surface {
       //  e o floco some sozinho — o ruído 3D sem mips virava uma trama diagonal no capô)
       let nO = normalize((vec4f(s.normal, 0.0) * O.model).xyz); let wt = abs(nO) / (abs(nO.x) + abs(nO.y) + abs(nO.z));
       let fl = textureSample(tNoise, sLin, lp.zy * 23.0).a * wt.x + textureSample(tNoise, sLin, lp.xz * 23.0).a * wt.y + textureSample(tNoise, sLin, lp.xy * 23.0).a * wt.z - 0.5;
-      s.albedo = PAINT_COL * (1.0 + 0.08 * fl); s.metal = 0.58; s.rough = 0.3 + 0.04 * fl; s.coat = 1.0;
+      let hasP = (O.p1.x + O.p1.y + O.p1.z) > 0.001;
+      let paintCol = select(PAINT_COL, O.p1.rgb, hasP);
+      let paintMet = select(0.58, O.p1.w, hasP);
+      s.albedo = paintCol * (1.0 + 0.08 * fl); s.metal = paintMet; s.rough = 0.3 + 0.04 * fl; s.coat = 1.0;
       // abas dos recortes junto ao chão (base das caixas de roda): escuras, para não sobrar lasca clara pendurada
       { let under = (1.0 - smoothstep(0.31, 0.345, lp.y)) * smoothstep(1.4, 1.5, abs(lp.x)); s.albedo = mix(s.albedo, vec3f(0.01), under); s.coat *= 1.0 - under; s.metal *= 1.0 - under; s.rough = mix(s.rough, 0.95, under); }
       if (pa > 0.5) { let low = max(1.0 - smoothstep(0.2, 0.26, lp.y), (1.0 - smoothstep(0.54, 0.6, lp.y)) * smoothstep(1.2, 1.3, abs(lp.x))); s.albedo = mix(s.albedo, vec3f(0.012), low); s.coat *= 1.0 - low; s.metal *= 1.0 - low; s.rough = mix(s.rough, 0.9, low); }
       if (pa < 0.5) {
+        let isUno = O.p2.x < 0.5;
         var d = abs(in.uv.x);
-        // tampa de combustível (lado esquerdo)
-        if (lp.z < -0.5) { d = min(d, abs(length(vec2f(lp.x + 1.04, lp.y - 0.715)) - 0.062)); }
+        // tampa de combustível (lado esquerdo, exclusiva do Uno)
+        if (isUno && lp.z < -0.5) { d = min(d, abs(length(vec2f(lp.x + 1.04, lp.y - 0.715)) - 0.062)); }
         // vão entre painéis: núcleo escuro de ~4 mm + sombra suave em volta (lê como fresta, não como traço);
         // quando fica menor que o pixel, some por cobertura em vez de engrossar
         let w = max(fwidth(d), 1e-5); let hw = 0.002;
         let line = sat((hw - d) / w + 0.5) * min(1.0, 2.0 * hw / w);
         let halo = (1.0 - smoothstep(hw, hw + 0.007, d)) * sat(0.0035 / w);
         s.albedo *= 1.0 - 0.22 * halo; s.ao = min(s.ao, 1.0 - 0.4 * halo);
-        // faixa lateral mais escura entre os dois vincos + friso fino escuro na borda de cima + soleira sombreada
+        // faixa lateral mais escura entre os dois vincos + friso fino escuro na borda de cima (Uno) + soleira sombreada
         let side = step(in.uv.y, 0.4);
-        // (nas fotos de estúdio tudo abaixo do friso é um tom mais escuro)
-        let band = smoothstep(0.215, 0.25, lp.y) * (1.0 - smoothstep(0.575, 0.59, lp.y)) * side;
-        s.albedo *= 1.0 - 0.3 * band; s.rough += 0.03 * band;
-        let wy = max(fwidth(lp.y), 1e-5);
-        // friso lateral: faixa larga de borracha preta (~5 cm) na altura do topo dos para-choques, entre as caixas de roda
-        let sx = smoothstep(-0.83, -0.80, lp.x) * (1.0 - smoothstep(0.80, 0.83, lp.x));
-        let sdy = lp.y - 0.607; let strip = sat((0.025 - abs(sdy)) / wy + 0.5) * min(1.0, 0.05 / wy) * side * sx;
-        { let upS = normalize((O.model * vec4f(0.0, 1.0, 0.0, 0.0)).xyz); let eb = smoothstep(0.014, 0.024, abs(sdy)) * strip; s.normal = normalize(s.normal + upS * sign(sdy) * eb * 0.8); }
+        var strip = 0.0;
+        if (isUno) {
+          // (nas fotos de estúdio tudo abaixo do friso é um tom mais escuro)
+          let band = smoothstep(0.215, 0.25, lp.y) * (1.0 - smoothstep(0.575, 0.59, lp.y)) * side;
+          s.albedo *= 1.0 - 0.3 * band; s.rough += 0.03 * band;
+          let wy = max(fwidth(lp.y), 1e-5);
+          // friso lateral: faixa larga de borracha preta (~5 cm) na altura do topo dos para-choques, entre as caixas de roda
+          let sx = smoothstep(-0.83, -0.80, lp.x) * (1.0 - smoothstep(0.80, 0.83, lp.x));
+          let sdy = lp.y - 0.607; strip = sat((0.025 - abs(sdy)) / wy + 0.5) * min(1.0, 0.05 / wy) * side * sx;
+          { let upS = normalize((O.model * vec4f(0.0, 1.0, 0.0, 0.0)).xyz); let eb = smoothstep(0.014, 0.024, abs(sdy)) * strip; s.normal = normalize(s.normal + upS * sign(sdy) * eb * 0.8); }
+        }
         // soleira: faixa preta fosca sob a porta, entre as caixas de roda
         let sill = (1.0 - smoothstep(0.222, 0.234, lp.y)) * side;
         s.albedo = mix(s.albedo, vec3f(0.014), sill * 0.92); s.coat *= 1.0 - sill; s.metal *= 1.0 - sill; s.rough = mix(s.rough, 0.85, sill); s.ao = min(s.ao, 1.0 - 0.3 * sill);
         // vinco horizontal da tampa traseira (na altura do topo das lanternas): dobra a normal numa faixa estreita
-        if (lp.x < -1.5 && in.uv.y > 0.66) {
+        if (isUno && lp.x < -1.5 && in.uv.y > 0.66) {
           let t = (lp.y - 0.836) / 0.007; let upW = normalize((O.model * vec4f(0.0, 1.0, 0.0, 0.0)).xyz);
           s.normal = normalize(s.normal + upW * (t * exp(-t * t) * 0.55) * (1.0 - smoothstep(0.44, 0.48, abs(lp.z))));
           // rebaixo da placa: degrau sombreado em volta da placa (retângulo arredondado) e fundo levemente mais escuro
@@ -826,7 +883,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
           s.albedo *= 1.0 - 0.3 * stepb - 0.07 * (1.0 - smoothstep(-0.004, 0.0, pr)); s.ao = min(s.ao, 1.0 - 0.5 * stepb);
         }
         var black = max(line, strip); var lvShade = 1.0;
-        if (in.uv.y > 0.66) {
+        if (isUno && in.uv.y > 0.66) {
           let zz = lp.z / 0.72; let xe = lp.x - carBulgeW(lp.x) * (1.0 - zz * zz);
           // grade plástica na base do para-brisa
           let cowl = smoothstep(0.6, 0.61, xe) * (1.0 - smoothstep(0.741, 0.745, xe));
@@ -931,12 +988,13 @@ fn surf(in: V2F, ff: bool) -> Surface {
     case 9u: {   // lentes (lanterna traseira, piscas): prismas finos sobre refletor, cores profundas mesmo ao sol
       s.rough = 0.38; s.coat = 0.0;
       let rib = 0.86 + 0.14 * sin(lp.y * 6.2831853 / 0.0042);
+      let hz = sat(O.p0.w);
       if (pa < 1.5) {
         // lanterna traseira: faixa superior âmbar-escuro (pisca), vermelho-rubi (posição/freio) no meio, ré clara embaixo
         let v = in.uv.y; let u = in.uv.x; let br = sat(O.p0.x);
         // o albedo fica sempre escuro (ao sol não lava para rosa); o freio aceso vem só do emissivo, em vermelho puro
         var c = mix(vec3f(0.17, 0.003, 0.002), vec3f(0.2, 0.004, 0.002), br); var e = mix(0.03, 0.66, br);
-        if (v > 0.66) { c = vec3f(0.19, 0.05, 0.002); e = 0.006; }
+        if (v > 0.66) { c = mix(vec3f(0.19, 0.05, 0.002), vec3f(0.95, 0.28, 0.01), hz); e = mix(0.006, 0.85, hz); }
         else if (v < 0.2 && u < 0.36) { c = mix(vec3f(0.1, 0.1, 0.098), vec3f(1.0, 1.0, 0.95), sat(O.p0.y)); e = 0.004 + sat(O.p0.y) * 0.5; }   // ré: pequeno retângulo interno
         // divisórias em relevo entre as seções (horizontais) e uma vertical a 1/3 da largura: barras escuras com chanfro
         let fy = max(fwidth(v), 1e-4); let fu = max(fwidth(u), 1e-4);
@@ -957,8 +1015,9 @@ fn surf(in: V2F, ff: bool) -> Surface {
         // piscas: lente âmbar translúcida (mais escura e saturada) com o brilho do refletor por trás e verniz
 // (uv.x = x + z: coordenada ao longo da frente/lateral) — frisos verticais finos e um degradê de refletor por trás
         let fl2 = 0.5 + 0.5 * sin(in.uv.x * 6.2831853 / 0.0075); let fadeP = sat(1.0 - fwidth(in.uv.x) / 0.0075 * 2.0);
-        let gy = 1.0 - 0.45 * abs((lp.y - 0.693) / 0.062);
-        s.albedo = in.col.rgb * vec3f(0.9, 0.62, 0.3) * mix(1.0, 0.74 + 0.4 * fl2, fadeP) * gy * (0.9 + 0.1 * rib); s.rough = 0.3; s.coat = 0.7; s.emissive = 0.03;   // lente lisa translúcida, só com frisos horizontais finos
+        let gy = sat(1.0 - 0.45 * abs((lp.y - 0.693) / 0.062));
+        let baseA = in.col.rgb * vec3f(0.9, 0.62, 0.3) * mix(1.0, 0.74 + 0.4 * fl2, fadeP) * gy * (0.9 + 0.1 * rib);
+        s.albedo = mix(baseA, vec3f(1.0, 0.36, 0.02), hz * 0.85); s.rough = 0.3; s.coat = 0.7; s.emissive = mix(0.03, 0.9, hz);   // lente lisa translúcida, só com frisos horizontais finos
       }
     }
     case 10u: {  // alumínio da escada
@@ -983,7 +1042,7 @@ fn surf(in: V2F, ff: bool) -> Surface {
     }
     case 13u: { s.rough = 1.0; s.ao = 0.3; s.metal = 0.9; }
     case 14u: {  // refletor do farol: cuba prateada com aparência própria (pouco dependente do céu) / bulbo
-      let u = in.uv.x; let v = in.uv.y;
+      let u = in.uv.x; let v = in.uv.y; let hl = sat(O.p0.z);
       // gradação: mais claro no centro (em volta do bulbo), escurecendo para as bordas e para baixo; facetas verticais em colunas
       let rightW = normalize((O.model * vec4f(0.0, 0.0, 1.0, 0.0)).xyz);
       let fz = sin(lp.z * 6.2831853 / 0.013); let ffade = sat(1.0 - fwidth(lp.z) / 0.013 * 2.5);
@@ -991,13 +1050,13 @@ fn surf(in: V2F, ff: bool) -> Surface {
       let rr = length(vec2f(u * 0.85, v));
       let grad = mix(1.0, 0.36, smoothstep(0.1, 1.05, rr)) * mix(0.72, 1.0, smoothstep(-1.0, 0.3, v));
       let facet = mix(1.0, 0.86 + 0.14 * fz, ffade);
-      s.albedo = vec3f(0.74, 0.75, 0.77) * grad * facet; s.metal = 0.25; s.rough = 0.32; s.ao = 1.0;
-      s.emissive = 0.105 * grad;   // a cuba fica na sombra da moldura: luz própria proporcional ao desenho (prateado, não azul do céu)
+      s.albedo = mix(vec3f(0.74, 0.75, 0.77), vec3f(1.0, 0.94, 0.8), hl * 0.55) * grad * facet; s.metal = 0.25; s.rough = 0.32; s.ao = 1.0;
+      s.emissive = mix(0.05, 0.38, hl) * grad;   // a cuba fica na sombra da moldura: luz própria proporcional ao farol
       if (pa > 0.5) {
         // bulbo claro (a > 0,5) e sua capa prateada na ponta (a > 1,5): discretos, sem ponto preto
         s.normal = normalize(in.nrm);
-        if (pa > 1.5) { s.metal = 0.3; s.albedo = vec3f(0.5, 0.5, 0.51); s.rough = 0.35; s.emissive = 0.06; }
-        else { s.metal = 0.2; s.albedo = vec3f(0.8, 0.79, 0.74); s.rough = 0.25; s.emissive = 0.09 + O.p0.z * 0.1; }
+        if (pa > 1.5) { s.metal = 0.3; s.albedo = vec3f(0.5, 0.5, 0.51); s.rough = 0.35; s.emissive = mix(0.04, 0.16, hl); }
+        else { s.metal = 0.2; s.albedo = mix(vec3f(0.8, 0.79, 0.74), vec3f(1.0, 0.96, 0.86), hl); s.rough = 0.25; s.emissive = mix(0.05, 0.95, hl); }
       }
     }
     case 15u: {   // espelho retrovisor: reflexo FIXO (céu / horizonte de mata / chão), escurecido — não depende do cubemap
@@ -1345,9 +1404,10 @@ fn asphaltSurf(in: V2F) -> Surface {
   alb = mix(alb, alb * 1.3 + 0.006, wear); rough = mix(rough, 0.77, wear);
   // piche das emendas e trincas: cinza-escuro, um pouco mais liso
   alb = mix(alb, alb * 0.38 + vec3f(0.004), tar); rough = mix(rough, 0.74, tar);
+  let wZone = max(in.col.g, F.car2.y);
   {
     let dn = textureSample(tNoise, sLin, vec2f(s * 0.0037 + 0.21, d * 0.045)).g * 0.6 + n1.b * 0.4;
-    let dampG = smoothstep(0.6, 0.74, dn) * (1.0 - smoothstep(0.0, 0.2, in.col.g));
+    let dampG = smoothstep(0.6, 0.74, dn) * (1.0 - smoothstep(0.0, 0.2, wZone));
     alb = mix(alb, alb * 0.72, dampG); rough = mix(rough, 0.88, dampG * 0.6);
   }
   // borda do asfalto irregular: terra e grama invadindo os últimos centímetros (a divisa não é uma reta limpa)
@@ -1388,12 +1448,12 @@ fn asphaltSurf(in: V2F) -> Surface {
   var N = bumpXZ(Ng, grad);
   // ---- trechos molhados ----
   var wet = 0.0;
-  if (in.col.g > 0.001) {
+  if (wZone > 0.001) {
     // "profundidade" da água: depressões de baixa frequência + sulcos das rodas + beira da pista; borda orgânica por ruído fino
     let lo = textureSample(tNoise, sLin, vec2f(s * 0.0125 + 0.37, d * 0.062)).r * 0.56 + textureSample(tNoise, sLin, vec2f(s * 0.031, d * 0.11 + 0.4)).g * 0.24 + textureSample(tNoise, sLin, xz * 0.047 + 0.13).r * 0.2;
     let fine = (n2.r - 0.5) * 0.02 + (n3.r - 0.5) * 0.035 + (n4.r - 0.5) * 0.012;    // a borda segue o agregado: nítida e irregular, não uma máscara mole
     let edge = smoothstep(2.4, 5.2, abs(d)) * 0.05 + rutG * 0.085;      // a água junta nos trilhos de roda e na beira
-    let lvl = lo + fine + edge - mix(0.78, 0.665, in.col.g);
+    let lvl = lo + fine + edge - mix(0.78, 0.665, wZone);
     // seco → úmido (halo largo, escurece e alisa um pouco) → filme d'água → lâmina. Tudo em rampas largas: sem borda dura.
     let lw = fwidth(lvl) * 0.75;                                        // largura de 1 pixel em unidades do nível
     let damp = smoothstep(-0.09, -0.035, lvl);
@@ -4043,6 +4103,19 @@ R.decals = [];
 // ---- 22_sky.js
 // Geração única das texturas de ruído e do céu; cor do sol; harmônicos esféricos do ambiente.
 const SUN_EL = 17 * PI / 180, SUN_AZ = 180.5 * PI / 180;
+const ENV = {
+  idx: 0,
+  wet: 0,
+  grip: 1,
+  presets: [
+    { nome: 'Sol (Manhã)', el: SUN_EL, az: SUN_AZ, colEl: 14.5 * PI / 180, colMul: 1.5, turb: 0.57, fog: [0.0008, 1 / 55, 0, 0.05], exposure: 1, wet: 0, grip: 1.0 },
+    { nome: 'Pôr do Sol', el: 5.5 * PI / 180, az: 212 * PI / 180, colEl: 5.0 * PI / 180, colMul: 1.85, turb: 0.72, fog: [0.0011, 1 / 50, 0, 0.065], exposure: 1.08, wet: 0, grip: 1.0 },
+    { nome: 'Pista Molhada', el: 11.5 * PI / 180, az: 192 * PI / 180, colEl: 11.5 * PI / 180, colMul: 0.95, turb: 0.88, fog: [0.0016, 1 / 45, 0, 0.08], exposure: 1.05, wet: 0.92, grip: 0.84 },
+  ],
+};
+let SKY_PIPE = null, SKY_UB = null, SKY_BG = null;
+let _envBusy = null, _envNext = null;
+const _skyU = new Float32Array(8);
 function atmSunColor(dirY) {
   // mesma atmosfera do shader (atmos.wgsl): transmitância do sol até o chão
   const RP = 6360e3, RA = 6440e3, o = RP + 40, n = 32;
@@ -4051,11 +4124,30 @@ function atmSunColor(dirY) {
   const BR = [5.8e-6, 13.6e-6, 33.1e-6], BO = [0.65e-6, 1.881e-6, 0.085e-6], BM = 26e-6 * 1.11;
   return [0, 1, 2].map(i => 22 * Math.exp(-(BR[i] * oR + BM * oM + BO[i] * oO)));
 }
+function envSyncCpu(idx, opts) {
+  const n = ENV.presets.length, i = ((idx | 0) % n + n) % n, p = ENV.presets[i];
+  ENV.idx = i; ENV.wet = p.wet; ENV.grip = p.grip;
+  R.sun[0] = Math.cos(p.el) * Math.cos(p.az); R.sun[1] = Math.sin(p.el); R.sun[2] = Math.cos(p.el) * Math.sin(p.az);
+  // cor do sol: transmitância da atmosfera com ganho artístico
+  const sc = atmSunColor(Math.sin(p.colEl)); R.sunCol[0] = sc[0] * p.colMul; R.sunCol[1] = sc[1] * p.colMul; R.sunCol[2] = sc[2] * p.colMul;
+  R.fog[0] = p.fog[0]; R.fog[1] = p.fog[1]; R.fog[2] = p.fog[2]; R.fog[3] = p.fog[3];
+  R.exposure = p.exposure;
+  if (typeof GS !== 'undefined' && (!opts || !opts.keepLights)) GS.lightsOn = i > 0;
+  return i;
+}
+async function skyBake(progress) {
+  const dev = G.dev, skyView = R.view.sky, strips = 16;
+  for (let i = 0; i < strips; i++) {
+    const enc = dev.createCommandEncoder();
+    const p = enc.beginRenderPass({ colorAttachments: [{ view: skyView, loadOp: i ? 'load' : 'clear', storeOp: 'store' }] });
+    p.setPipeline(SKY_PIPE); p.setBindGroup(0, SKY_BG); p.setScissorRect(i * SKY_W / strips, 0, SKY_W / strips, SKY_H); p.draw(3); p.end();
+    dev.queue.submit([enc.finish()]);
+    await dev.queue.onSubmittedWorkDone(); if (progress) progress(i / strips);
+  }
+}
 async function skyInit(progress) {
   const dev = G.dev, T = R.tex, V = R.view;
-  R.sun[0] = Math.cos(SUN_EL) * Math.cos(SUN_AZ); R.sun[1] = Math.sin(SUN_EL); R.sun[2] = Math.cos(SUN_EL) * Math.sin(SUN_AZ);
-  // cor do sol: transmitância da atmosfera como se o sol estivesse um pouco mais baixo (tom mais quente), com ganho artístico
-  const sc = atmSunColor(Math.sin(14.5 * PI / 180)); R.sunCol[0] = sc[0] * 1.5; R.sunCol[1] = sc[1] * 1.5; R.sunCol[2] = sc[2] * 1.5;
+  const idx = envSyncCpu(ENV.idx, { keepLights: true });
   // ruído
   const nb = mkPost('noisebake', {}, ['rgba8unorm']);
   const ub = mkBuf(65 * 256, BU.U), ud = new Float32Array(65 * 64);
@@ -4068,17 +4160,44 @@ async function skyInit(progress) {
   dev.queue.submit([enc.finish()]);
   genMips(T.noise, 'rgba8unorm');
   // céu, em faixas (para não travar a GPU num único comando longo)
-  const sb = mkPost('skybake', {}, ['rgba16float']);
-  const su = mkBuf(32, BU.U, new Float32Array([R.sun[0], R.sun[1], R.sun[2], 0, 0.57, 0, 0, 0]));
-  const sbg = bgOf(sb, 0, [su, V.noise3, V.noise, R.sLin]);
-  const strips = 16;
-  for (let i = 0; i < strips; i++) {
-    enc = dev.createCommandEncoder();
-    const p = enc.beginRenderPass({ colorAttachments: [{ view: V.sky, loadOp: i ? 'load' : 'clear', storeOp: 'store' }] });
-    p.setPipeline(sb); p.setBindGroup(0, sbg); p.setScissorRect(i * SKY_W / strips, 0, SKY_W / strips, SKY_H); p.draw(3); p.end();
-    dev.queue.submit([enc.finish()]);
-    await dev.queue.onSubmittedWorkDone(); if (progress) progress(i / strips);
+  SKY_PIPE = mkPost('skybake', {}, ['rgba16float']);
+  _skyU[0] = R.sun[0]; _skyU[1] = R.sun[1]; _skyU[2] = R.sun[2]; _skyU[3] = 0;
+  _skyU[4] = ENV.presets[idx].turb; _skyU[5] = 0; _skyU[6] = 0; _skyU[7] = 0;
+  SKY_UB = mkBuf(32, BU.U, _skyU);
+  SKY_BG = bgOf(SKY_PIPE, 0, [SKY_UB, V.noise3, V.noise, R.sLin]);
+  await skyBake(progress);
+}
+async function envDrain() {
+  let last = ENV.idx;
+  try {
+    while (_envNext !== null) {
+      const i = _envNext;
+      _envNext = null;
+      last = i;
+      _skyU[0] = R.sun[0]; _skyU[1] = R.sun[1]; _skyU[2] = R.sun[2]; _skyU[3] = 0;
+      _skyU[4] = ENV.presets[i].turb; _skyU[5] = 0; _skyU[6] = 0; _skyU[7] = 0;
+      G.dev.queue.writeBuffer(SKY_UB, 0, _skyU);
+      await skyBake();
+      if (_envNext !== null) continue;
+      if (typeof renderStaticShadow === 'function') renderStaticShadow();
+      if (typeof renderFrame === 'function') for (let k = 0; k < 3; k++) renderFrame();
+      if (typeof computeSH === 'function') await computeSH();
+      if (_envNext !== null) continue;
+      if (typeof renderFrame === 'function') for (let k = 0; k < 3; k++) renderFrame();
+    }
+  } finally {
+    _envBusy = null;
   }
+  return last;
+}
+async function envApply(idx, opts) {
+  const i = envSyncCpu(idx, opts);
+  if (typeof G !== 'undefined' && G.dev && SKY_PIPE && SKY_UB && SKY_BG) {
+    _envNext = i;
+    if (!_envBusy) _envBusy = envDrain();
+    return _envBusy;
+  }
+  return i;
 }
 function halfToFloat(h) { const s = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 31, f = h & 1023; if (e === 0) return s * Math.pow(2, -14) * (f / 1024); if (e === 31) return f ? NaN : s * Infinity; return s * Math.pow(2, e - 15) * (1 + f / 1024); }
 // lê um mip do cubemap de ambiente e projeta em SH de ordem 2 (irradiância/π)
@@ -4132,14 +4251,14 @@ class GlassSet {
     this.add = mkFwdFamily('glassAdd', { src: 'glass', defs: { GLASS_ADD: '' }, blend: { color: { srcFactor: 'one', dstFactor: 'one' }, alpha: { srcFactor: 'zero', dstFactor: 'one' } } });
     this.items = []; this.bg = null;
   }
-  add_(mesh, slot) { this.items.push({ vb: mesh.vb, ib: mesh.ib, count: mesh.count, slot: slot || 0 }); }
+  add_(mesh, slot) { const it = { vb: mesh.vb, ib: mesh.ib, count: mesh.count, slot: slot || 0, on: true }; this.items.push(it); return it; }
   draw(pass) {
     if (!this.mul.pipe || !this.add.pipe) return;
     if (!this.bg) this.bg = fwdBindGroup(this.mul);
     pass.setBindGroup(3, this.bg);
     for (let k = 0; k < 2; k++) {
       pass.setPipeline(k ? this.add.pipe : this.mul.pipe);
-      for (let i = 0; i < this.items.length; i++) { const it = this.items[i]; R.dyn2[0] = it.slot * 256; pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1); pass.setVertexBuffer(0, it.vb); pass.setIndexBuffer(it.ib, 'uint32'); pass.drawIndexed(it.count); }
+      for (let i = 0; i < this.items.length; i++) { const it = this.items[i]; if (it.on === false) continue; R.dyn2[0] = it.slot * 256; pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1); pass.setVertexBuffer(0, it.vb); pass.setIndexBuffer(it.ib, 'uint32'); pass.drawIndexed(it.count); }
     }
   }
 }
@@ -4636,28 +4755,6 @@ function carBuildParts(mb, gl) {
   mb.rbox(0.23, 1.29, 0, 0.025, 0.055, 0.2, 0.012, 2); mb.tube([[0.24, 1.29, 0], [0.2, 1.35, 0]], 0.008, 6);
   mb.tube([[0.2, 0.42, 0.0], [0.17, 0.6, 0.0]], 0.01, 6); mb.rbox(0.168, 0.62, 0, 0.045, 0.045, 0.045, 0.02, 3);
   mb.rbox(-0.12, 0.40, 0, 0.3, 0.05, 0.04, 0.015, 2);
-  // piloto: tronco, ombros, braços no volante e capacete (simples, visto pelos vidros)
-  {
-    const zd = -0.345;
-    mb.mat(CM.INTERIOR, 2).color(0.2, 0.028, 0.03);   // macacão vermelho-escuro
-    mb.push(m4translate(m4(), -0.245, 0.50, zd)); mb.push(m4rotZ(m4(), 0.30));
-    mb.rbox(0.085, 0.27, 0, 0.2, 0.54, 0.36, 0.08, 4);                 // tronco
-    mb.rbox(0.085, 0.50, 0, 0.17, 0.1, 0.44, 0.045, 3);                // ombros
-    mb.pop(); mb.pop();
-    mb.rbox(0.02, 0.535, zd, 0.44, 0.13, 0.34, 0.06, 3);               // coxas
-    for (const sg of [-1, 1]) mb.tube([[-0.26, 0.97, zd + sg * 0.2], [-0.02, 0.86, zd + sg * 0.215], [0.275, 0.93, -0.36 + sg * 0.165]], 0.043, 8);   // braços
-    mb.mat(CM.INTERIOR, 3).color(0.02, 0.02, 0.022);
-    for (const sg of [-1, 1]) mb.rbox(0.285, 0.935, -0.36 + sg * 0.17, 0.085, 0.07, 0.075, 0.03, 2);   // luvas
-    mb.rbox(-0.275, 1.035, zd, 0.1, 0.07, 0.11, 0.03, 2);              // pescoço
-    // cinto de segurança diagonal (ombro esquerdo → quadril direito), à frente do tronco
-    mb.mat(CM.INTERIOR, 3).color(0.012, 0.012, 0.013);
-    mb.sweep([[-0.262, 1.0, zd - 0.15], [-0.15, 0.82, zd - 0.02], [-0.085, 0.63, zd + 0.15]], [[-0.022, 0.004], [0.022, 0.004], [0.022, -0.004], [-0.022, -0.004]], { closedProfile: true, hard: true, up: [1, 0.3, 0] });
-    mb.mat(CM.GLOSS).color(0.05, 0.052, 0.058);   // capacete integral grafite (discreto pelo vidro); o macacão é vermelho-escuro
-    mb.rbox(-0.262, 1.168, zd, 0.25, 0.25, 0.228, 0.112, 7);          // casco
-    mb.rbox(-0.236, 1.092, zd, 0.186, 0.105, 0.206, 0.05, 5);         // queixeira (rente ao casco)
-    mb.mat(CM.GLOSS, 1).color(0.01, 0.011, 0.014);
-    mb.rbox(-0.2, 1.178, zd, 0.13, 0.08, 0.233, 0.034, 5);        // viseira: faixa escura que envolve a frente e os lados do casco
-  }
   // emblema dianteiro: cinco barras cromadas inclinadas sobrepostas ao centro da grade (ocupam a altura das duas fendas)
   {
     const y = 0.694, x = carTopX(0, y, false), xu = carTopX(0, y + 0.02, false), sl = (xu - x) / 0.02, l = Math.hypot(1, sl);
@@ -4668,6 +4765,28 @@ function carBuildParts(mb, gl) {
   }
   // placas e emblemas traseiros (decalques do atlas)
   carDecals(mb);
+}
+// piloto: tronco, ombros, braços no volante e capacete (malha separada para ocultar na câmera de cockpit)
+function carBuildDriver(mb) {
+  const zd = -0.345;
+  mb.mat(CM.INTERIOR, 2).color(0.2, 0.028, 0.03);   // macacão vermelho-escuro
+  mb.push(m4translate(m4(), -0.245, 0.50, zd)); mb.push(m4rotZ(m4(), 0.30));
+  mb.rbox(0.085, 0.27, 0, 0.2, 0.54, 0.36, 0.08, 4);                 // tronco
+  mb.rbox(0.085, 0.50, 0, 0.17, 0.1, 0.44, 0.045, 3);                // ombros
+  mb.pop(); mb.pop();
+  mb.rbox(0.02, 0.535, zd, 0.44, 0.13, 0.34, 0.06, 3);               // coxas
+  for (const sg of [-1, 1]) mb.tube([[-0.26, 0.97, zd + sg * 0.2], [-0.02, 0.86, zd + sg * 0.215], [0.275, 0.93, -0.36 + sg * 0.165]], 0.043, 8);   // braços
+  mb.mat(CM.INTERIOR, 3).color(0.02, 0.02, 0.022);
+  for (const sg of [-1, 1]) mb.rbox(0.285, 0.935, -0.36 + sg * 0.17, 0.085, 0.07, 0.075, 0.03, 2);   // luvas
+  mb.rbox(-0.275, 1.035, zd, 0.1, 0.07, 0.11, 0.03, 2);              // pescoço
+  // cinto de segurança diagonal (ombro esquerdo → quadril direito), à frente do tronco
+  mb.mat(CM.INTERIOR, 3).color(0.012, 0.012, 0.013);
+  mb.sweep([[-0.262, 1.0, zd - 0.15], [-0.15, 0.82, zd - 0.02], [-0.085, 0.63, zd + 0.15]], [[-0.022, 0.004], [0.022, 0.004], [0.022, -0.004], [-0.022, -0.004]], { closedProfile: true, hard: true, up: [1, 0.3, 0] });
+  mb.mat(CM.GLOSS).color(0.05, 0.052, 0.058);   // capacete integral grafite (discreto pelo vidro); o macacão é vermelho-escuro
+  mb.rbox(-0.262, 1.168, zd, 0.25, 0.25, 0.228, 0.112, 7);          // casco
+  mb.rbox(-0.236, 1.092, zd, 0.186, 0.105, 0.206, 0.05, 5);         // queixeira (rente ao casco)
+  mb.mat(CM.GLOSS, 1).color(0.01, 0.011, 0.014);
+  mb.rbox(-0.2, 1.178, zd, 0.13, 0.08, 0.233, 0.034, 5);        // viseira: faixa escura que envolve a frente e os lados do casco
 }
 const CRK = { x0: 0.0, x1: -0.98, barY: 1.47, railZ: 0.205, lx0: -1.98, lx1: 1.22 };
 function carLadder(mb) {
@@ -4719,7 +4838,12 @@ function carWipers(mb) {
   mb.sweep(pts, [[-0.006, -0.006], [0.006, -0.006], [0.003, 0.006], [-0.003, 0.006]], { closedProfile: true, hard: true });
 }
 // regiões do atlas (u0, v0, u1, v1)
-const CAT = { plate: [0, 0, 0.5, 0.332], fiat: [0.5, 0, 0.75, 0.16], mille: [0.5, 0.18, 0.95, 0.4] };
+const CAT = {
+  plate: [0, 0, 0.5, 0.332], fiat: [0.5, 0, 0.75, 0.16], mille: [0.5, 0.18, 0.95, 0.4],
+  golPlate: [0, 180 / 512, 0.5, 350 / 512],
+  vw: [540 / 1024, 230 / 512, 700 / 1024, 390 / 512],
+  gol18: [520 / 1024, 400 / 512, 980 / 1024, 500 / 512],
+};
 function carDecals(mb) {
   // quad sobre a superfície traseira/dianteira: centro (z, y), largura w, altura h; rear: texto lido por quem olha de trás
   const dq = (reg, zc, y0, w, h, rear, lift) => {
@@ -4746,17 +4870,23 @@ const CGLYPH = {
   E: [[[0.72, 0], [0, 0], [0, 1], [0.72, 1]], [[0, 0.52], [0.52, 0.52]]], P: [[[0, 0], [0, 1], [0.52, 1], [0.72, 0.88], [0.72, 0.62], [0.52, 0.5], [0, 0.5]]],
   U: [[[0, 1], [0, 0.25], [0.14, 0.05], [0.4, 0], [0.66, 0.05], [0.8, 0.25], [0.8, 1]]], N: [[[0, 0], [0, 1], [0.8, 0], [0.8, 1]]],
   O: [[[0.4, 0], [0.14, 0.08], [0, 0.3], [0, 0.7], [0.14, 0.92], [0.4, 1], [0.66, 0.92], [0.8, 0.7], [0.8, 0.3], [0.66, 0.08], [0.4, 0]]],
-  1: [[[0.12, 0.74], [0.42, 1], [0.42, 0]]], 9: [[[0.7, 0.62], [0.55, 0.46], [0.3, 0.46], [0.1, 0.6], [0.1, 0.85], [0.3, 1], [0.52, 1], [0.7, 0.85], [0.7, 0.3], [0.55, 0.05], [0.3, 0], [0.12, 0.1]]],
+  1: [[[0.12, 0.74], [0.42, 1], [0.42, 0]]], 3: [[[0.1, 0.86], [0.32, 1], [0.58, 1], [0.72, 0.84], [0.72, 0.64], [0.52, 0.52], [0.3, 0.52]], [[0.52, 0.52], [0.74, 0.38], [0.74, 0.16], [0.56, 0], [0.3, 0], [0.1, 0.14]]],
+  4: [[[0.64, 0], [0.64, 1], [0.06, 0.32], [0.78, 0.32]]],
   6: [[[0.66, 0.9], [0.5, 1], [0.3, 1], [0.12, 0.82], [0.1, 0.3], [0.25, 0.03], [0.5, 0], [0.68, 0.15], [0.7, 0.4], [0.52, 0.56], [0.3, 0.56], [0.12, 0.42]]],
-  '-': [[[0.1, 0.48], [0.5, 0.48]]],
+  8: [[[0.4, 0.52], [0.16, 0.62], [0.12, 0.8], [0.24, 0.96], [0.4, 1], [0.56, 0.96], [0.68, 0.8], [0.64, 0.62], [0.4, 0.52], [0.14, 0.4], [0.08, 0.2], [0.2, 0.04], [0.4, 0], [0.6, 0.04], [0.72, 0.2], [0.66, 0.4], [0.4, 0.52]]],
+  9: [[[0.7, 0.62], [0.55, 0.46], [0.3, 0.46], [0.1, 0.6], [0.1, 0.85], [0.3, 1], [0.52, 1], [0.7, 0.85], [0.7, 0.3], [0.55, 0.05], [0.3, 0], [0.12, 0.1]]],
+  G: [[[0.74, 0.84], [0.6, 0.96], [0.36, 1], [0.14, 0.88], [0.04, 0.64], [0.04, 0.36], [0.14, 0.12], [0.36, 0], [0.62, 0.04], [0.76, 0.22], [0.76, 0.48], [0.44, 0.48]]],
+  L: [[[0.1, 1], [0.1, 0], [0.72, 0]]], V: [[[0, 1], [0.4, 0], [0.8, 1]]], W: [[[0, 1], [0.22, 0], [0.48, 0.68], [0.74, 0], [0.96, 1]]],
+  '-': [[[0.1, 0.48], [0.5, 0.48]]], '.': [[[0.14, 0.02], [0.14, 0.1]]], ' ': [],
 };
-const CADV = { I: 0.45, i: 0.3, l: 0.3, M: 1.12, '-': 0.6, 1: 0.7, e: 0.82 };
-function carText(g, txt, x, y, h, lw, skew) {
+const CADV = { I: 0.45, i: 0.3, l: 0.3, M: 1.12, W: 1.15, L: 0.85, '-': 0.6, '.': 0.32, ' ': 0.5, 1: 0.7, e: 0.82 };
+function carText(g, txt, x, y, h, lw, skew, advLw) {
   g.lineWidth = lw; g.lineCap = 'round'; g.lineJoin = 'round';
+  const alw = advLw === undefined ? lw : advLw;
   for (const ch of txt) {
     const gl = CGLYPH[ch];
     if (gl) for (const st of gl) { g.beginPath(); st.forEach((p, i) => { const px = x + (p[0] + (skew || 0) * p[1]) * h * 0.72, py = y - p[1] * h; i ? g.lineTo(px, py) : g.moveTo(px, py); }); g.stroke(); }
-    x += (CADV[ch] || 1.0) * h * 0.72 + lw * 0.6;
+    x += (CADV[ch] || 1.0) * h * 0.72 + alw * 0.6;
   }
   return x;
 }
@@ -4792,6 +4922,19 @@ function carAtlas() {
   }
   const xe = xs + 4;
   g.strokeStyle = '#d0281a'; carText(g, 'EP', xe + 20, 190, 86, 16, 0.24);
+  // placa e emblemas do Gol Quadrado AP 1.8 (VW + GOL 1.8)
+  g.fillStyle = '#b9bcbc'; g.fillRect(0, 180, 512, 170); g.strokeStyle = '#1a1a1a'; g.lineWidth = 6; g.strokeRect(5, 185, 502, 160);
+  g.fillStyle = '#9fa3a3'; g.fillRect(150, 192, 212, 26); g.strokeStyle = '#222'; carText(g, 'GOL 1.8', 186, 214, 17, 2.4, 0);
+  g.strokeStyle = '#141414'; carText(g, 'GOL-1994', 30, 326, 76, 11, 0);
+  g.fillStyle = '#777'; g.beginPath(); g.arc(28, 204, 6, 0, TAU); g.arc(484, 204, 6, 0, TAU); g.fill();
+  g.fillStyle = '#141820'; g.beginPath(); g.arc(620, 310, 74, 0, TAU); g.fill();
+  g.strokeStyle = '#e4e8ec'; g.lineWidth = 10; g.beginPath(); g.arc(620, 310, 67, 0, TAU); g.stroke();
+  g.strokeStyle = '#e4e8ec'; g.lineWidth = 11; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(596, 256); g.lineTo(620, 304); g.lineTo(644, 256); g.stroke();
+  g.beginPath(); g.moveTo(576, 274); g.lineTo(599, 349); g.lineTo(620, 315); g.lineTo(641, 349); g.lineTo(664, 274); g.stroke();
+  g.strokeStyle = '#15171b'; const gx = carText(g, 'GOL ', 536, 480, 62, 16, 0.18, 16); carText(g, '1.8', gx + 6, 480, 62, 16, 0.18, 16);
+  g.strokeStyle = '#e2e6eb'; const gx2 = carText(g, 'GOL ', 536, 480, 62, 9.5, 0.18, 16);
+  g.strokeStyle = '#d42c1d'; carText(g, '1.8', gx2 + 6, 480, 62, 10.5, 0.18, 16);
   const im = g.getImageData(0, 0, W, H);
   const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 6 });
   G.dev.queue.writeTexture({ texture: tex }, im.data, { bytesPerRow: W * 4 }, [W, H]);
@@ -4848,23 +4991,76 @@ function carBuildSteer(mb) {
 const CAR = {
   wheelbase: 2.362, trackF: 1.34, trackR: 1.30, wheelR: 0.281,
   hubs: [[1.181, 0.281, -0.67], [1.181, 0.281, 0.67], [-1.181, 0.281, -0.65], [-1.181, 0.281, 0.65]],
+  eyePos: [-0.10, 1.175, -0.355],
   slotBody: 0, slotWheel: [0, 0, 0, 0], slotSteer: 0,
   steerMat: m4(), tris: 0, _t: m4(), _t2: m4(), _t3: m4(), set: null, glass: null, atlasBG: null, fam: null, bodyMesh: null, wheelMesh: null,
+  models: [], modelIdx: 0, bodyKind: 0,
+  driverItems: [], driverVisible: true,
+  setDriverVis(vis) {
+    const v = !!vis; CAR.driverVisible = v;
+    for (let i = 0; i < CAR.driverItems.length; i++) if (CAR.driverItems[i]) CAR.driverItems[i].on = v;
+  },
+  select(idx) {
+    if (!CAR.models.length) return;
+    const i = (idx | 0) === 1 && CAR.models[1] ? 1 : 0;
+    CAR.modelIdx = i;
+    for (let k = 0; k < CAR.models.length; k++) {
+      const m = CAR.models[k], on = k === i;
+      if (m.items) for (let j = 0; j < m.items.length; j++) if (m.items[j]) m.items[j].on = on;
+      if (m.glassItems) for (let j = 0; j < m.glassItems.length; j++) if (m.glassItems[j]) m.glassItems[j].on = on;
+    }
+    const M = CAR.models[i];
+    CAR.bodyMesh = M.bodyMesh;
+    CAR.wheelMesh = M.wheelMesh;
+    CAR.hubs = M.hubs;
+    CAR.wheelR = M.wheelR;
+    if (M.steerMat) CAR.steerMat.set(M.steerMat);
+    CAR.eyePos = M.eyePos;
+    CAR.bodyKind = M.bodyKind;
+    CAR.driverItems = M.driverItems || [];
+    if (M.tris) CAR.tris = M.tris;
+    CAR.setDriverVis(CAR.driverVisible);
+  },
   build() {
     carShapeInit(); carWindowsInit(); carSeamInit();
     const fam = CAR.fam = mkFamily('car', { src: 'mat_car', noCube: true });
     CAR.slotBody = objSlot(); for (let i = 0; i < 4; i++) CAR.slotWheel[i] = objSlot(); CAR.slotSteer = objSlot();
     const set = CAR.set = new MeshSet(fam), glass = CAR.glass = new GlassSet();
+    CAR.driverItems = []; CAR.driverVisible = true;
+    const attach = m => {
+      m.items = []; m.driverItems = []; m.glassItems = [];
+      m.items.push(set.add(m.bodyMesh, CAR.slotBody, 3));
+      if (m.glassMesh) m.glassItems.push(glass.add_(m.glassMesh, CAR.slotBody));
+      if (m.driverMesh) { const di = set.add(m.driverMesh, CAR.slotBody, 3); m.items.push(di); m.driverItems.push(di); }
+      if (m.wheelMesh) {
+        for (let i = 0; i < 4; i++) {
+          m.items.push(set.add(m.wheelMesh, CAR.slotWheel[i], 3));
+          if (m.wheelBlurMesh) m.items.push(set.add(m.wheelBlurMesh, CAR.slotWheel[i], 1));
+        }
+      }
+      if (m.steerMesh) m.items.push(set.add(m.steerMesh, CAR.slotSteer, 3));
+      return m;
+    };
     const mb = new MeshBuilder(1 << 17), gl = new MeshBuilder(1 << 14);
     carBuildBody(mb, gl);
     if (typeof carBuildParts === 'function') carBuildParts(mb, gl);
-    CAR.tris = mb.ni / 3 + gl.ni / 3;
-    const bm = CAR.bodyMesh = mb.upload(); set.add(bm, CAR.slotBody, 3); glass.add_(gl.upload(), CAR.slotBody);
-    if (typeof carBuildWheel === 'function') {
-      const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); const wm = CAR.wheelMesh = w.upload(), wbm = wb.upload(); CAR.tris += 4 * (w.ni + wb.ni) / 3;
-      for (let i = 0; i < 4; i++) { set.add(wm, CAR.slotWheel[i], 3); set.add(wbm, CAR.slotWheel[i], 1); }   // disco de borrão: só no passe principal
-    }
-    if (typeof carBuildSteer === 'function') { const s = new MeshBuilder(1 << 12); carBuildSteer(s); CAR.tris += s.ni / 3; set.add(s.upload(), CAR.slotSteer, 3); }
+    let tris0 = mb.ni / 3 + gl.ni / 3;
+    const bm = mb.upload(), gm = gl.upload();
+    let dm = null, wm = null, wbm = null, sm = null;
+    if (typeof carBuildDriver === 'function') { const d = new MeshBuilder(1 << 13); carBuildDriver(d); tris0 += d.ni / 3; dm = d.upload(); }
+    if (typeof carBuildWheel === 'function') { const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); wm = w.upload(); wbm = wb.upload(); tris0 += 4 * (w.ni + wb.ni) / 3; }
+    if (typeof carBuildSteer === 'function') { const s = new MeshBuilder(1 << 12); carBuildSteer(s); tris0 += s.ni / 3; sm = s.upload(); }
+    const m0 = {
+      name: 'Uno Mille EP',
+      bodyMesh: bm, driverMesh: dm, glassMesh: gm, wheelMesh: wm, wheelBlurMesh: wbm, steerMesh: sm,
+      steerMat: new Float32Array(CAR.steerMat),
+      hubs: [[1.181, 0.281, -0.67], [1.181, 0.281, 0.67], [-1.181, 0.281, -0.65], [-1.181, 0.281, 0.65]],
+      wheelR: 0.281, eyePos: [-0.10, 1.175, -0.355], bodyKind: 0, tris: tris0,
+    };
+    CAR.models.length = 0;
+    CAR.models.push(attach(m0));
+    if (typeof golBuildModel === 'function') CAR.models.push(attach(golBuildModel()));
+    CAR.select(CAR.modelIdx);
     const tex = typeof carAtlas === 'function' ? carAtlas() : mkTex(4, 4, 'rgba8unorm-srgb');
     // desenhável: liga o atlas (grupo 3) e não entra no mapa de sombras estático do mundo
     R.drawables.push({ draw(pass, ctx) {
@@ -6770,24 +6966,696 @@ function grassBuild() {
   });
 }
 
+// ---- 34_gol.js
+// VW Gol Quadrado AP 1.8 (1991–1994 CL/GL/GTi "chinesinha"): carroceria em cunha, vigia ~42°, aerofólios,
+// lanternas horizontais tricolores, grade frisada com emblema VW, borzeguim lateral, painel satélite, volante 4 botões e rodas Orbital.
+const GOL = {
+  XF: 1.888, XR: -1.815,
+  YS: 0.195,
+  AXF: 1.179, AXR: -1.179, WR: 0.281,
+  TH_S: Math.sin(17.5 * PI / 180), TH_C: Math.cos(17.5 * PI / 180),
+  VF: [0, 0.36, 0.42, 0.60, 0.68, 1],
+  ARCH_R: 0.324, ARCH_Y: 0.296,
+};
+const _guv = [0, 0];
+const gsq = x => x * x;
+function gsmin(a, b, k) { const h = Math.max(k - Math.abs(a - b), 0) / k; return Math.min(a, b) - h * h * k * 0.25; }
+function gsmax(a, b, k) { return -gsmin(-a, -b, k); }
+function golG(d, r) { return d <= -r || d >= r ? 0 : d < 0 ? (r + d) * (r + d) / (4 * r) : (r - d) * (r - d) / (4 * r); }
+function golRRect(a, b, ha, hb, r) { const qa = Math.abs(a) - ha + r, qb = Math.abs(b) - hb + r; return Math.hypot(Math.max(qa, 0), Math.max(qb, 0)) + Math.min(Math.max(qa, qb), 0) - r; }
+function golSegDist(px, py, ax, ay, bx, by) { const dx = bx - ax, dy = by - ay, t = sat(((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)); return Math.hypot(px - ax - dx * t, py - ay - dy * t); }
+
+// perfil superior no plano de borda: frente inclinada "chinesinha", capô longo em cunha, para-brisa, teto baixo (1,375 m), vigia ~42°, tampa traseira
+function golYT(x) {
+  const fascia = 0.720 - 2.9 * (x - 1.785);
+  const hood = 0.895 - 0.144 * (x - 0.57) + 0.010 * (1 - gsq((x - 1.18) / 0.61));
+  const wind = 0.895 - 0.84 * (x - 0.57);
+  const a = x + 0.56, roof = 1.375 - (a > 0 ? 0.045 * a * a : 0.025 * a * a) + (x > 0.05 ? 4.5 * gsq(x - 0.05) : 0);
+  const hatch = 0.878 + 0.92 * (x + 1.69);
+  const deck = 0.865 + 0.25 * (x + 1.74);
+  const tail = 0.858 + 9.5 * (x + 1.755);
+  const rear = gsmax(hatch, deck, 0.018);
+  let y = gsmax(hood, wind, 0.024);
+  y = gsmin(y, roof, 0.032);
+  y = gsmin(y, rear, 0.026);
+  y = gsmin(y, tail, 0.022);
+  y = gsmin(y, fascia, 0.030);
+  return y;
+}
+function golBulge(x) { return 0.038 * smooth(-0.1, 0.3, x) - 0.022 * smooth(-1.25, -1.60, x); }
+function golCrown(x) { return 0.016 * smooth(0.55, 0.88, x) * smooth(1.86, 1.74, x) + 0.018 * smooth(0.15, -0.15, x) * smooth(-1.72, -1.45, x); }
+function golYtop(x, z) {
+  const zz = z / 0.73, xi = golBulge(x) * (1 - zz * zz);
+  let y = golYT(x - xi) - golCrown(x) * zz * zz;
+  // ressalto central limpo no capô (característico do Gol CL/GTi)
+  if (x > 0.52) {
+    const zc = 0.42 - 0.095 * sat((x - 0.62) / 1.12);
+    y += 0.010 * (1 - smooth(zc - 0.012, zc + 0.012, z)) * smooth(0.66, 0.80, x - xi) * smooth(1.78, 1.68, x - xi);
+  }
+  return y;
+}
+function golWPlan(x) {
+  const t = sat((x - 0.60) / 1.28), t2 = sat((-0.90 - x) / 0.90);
+  return 0.792 - 0.068 * t * t - 0.044 * t2 * t2;
+}
+function golZL(x, y) {
+  let z = golWPlan(x);
+  const d = y - 0.60;
+  z -= d < 0 ? 0.018 * gsq(d / 0.40) : 0.016 * gsq(d / 0.30);
+  // vinco sutil de cintura e dobra da soleira
+  z -= 0.0025 * smooth(0.45, 0.54, y) * (1 - smooth(0.76, 0.85, y));
+  if (y < 0.245) z -= 0.026 * gsq((0.245 - y) / 0.05);
+  const df = Math.hypot(x - GOL.AXF, y - GOL.ARCH_Y) - GOL.ARCH_R;
+  const dr = Math.hypot(x - GOL.AXR, y - GOL.ARCH_Y) - GOL.ARCH_R;
+  const da = Math.min(df, dr);
+  if (da < 0.25) z += 0.0085 * Math.exp(-gsq((da - 0.008) / 0.065));
+  return z;
+}
+function golBeltN(x) { return 0.892 + 0.004 * (0.57 - x); }
+function golR2(x) {
+  let r = 0.036;
+  r = lerp(r, 0.020, smooth(-0.08, 0.16, x));
+  r = lerp(r, 0.012, smooth(0.55, 0.75, x));
+  r = lerp(r, 0.032, smooth(1.70, 1.80, x));
+  r = lerp(r, 0.022, smooth(-1.25, -1.45, x));
+  r = lerp(r, 0.026, smooth(-1.68, -1.76, x));
+  return r;
+}
+const _gstCache = []; let _gstNext = 0;
+for (let i = 0; i < 8; i++) _gstCache.push({ x: NaN, yB: 0, zB: 0, dAz: 0, LA: 0, LB: 0, zE: 0, yE: 0, dCy: 0, r1: 0, r2: 0, b: new Float64Array(6) });
+function golStation(x) {
+  for (let i = 0; i < 8; i++) if (_gstCache[i].x === x) return _gstCache[i];
+  const st = _gstCache[_gstNext]; _gstNext = (_gstNext + 1) & 7; st.x = x;
+  const bn = golBeltN(x);
+  let y = bn; for (let k = 0; k < 4; k++) y = golYtop(x, golZL(x, Math.min(y, bn + 0.2)));
+  if (y <= bn) { st.yB = y; st.LB = 0; }
+  else {
+    st.yB = bn; const zb = golZL(x, bn); let t = (golYtop(x, zb) - bn) / GOL.TH_C;
+    for (let k = 0; k < 5; k++) t = (golYtop(x, zb - t * GOL.TH_S) - bn) / GOL.TH_C;
+    st.LB = Math.max(t, 0);
+  }
+  st.zB = golZL(x, st.yB); st.dAz = (golZL(x, st.yB) - golZL(x, st.yB - 0.004)) / 0.004;
+  st.LA = st.yB - GOL.YS;
+  st.zE = st.zB - st.LB * GOL.TH_S; st.yE = st.yB + st.LB * GOL.TH_C;
+  st.dCy = -(golYtop(x, st.zE) - golYtop(x, st.zE - 0.004)) / 0.004;
+  st.r1 = 0.010; st.r2 = golR2(x);
+  const b = st.b, h = st.LB * 0.5;
+  b[0] = 0; b[1] = st.LA - st.r1; b[2] = st.LA + Math.min(st.r1, h); b[3] = st.LA + st.LB - Math.min(st.r2, h); b[4] = st.LA + st.LB + st.r2; b[5] = st.LA + st.LB + st.zE;
+  return st;
+}
+function golSkin(x, v, off, out) {
+  const st = golStation(x), VF = GOL.VF, b = st.b;
+  let k = 0; while (k < 4 && v > VF[k + 1]) k++;
+  const s = b[k] + (b[k + 1] - b[k]) * (v - VF[k]) / (VF[k + 1] - VF[k]);
+  let z, y, tz, ty;
+  const s1 = st.LA, s2 = st.LA + st.LB;
+  if (s <= s1) { y = GOL.YS + s; z = golZL(x, y); tz = (golZL(x, y + 0.002) - golZL(x, y - 0.002)) / 0.004; ty = 1; }
+  else if (s <= s2) { const t = s - s1; z = st.zB - t * GOL.TH_S; y = st.yB + t * GOL.TH_C; tz = -GOL.TH_S; ty = GOL.TH_C; }
+  else { z = st.zE - (s - s2); y = golYtop(x, z); tz = -1; ty = -(golYtop(x, z + 0.002) - golYtop(x, z - 0.002)) / 0.004; }
+  const d1z = -GOL.TH_S - st.dAz, d1y = GOL.TH_C - 1, d2z = -1 + GOL.TH_S, d2y = st.dCy - GOL.TH_C;
+  const g1 = golG(s - s1, st.r1), g2 = golG(s - s2, st.r2);
+  z += d1z * g1 + d2z * g2; y += d1y * g1 + d2y * g2;
+  let px = x;
+  if (off) {
+    const e1 = s - s1, e2 = s - s2;
+    const h1 = e1 <= -st.r1 || e1 >= st.r1 ? 0 : (e1 < 0 ? (st.r1 + e1) : -(st.r1 - e1)) / (2 * st.r1);
+    const h2 = e2 <= -st.r2 || e2 >= st.r2 ? 0 : (e2 < 0 ? (st.r2 + e2) : -(st.r2 - e2)) / (2 * st.r2);
+    const Tz = tz + d1z * h1 + d2z * h2, Ty = ty + d1y * h1 + d2y * h2;
+    let nz = Ty, ny = -Tz; const l = 1 / Math.hypot(nz, ny); nz *= l; ny *= l;
+    const yx = (golYtop(x + 0.003, Math.max(z, 0)) - golYtop(x - 0.003, Math.max(z, 0))) / 0.006;
+    const nx = -yx * Math.max(ny, 0) * Math.max(ny, 0), l2 = 1 / Math.hypot(nx, ny, nz);
+    px += nx * l2 * off; y += ny * l2 * off; z += nz * l2 * off;
+  }
+  out[0] = px; out[1] = y; out[2] = z;
+}
+const GOL_UT = { n: 800, x: null, s: null, L: 0 };
+function golShapeInit() {
+  const n = GOL_UT.n, xs = GOL_UT.x = new Float64Array(n + 1), ss = GOL_UT.s = new Float64Array(n + 1);
+  let px = GOL.XF, py = golYT(px), acc = 0;
+  for (let i = 0; i <= n; i++) {
+    const x = GOL.XF + (GOL.XR - GOL.XF) * i / n, y = golYT(x);
+    acc += Math.hypot(x - px, y - py); px = x; py = y; xs[i] = x; ss[i] = acc;
+  }
+  GOL_UT.L = acc;
+}
+function golXofU(u) {
+  const T = GOL_UT, s = sat(u) * T.L; let lo = 0, hi = T.n;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (T.s[m] <= s) lo = m; else hi = m; }
+  const f = (s - T.s[lo]) / Math.max(1e-9, T.s[hi] - T.s[lo]);
+  return T.x[lo] + (T.x[hi] - T.x[lo]) * f;
+}
+function golUofX(x) {
+  const T = GOL_UT, f = sat((x - GOL.XF) / (GOL.XR - GOL.XF)) * T.n, i = Math.min(T.n - 1, Math.floor(f));
+  return (T.s[i] + (T.s[i + 1] - T.s[i]) * (f - i)) / T.L;
+}
+function golSkinFn(off) { return (u, v, out) => golSkin(golXofU(u), v, off || 0, out); }
+function golTopX(z, y, rear) {
+  let a = rear ? -1.86 : 1.62, b = rear ? -1.16 : 1.92;
+  for (let i = 0; i < 40; i++) { const m = (a + b) / 2, f = golYtop(m, z) - y; if ((f > 0) === !rear) a = m; else b = m; }
+  return (a + b) / 2;
+}
+function golSub(mb, off, x0, x1, va, vb, cell, opts) {
+  const u0 = golUofX(x0), u1 = golUofX(x1);
+  opts.nu = Math.max(2, Math.ceil((u1 - u0) * GOL_UT.L / cell));
+  opts.nv = Math.max(2, Math.ceil((vb - va) * 3.1 / cell));
+  opts.flip = opts.flip === undefined ? true : opts.flip;
+  mb.patch(golSkinFn(off), u0, u1, va, vb, opts);
+}
+
+// recortes (negativo = dentro do elemento)
+function golArchF(P) {
+  return Math.min(Math.hypot(P[0] - GOL.AXF, P[1] - GOL.ARCH_Y), Math.hypot(P[0] - GOL.AXR, P[1] - GOL.ARCH_Y)) - GOL.ARCH_R;
+}
+const GW = { apx: 0, apy: 0, anx: 0, any: 0, cpx: 0, cpy: 0, cnx: 0, cny: 0 };
+function golWindowsInit() {
+  const a = golStation(0.50), ax = 0.50, ay = a.yE, b = golStation(0.10), bx = 0.10, by = b.yE;
+  let nx = -(by - ay), ny = bx - ax, l = Math.hypot(nx, ny); nx /= l; ny /= l; if (ny > 0) { nx = -nx; ny = -ny; }
+  GW.apx = ax; GW.apy = ay; GW.anx = nx; GW.any = ny;
+  const c = golStation(-1.18), cx = -1.18, cy = c.yE, d = golStation(-1.54), dx = -1.54, dy = d.yE;
+  nx = -(dy - cy); ny = dx - cx; l = Math.hypot(nx, ny); nx /= l; ny /= l; if (nx < 0) { nx = -nx; ny = -ny; }
+  GW.cpx = cx; GW.cpy = cy; GW.cnx = nx; GW.cny = ny;
+}
+function golRoofEdgeY(x) { return golStation(clamp(x, -1.24, 0.04)).yE; }
+function golWinDoor(P) {
+  const x = P[0], y = P[1];
+  const bottom = (golBeltN(x) + 0.014) - y;
+  const top = y - (golRoofEdgeY(x) - 0.036);
+  const front = 0.058 - ((x - GW.apx) * GW.anx + (y - GW.apy) * GW.any);
+  const rear = -0.37 - x;
+  return gsmax(gsmax(bottom, top, 0.022), gsmax(front, rear, 0.022), 0.026);
+}
+function golWinQuarter(P) {
+  const x = P[0], y = P[1];
+  const bottom = (golBeltN(x) + 0.014) - y;
+  const top = y - (golRoofEdgeY(x) - 0.036);
+  const front = x - (-0.465);
+  const rear = 0.088 - ((x - GW.cpx) * GW.cnx + (y - GW.cpy) * GW.cny);
+  return gsmax(gsmax(bottom, top, 0.020), gsmax(front, rear, 0.020), 0.024);
+}
+function golXe(P) { const zz = P[2] / 0.73; return P[0] - golBulge(P[0]) * (1 - zz * zz); }
+function golWindshield(P) {
+  const xe = golXe(P), st = golStation(P[0]);
+  const lo = xe - 0.555, hi = 0.042 - xe, side = P[2] - (st.zE - 0.044);
+  return P[0] < -0.05 ? 1 : gsmax(gsmax(lo, hi, 0.026), side, 0.05);
+}
+function golHatchGlass(P) {
+  const st = golStation(P[0]), y = P[1];
+  const lo = 0.920 - y, hi = y - 1.335, side = P[2] - (st.zE - 0.068);
+  return P[0] > -1.16 ? 1 : gsmax(gsmax(lo, hi, 0.026), side, 0.05);
+}
+const GL_GOL = { hlZ0: 0.348, hlZ1: 0.602, lY: 0.626, lH: 0.062, clZ: 0.608, clX: 1.665 };
+function golHeadlight(P) { return golRRect(P[2] - (GL_GOL.hlZ0 + GL_GOL.hlZ1) / 2, P[1] - GL_GOL.lY, (GL_GOL.hlZ1 - GL_GOL.hlZ0) / 2, GL_GOL.lH, 0.008); }
+function golCornerLamp(P, v) {
+  const g = v > 0.64 ? GL_GOL.clZ - P[2] : GL_GOL.clX - P[0];
+  return Math.max(Math.abs(P[1] - GL_GOL.lY) - GL_GOL.lH, g);
+}
+function golGrille(P) { return golRRect(P[2], P[1] - GL_GOL.lY, 0.335, GL_GOL.lH, 0.006); }
+const GT_GOL = { z0: 0.355, y0: 0.576, y1: 0.742 };
+function golTailLamp(P) {
+  return Math.max(
+    golRRect(0, P[1] - (GT_GOL.y0 + GT_GOL.y1) / 2, 1, (GT_GOL.y1 - GT_GOL.y0) / 2, 0.008),
+    GT_GOL.z0 - P[2],
+    P[0] - (-1.755 + (P[1] - 0.858) / 9.5 + 0.058)
+  );
+}
+const GSEAM = { door: null };
+function golSeamInit() {
+  const p = [[0.64, 0.22], [0.64, 0.89], [0.58, 0.93]];
+  for (let x = 0.50; x >= -0.39; x -= 0.045) p.push([x, golStation(x).yE - (x > 0.04 ? 0.028 : 0.022)]);
+  p.push([-0.415, golStation(-0.415).yE - 0.022]); p.push([-0.415, 0.22]); p.push([0.64, 0.22]);
+  GSEAM.door = p;
+}
+function golSeam(P, v) {
+  const x = P[0], y = P[1], z = P[2]; let d = 1;
+  if (v < 0.66 && x > -0.65 && x < 0.90) {
+    const p = GSEAM.door; let m = 1e9, inside = false;
+    for (let i = 0; i < p.length - 1; i++) {
+      const a = p[i], b = p[i + 1]; m = Math.min(m, golSegDist(x, y, a[0], a[1], b[0], b[1]));
+      if ((a[1] > y) !== (b[1] > y) && x < a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1])) inside = !inside;
+    }
+    d = Math.min(d, inside ? -m : m);
+  }
+  if (v > 0.6) {
+    const xe = golXe(P), st = golStation(x);
+    if (xe > 0.48) d = Math.min(d, Math.max(z - (st.zE - 0.052), 0.615 - xe, xe - 1.770));
+    if (x < -1.05) {
+      const zs = lerp(GT_GOL.z0 - 0.015, st.zE - 0.05, smooth(GT_GOL.y1 + 0.01, GT_GOL.y1 + 0.08, y));
+      d = Math.min(d, Math.max(z - zs, 0.560 - y, x + 1.18));
+    }
+  }
+  return d;
+}
+
+function golBuildBody(mb, gl) {
+  const seamUV = (u, v, P) => { _guv[0] = golSeam(P, v); _guv[1] = v; return _guv; };
+  const plainUV = (u, v, P) => { _guv[0] = 1; _guv[1] = v; return _guv; };
+  const v0 = mb.nv, i0 = mb.ni, gv0 = gl.nv, gi0 = gl.ni;
+  const paintField = (u, v, P) => {
+    let f = 1;
+    if (v < 0.42) f = golArchF(P);
+    else if (v < 0.66) f = Math.min(golWinDoor(P), golWinQuarter(P));
+    if (v > 0.6) {
+      f = Math.min(f, golWindshield(P), golHatchGlass(P));
+      if (P[0] > 1.55) f = Math.min(f, golHeadlight(P), golGrille(P));
+    }
+    f = Math.min(f, Math.max(GOL.AXF - P[0], P[1] - 0.542), Math.max(P[0] - GOL.AXR, P[1] - 0.550));
+    return -f;
+  };
+  const VS = 64 / 152;
+  mb.mat(CM.PAINT).color(1, 1, 1);
+  mb.patch(golSkinFn(0), 0, 1, 0, VS, { nu: 320, nv: 56, flip: true, uv: seamUV, rim: 0.016, rimMat: m => m.mat(CM.PAINT, 255), field: paintField });
+  mb.mat(CM.PAINT).color(1, 1, 1);
+  mb.patch(golSkinFn(0), 0, 1, VS, 1, { nu: 320, nv: 88, flip: true, uv: seamUV, rim: 0.016, rimMat: m => m.mat(CM.RUBBER).color(0.018, 0.018, 0.02), field: paintField });
+
+  // borrachas das janelas e faróis
+  const band = (fn, a, b) => (u, v, P) => { const f = fn(P, v); return Math.max(f - b, a - f); };
+  mb.mat(CM.RUBBER).color(0.02, 0.02, 0.02);
+  golSub(mb, 0.0015, 0.62, -0.40, 0.40, 0.64, 0.013, { field: band(golWinDoor, -0.012, 0.003), uv: plainUV });
+  golSub(mb, 0.0015, -0.44, -1.62, 0.40, 0.64, 0.013, { field: band(golWinQuarter, -0.012, 0.003), uv: plainUV });
+  golSub(mb, 0.0015, 0.62, -0.02, 0.60, 1, 0.013, { field: band(golWindshield, -0.014, 0.004), uv: plainUV });
+  golSub(mb, 0.0015, -1.16, -1.70, 0.60, 1, 0.013, { field: band(golHatchGlass, -0.014, 0.004), uv: plainUV });
+  golSub(mb, 0.0012, 1.88, 1.66, 0.62, 1, 0.006, { field: band(golHeadlight, -0.004, 0.002), uv: plainUV });
+
+  // coluna divisória do quebra-vento (entre triângulo dianteiro e vidro principal da porta)
+  {
+    const xB = 0.24, xT = 0.16, yB = 0.905, yT = 1.225;
+    const pts = [];
+    for (let k = 0; k <= 6; k++) {
+      const t = k / 6, x = lerp(xB, xT, t), y = lerp(yB, yT, t);
+      const st = golStation(x), z = lerp(st.zB, st.zE, clamp((y - st.yB) / Math.max(0.01, st.yE - st.yB), 0, 1));
+      pts.push([x, y, z]);
+    }
+    mb.mat(CM.RUBBER).color(0.02, 0.02, 0.022);
+    mb.sweep(pts, [[-0.011, -0.004], [0.011, -0.004], [0.011, 0.006], [-0.011, 0.006]], { closedProfile: true, hard: true, up: [0, 0, 1] });
+  }
+
+  // pisca âmbar envolvente de canto e lanterna traseira horizontal tricolor
+  mb.mat(CM.LENS, 2).color(0.62, 0.3, 0.05);
+  golSub(mb, 0.002, 1.87, 1.65, 0.25, 0.88, 0.006, {
+    field: (u, v, P) => golCornerLamp(P, v),
+    uv: (u, v, P) => { _guv[0] = P[0] + P[2]; _guv[1] = P[1]; return _guv; },
+    rim: 0.004,
+  });
+  mb.mat(CM.LENS, 1).color(0.75, 0.03, 0.02);
+  golSub(mb, 0.0025, -1.68, -1.815, 0.12, 0.95, 0.007, {
+    field: (u, v, P) => golTailLamp(P) - 0.003,
+    uv: (u, v, P) => { _guv[0] = sat((P[2] - GT_GOL.z0) / (0.748 - GT_GOL.z0)); _guv[1] = sat((P[1] - GT_GOL.y0) / (GT_GOL.y1 - GT_GOL.y0)); return _guv; },
+    rim: 0.003,
+  });
+
+  // maçaneta retangular preta e fechadura na porta
+  mb.mat(CM.PLASTIC).color(0.025, 0.025, 0.028);
+  golSub(mb, 0.005, -0.26, -0.39, 0.2, 0.39, 0.005, { field: (u, v, P) => golRRect(P[0] + 0.325, P[1] - 0.822, 0.048, 0.018, 0.006), uv: plainUV, rim: 0.004 });
+
+  // fundo das fendas da grade dianteira + 3 frisos horizontais pretos
+  mb.mat(CM.GRILLE).color(0.012, 0.012, 0.013);
+  golSub(mb, -0.024, 1.87, 1.72, 0.62, 1, 0.012, { field: (u, v, P) => golRRect(P[2], P[1] - GL_GOL.lY, 0.348, 0.068, 0.006), uv: plainUV });
+  mb.mat(CM.PLASTIC).color(0.022, 0.022, 0.024);
+  for (const sy of [0.592, 0.626, 0.660]) {
+    const xF = golTopX(0.18, sy, false) - 0.004;
+    mb.rbox(xF, sy, 0.175, 0.024, 0.009, 0.335, 0.003, 1);
+  }
+
+  // borzeguim: friso largo inferior na lateral entre as caixas de roda (y = 0.235..0.435)
+  mb.mat(CM.PLASTIC).color(0.024, 0.024, 0.026);
+  {
+    const clPts = [[-0.005, 0.235], [0.009, 0.242], [0.011, 0.392], [0.006, 0.398], [0.011, 0.405], [0.011, 0.428], [0.002, 0.438], [-0.006, 0.440]];
+    const np = clPts.length, nu = 44;
+    mb.patch((u, v, o) => {
+      const x = lerp(-0.835, 0.835, u), k = v * (np - 1), j = Math.min(np - 2, Math.floor(k)), f = k - j;
+      const off = lerp(clPts[j][0], clPts[j + 1][0], f), y = lerp(clPts[j][1], clPts[j + 1][1], f);
+      o[0] = x; o[1] = y; o[2] = golZL(x, y) + off;
+    }, 0, 1, 0, 1, { nu, nv: np - 1, flip: false, uv: plainUV });
+  }
+
+  // forro interno (portas/laterais escuras, teto claro)
+  const inner = (u, v, P) => -(Math.min(golWinDoor(P), golWinQuarter(P), v > 0.55 ? Math.min(golWindshield(P), golHatchGlass(P)) : 1) - 0.014);
+  mb.mat(CM.INTERIOR).color(0.075, 0.078, 0.085);
+  golSub(mb, -0.028, 0.65, -1.72, 0.04, 0.60, 0.026, { field: inner, uv: plainUV, flip: false });
+  mb.mat(CM.INTERIOR, 1).color(0.2, 0.2, 0.195);
+  golSub(mb, -0.028, 0.65, -1.72, 0.60, 1, 0.026, { field: inner, uv: plainUV, flip: false });
+
+  // vidros (laterais, para-brisa, vigia traseira inclinada, lentes dos faróis)
+  gl.mat(0).color(0.83, 0.915, 0.88);
+  const glz = fn => (u, v, P) => fn(P, v) + 0.008;
+  golSub(gl, -0.005, 0.62, -0.40, 0.40, 0.64, 0.02, { field: glz(golWinDoor), uv: plainUV });
+  golSub(gl, -0.005, -0.44, -1.62, 0.40, 0.64, 0.02, { field: glz(golWinQuarter), uv: plainUV });
+  golSub(gl, -0.005, 0.62, -0.02, 0.60, 1, 0.02, { field: glz(golWindshield), uv: plainUV });
+  golSub(gl, -0.005, -1.16, -1.70, 0.60, 1, 0.02, { field: glz(golHatchGlass), uv: plainUV });
+  gl.mat(1).color(0.93, 0.95, 0.95);
+  golSub(gl, -0.003, 1.88, 1.72, 0.62, 1, 0.012, { field: (u, v, P) => golHeadlight(P) + 0.002, uv: (u, v, P) => { _guv[0] = P[2]; _guv[1] = P[1]; return _guv; } });
+
+  mb.mirror(v0, i0, 2); gl.mirror(gv0, gi0, 2);
+}
+
+function golBuildParts(mb) {
+  const v0 = mb.nv, i0 = mb.ni;
+  // para-choques envolventes (comprimento total 1.94 - (-1.87) = 3.81 m)
+  mb.mat(CM.PLASTIC).color(0.022, 0.022, 0.024);
+  const fPath = carPath([[1.908, 0], [1.902, 0.34, 0.14], [1.882, 0.56, 0.12], [1.842, 0.720, 0.06], [1.72, 0.742, 0.05], [1.56, 0.766, 0.08], [1.42, 0.785]]);
+  const fProf = carPath([[-0.08, 0.548], [0.024, 0.546, 0.004], [0.032, 0.538, 0.004], [0.032, 0.514, 0.004], [0.025, 0.508, 0.003], [0.025, 0.492, 0.003], [0.032, 0.488, 0.003], [0.030, 0.365, 0.010], [0.020, 0.285, 0.008], [-0.06, 0.275]]);
+  carBumper(mb, fPath, fProf, 1, (u, v, P) => {
+    let f = golArchF(P) - 0.004;
+    if (P[0] > 1.84) {
+      f = Math.min(f,
+        golRRect(P[2] - 0.48, P[1] - 0.335, 0.13, 0.024, 0.008),
+        golRRect(P[2], P[1] - 0.445, 0.212, 0.068, 0.008),
+        golRRect(P[2], P[1] - 0.328, 0.24, 0.024, 0.008)
+      );
+    }
+    return -f;
+  }, 136, 42, 0.34 + 0.22 + 0.165, 0.32, 0.548, 0.24);
+
+  const rPath = carPath([[-1.842, 0], [-1.838, 0.34, 0.14], [-1.820, 0.58, 0.12], [-1.778, 0.744, 0.06], [-1.67, 0.764, 0.05], [-1.54, 0.778, 0.08], [-1.42, 0.790]]);
+  const rProf = carPath([[-0.08, 0.555], [0.022, 0.553, 0.004], [0.028, 0.545, 0.004], [0.028, 0.520, 0.004], [0.022, 0.514, 0.003], [0.022, 0.498, 0.003], [0.028, 0.494, 0.003], [0.026, 0.355, 0.012], [0.008, 0.312, 0.008], [-0.06, 0.305]]);
+  carBumper(mb, rPath, rProf, -1, (u, v, P) => -(golArchF(P) - 0.004), 120, 38, 0.34 + 0.24 + 0.162, 0.34, 0.555, 0.20);
+
+  // fundo das entradas de ar e rebaixo da placa dianteira
+  mb.mat(CM.GRILLE, 1).color(0.008, 0.008, 0.009);
+  mb.quad(1.908, 0.30, 0.62, 1.908, 0.30, 0, 1.908, 0.37, 0, 1.908, 0.37, 0.62);
+  mb.mat(CM.PLASTIC).color(0.018, 0.018, 0.02);
+  mb.quad(1.922, 0.375, 0.22, 1.922, 0.375, 0, 1.922, 0.515, 0, 1.922, 0.515, 0.22);
+
+  // caixas de roda e assoalho
+  mb.mat(CM.UNDER).color(0.006, 0.006, 0.007);
+  for (const ax of [GOL.AXF, GOL.AXR]) {
+    const R0 = GOL.ARCH_R + 0.006, N = 26, zo = golZL(ax, 0.54) - 0.012, zi = 0.34;
+    for (let i = 0; i < N; i++) {
+      const aS = ax > 0 ? 12 : -18, aE = ax > 0 ? 198 : 163;
+      const a0 = (aS + (aE - aS) * i / N) * PI / 180, a1 = (aS + (aE - aS) * (i + 1) / N) * PI / 180;
+      const x0 = ax + Math.cos(a0) * R0, y0 = GOL.ARCH_Y + Math.sin(a0) * R0, x1 = ax + Math.cos(a1) * R0, y1 = GOL.ARCH_Y + Math.sin(a1) * R0;
+      const a = mb.v(x0, y0, zo, -Math.cos(a0), -Math.sin(a0), 0, 0, 0), b = mb.v(x0, y0, zi, -Math.cos(a0), -Math.sin(a0), 0, 0, 1), c = mb.v(x1, y1, zi, -Math.cos(a1), -Math.sin(a1), 0, 1, 1), d = mb.v(x1, y1, zo, -Math.cos(a1), -Math.sin(a1), 0, 1, 0);
+      mb.quadI(a, d, c, b);
+    }
+    mb.quad(ax - 0.33, 0.25, zi, ax + 0.33, 0.25, zi, ax + 0.33, 0.65, zi, ax - 0.33, 0.65, zi);
+  }
+  mb.quad(1.56, 0.20, 0.56, 1.56, 0.20, 0, 1.56, 0.40, 0, 1.56, 0.40, 0.56);
+  mb.quad(-1.44, 0.20, 0, -1.44, 0.20, 0.56, -1.44, 0.40, 0.56, -1.44, 0.40, 0);
+  mb.quad(1.56, 0.40, 0, 1.90, 0.40, 0, 1.90, 0.40, 0.72, 1.56, 0.40, 0.72);
+  mb.quad(-1.82, 0.40, 0, -1.44, 0.40, 0, -1.44, 0.40, 0.74, -1.82, 0.40, 0.74);
+  mb.quad(-0.84, 0.20, 0, 0.84, 0.20, 0, 0.84, 0.20, 0.71, -0.84, 0.20, 0.71);
+  mb.quad(0.84, 0.20, 0, 1.56, 0.20, 0, 1.56, 0.20, 0.50, 0.84, 0.20, 0.50);
+  mb.quad(-1.44, 0.20, 0, -0.84, 0.20, 0, -0.84, 0.20, 0.50, -1.44, 0.20, 0.50);
+
+  // refletores e bulbos dos faróis dianteiros
+  {
+    const z0 = GL_GOL.hlZ0 + 0.003, z1 = GL_GOL.hlZ1 - 0.003, y0 = GL_GOL.lY - GL_GOL.lH + 0.003, y1 = GL_GOL.lY + GL_GOL.lH - 0.003, D = 0.056;
+    const zc = (z0 + z1) / 2, yc = (y0 + y1) / 2, hz = (z1 - z0) / 2, hy = (y1 - y0) / 2;
+    const dep = (a, b) => 0.006 + D * Math.pow(Math.max(0, (1 - a * a * a * a) * (1 - b * b * b * b)), 0.6);
+    mb.mat(CM.REFLECTOR).color(0.9, 0.9, 0.92);
+    mb.patch((u, v, o) => { const z = zc + u * hz, y = yc + v * hy, d = dep(u, v), x = golTopX(z, y, false); o[0] = x - d * 0.95; o[1] = y - d * 0.22; o[2] = z; }, -1, 1, -1, 1, { nu: 20, nv: 12, flip: true, uv: (u, v) => { _guv[0] = u; _guv[1] = v; return _guv; } });
+    const xb = golTopX(zc, yc, false) - (dep(0, 0) - 0.012) * 0.95, ybb = yc - (dep(0, 0) - 0.012) * 0.22;
+    mb.push(m4translate(m4(), xb, ybb, zc)); mb.push(m4rotZ(m4(), -PI / 2 + 0.25));
+    mb.mat(CM.REFLECTOR, 1).color(1, 0.95, 0.8); mb.cyl(0, -0.012, 0, 0.010, 0.024, 0.009, 12, false, true);
+    mb.mat(CM.REFLECTOR, 2).color(0.85, 0.85, 0.86); mb.cyl(0, -0.012, 0, 0.015, -0.007, 0.013, 12, false, true);
+    mb.mat(CM.REFLECTOR, 2).color(0.6, 0.6, 0.6); mb.cyl(0, 0.022, 0, 0.010, 0.028, 0.007, 10, false, true);
+    mb.pop(); mb.pop();
+  }
+
+  // retrovisores externos quadrados anos 90
+  mb.mat(CM.PLASTIC).color(0.015, 0.015, 0.016);
+  mb.push(m4translate(m4(), 0.48, 0.948, 0.855)); mb.push(m4rotY(m4(), 0.16));
+  mb.rbox(0, 0, 0, 0.070, 0.094, 0.156, 0.018, 4);
+  mb.mat(CM.MIRROR).color(0.62, 0.64, 0.67);
+  mb.quad(-0.0355, -0.035, -0.065, -0.0355, -0.035, 0.065, -0.0355, 0.035, 0.065, -0.0355, 0.035, -0.065);
+  mb.pop(); mb.pop();
+  mb.mat(CM.PLASTIC).color(0.015, 0.015, 0.016);
+  mb.rbox(0.50, 0.944, 0.755, 0.12, 0.074, 0.076, 0.008, 2);
+
+  // aerofólios traseiros pretos (superior sobre a vigia + inferior sobre a tampa traseira)
+  mb.mat(CM.PLASTIC).color(0.020, 0.020, 0.022);
+  mb.rbox(-1.225, 1.356, 0.295, 0.13, 0.026, 0.59, 0.008, 2);
+  mb.rbox(-1.725, 0.902, 0.33, 0.105, 0.042, 0.66, 0.010, 2);
+  // suportes laterais dos aerofólios
+  mb.rbox(-1.21, 1.345, 0.575, 0.11, 0.032, 0.03, 0.006, 1);
+
+  // interior (metade direita; espelhado) — bancos esportivos CL/GTi mais baixos para teto de 1,375 m
+  mb.mat(CM.INTERIOR).color(0.048, 0.048, 0.052);
+  mb.quad(-0.90, 0.23, 0.73, 0.80, 0.23, 0.73, 0.80, 0.23, 0, -0.90, 0.23, 0);
+  mb.quad(-1.42, 0.23, 0.50, -0.90, 0.23, 0.50, -0.90, 0.23, 0, -1.42, 0.23, 0);
+  mb.quad(-1.74, 0.42, 0.73, -1.42, 0.42, 0.73, -1.42, 0.42, 0, -1.74, 0.42, 0);
+  mb.quad(0.75, 0.20, 0, 0.75, 0.20, 0.73, 0.75, 0.88, 0.73, 0.75, 0.88, 0);
+  // painel dianteiro reto e console central
+  mb.mat(CM.INTERIOR, 3).color(0.042, 0.042, 0.046);
+  mb.rbox(0.54, 0.76, 0.35, 0.34, 0.20, 0.70, 0.03, 3);
+  mb.rbox(0.42, 0.48, 0.055, 0.32, 0.30, 0.12, 0.025, 2);
+  mb.mat(CM.INTERIOR, 3).color(0.068, 0.068, 0.074);
+  mb.rbox(0.56, 0.858, 0.35, 0.30, 0.024, 0.69, 0.008, 2);
+  mb.mat(CM.GRILLE).color(0.02, 0.02, 0.022);
+  mb.box(0.37, 0.81, 0.61, 0.008, 0.04, 0.10);
+  mb.box(0.37, 0.81, 0.09, 0.008, 0.04, 0.10);
+  mb.mat(CM.INTERIOR, 3).color(0.03, 0.03, 0.034);
+  mb.rbox(0.368, 0.73, 0.35, 0.012, 0.08, 0.28, 0.004, 2);
+
+  // bancos dianteiros e traseiro
+  mb.mat(CM.INTERIOR, 4).color(0.065, 0.068, 0.075);
+  mb.rbox(-0.04, 0.38, 0.355, 0.48, 0.13, 0.48, 0.05, 4);
+  mb.push(m4translate(m4(), -0.27, 0.415, 0.355)); mb.push(m4rotZ(m4(), 0.31));
+  mb.rbox(0, 0.28, 0, 0.12, 0.56, 0.46, 0.05, 4);
+  mb.color(0.115, 0.12, 0.135);
+  mb.rbox(0.055, 0.28, 0, 0.03, 0.42, 0.28, 0.012, 2);
+  mb.pop(); mb.pop();
+  mb.push(m4translate(m4(), -0.29, 0.415, 0.355)); mb.push(m4rotZ(m4(), 0.31));
+  mb.mat(CM.INTERIOR, 2).color(0.062, 0.064, 0.072); mb.rbox(0.005, 0.66, 0, 0.09, 0.15, 0.23, 0.035, 4);
+  mb.mat(CM.STEEL).color(0.3, 0.3, 0.3); mb.cyl(0, 0.54, -0.055, 0.006, 0.60, 0.006, 6); mb.cyl(0, 0.54, 0.055, 0.006, 0.60, 0.006, 6);
+  mb.pop(); mb.pop();
+
+  mb.mat(CM.INTERIOR, 4).color(0.065, 0.068, 0.075);
+  mb.rbox(-0.98, 0.40, 0.31, 0.44, 0.14, 0.62, 0.05, 4);
+  mb.push(m4translate(m4(), -1.19, 0.44, 0.31)); mb.push(m4rotZ(m4(), 0.36)); mb.rbox(0, 0.24, 0, 0.11, 0.48, 0.62, 0.045, 4); mb.pop(); mb.pop();
+  mb.mat(CM.INTERIOR).color(0.038, 0.038, 0.042); mb.box(-1.50, 0.85, 0.30, 0.36, 0.02, 0.60);
+
+  mb.mirror(v0, i0, 2);
+
+  // ---------------- peças não simétricas ----------------
+  // painel "satélite" exclusivo do lado do motorista (capela quadrada + asas laterais de chaves)
+  mb.mat(CM.INTERIOR, 3).color(0.038, 0.038, 0.042);
+  mb.rbox(0.43, 0.885, -0.355, 0.16, 0.125, 0.34, 0.022, 3);
+  mb.rbox(0.405, 0.855, -0.57, 0.09, 0.11, 0.08, 0.015, 2);
+  mb.rbox(0.405, 0.855, -0.14, 0.09, 0.11, 0.08, 0.015, 2);
+  mb.tube([[0.32, 0.84, -0.355], [0.52, 0.77, -0.355]], 0.028, 10);
+  mb.rbox(0.20, 1.23, 0, 0.024, 0.05, 0.19, 0.010, 2); mb.tube([[0.21, 1.23, 0], [0.17, 1.29, 0]], 0.007, 6);
+  mb.tube([[0.18, 0.38, 0], [0.15, 0.56, 0]], 0.010, 6); mb.rbox(0.148, 0.58, 0, 0.044, 0.044, 0.044, 0.018, 3);
+  mb.rbox(-0.14, 0.36, 0, 0.28, 0.045, 0.038, 0.014, 2);
+
+  // limpadores dianteiros e traseiro
+  mb.mat(CM.RUBBER).color(0.015, 0.015, 0.015);
+  const wipF = (zp, z1, xe0, lift) => {
+    const P = (z, xe) => { const zz = z / 0.73, x = xe + golBulge(xe) * (1 - zz * zz); return [x, golYtop(x, z) + 0.015, z]; };
+    const zm = (zp + z1) / 2, a = P(zp, 0.58), m = P(zm + (z1 - zp) * 0.1, xe0 - lift * 0.5);
+    mb.rbox(a[0], a[1] - 0.004, a[2], 0.028, 0.02, 0.028, 0.007, 2);
+    mb.sweep([a, [(a[0] + m[0]) / 2, (a[1] + m[1]) / 2 + 0.005, (a[2] + m[2]) / 2], m], [[-0.005, -0.003], [0.005, -0.003], [0.005, 0.003], [-0.005, 0.003]], { closedProfile: true, hard: true });
+    const pts = []; for (let k = 0; k <= 7; k++) { const z = lerp(zp + (z1 - zp) * 0.12, z1, k / 7); pts.push(P(z, lerp(xe0, xe0 - lift, k / 7))); }
+    mb.sweep(pts, [[-0.006, -0.007], [0.006, -0.007], [0.003, 0.005], [-0.003, 0.005]], { closedProfile: true, hard: true });
+  };
+  wipF(0.28, -0.22, 0.555, 0.03); wipF(-0.24, -0.64, 0.555, 0.045);
+  {
+    const PR = (z, y) => { const x = golTopX(z, y, true); return [x - 0.015, y + 0.012, z]; };
+    const a = PR(0.02, 0.92), b = PR(-0.22, 0.97);
+    mb.rbox(a[0], a[1], a[2], 0.026, 0.026, 0.026, 0.007, 2);
+    mb.sweep([a, b], [[-0.005, -0.003], [0.005, -0.003], [0.005, 0.003], [-0.005, 0.003]], { closedProfile: true, hard: true });
+    const pts = []; for (let k = 0; k <= 6; k++) pts.push(PR(lerp(0, -0.38, k / 6), 0.975 + 0.012 * k / 6));
+    mb.sweep(pts, [[-0.005, -0.005], [0.005, -0.005], [0.003, 0.005], [-0.003, 0.005]], { closedProfile: true, hard: true });
+  }
+
+  // escapamento: silencioso transversal + ponteira dupla cromada à esquerda
+  mb.mat(CM.STEEL, 1).color(0.03, 0.03, 0.032);
+  mb.push(m4translate(m4(), -1.55, 0.275, -0.24)); mb.push(m4rotX(m4(), PI / 2)); mb.cyl(0, 0, 0, 0.058, 0.30, 0.058, 18, true, true); mb.pop(); mb.pop();
+  mb.mat(CM.CHROME, 1).color(0.86, 0.88, 0.90);
+  for (const ez of [-0.425, -0.485]) mb.tube([[-1.56, 0.272, ez], [-1.72, 0.270, ez], [-1.865, 0.268, ez]], 0.017, 10);
+
+  // emblema VW cromado central na grade dianteira (aro 3D + decalque VW nítido à frente do tampão)
+  {
+    const y = GL_GOL.lY, x = golTopX(0, y, false), xu = golTopX(0, y + 0.02, false), sl = (xu - x) / 0.02, l = Math.hypot(1, sl);
+    const B = m4basis(m4(), 0, 0, -1, sl / l, 1 / l, 0, 1 / l, -sl / l, 0, x + 0.003, y, 0);
+    mb.mat(CM.CHROME, 2).color(0.92, 0.93, 0.95); mb.push(B);
+    mb.push(m4rotX(m4(), PI / 2)); mb.cyl(0, -0.006, 0, 0.044, 0.005, 0.044, 24, true, true); mb.pop();
+    const reg = CAT.vw, hw = 0.040, hh = 0.040, zd = 0.0068;
+    mb.mat(CM.DECAL, 1).color(1, 1, 1);
+    mb.quad(-hw, -hh, zd, hw, -hh, zd, hw, hh, zd, -hw, hh, zd, reg[0], reg[3], reg[2], reg[1]);
+    mb.pop();
+  }
+
+  // placas dianteira/traseira e emblemas traseiros (VW + GOL 1.8)
+  const dq = (reg, zc, y0, w, h, rear, lift) => {
+    const P = (z, y) => { const x = rear ? golTopX(z, y, true) - lift : lift; return [x, y, z]; };
+    const s = rear ? 1 : -1, a = P(zc - s * w / 2, y0), b = P(zc + s * w / 2, y0), c = P(zc + s * w / 2, y0 + h), d = P(zc - s * w / 2, y0 + h);
+    mb.quad(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], d[0], d[1], d[2], reg[0], reg[3], reg[2], reg[1]);
+  };
+  mb.mat(CM.DECAL).color(1, 1, 1);
+  dq(CAT.golPlate, 0, 0.592, 0.40, 0.13, true, 0.006);
+  dq(CAT.golPlate, 0, 0.382, 0.40, 0.13, false, 1.9245);
+  mb.mat(CM.DECAL, 1).color(1, 1, 1);
+  dq(CAT.vw, 0, 0.768, 0.064, 0.064, true, 0.004);
+  dq(CAT.gol18, 0.49, 0.772, 0.21, 0.044, true, 0.004);
+  // faixa plástica preta acima da placa traseira (puxador da tampa)
+  mb.mat(CM.PLASTIC).color(0.02, 0.02, 0.022);
+  mb.rbox(golTopX(0, 0.742, true) - 0.006, 0.742, 0, 0.016, 0.024, 0.44, 0.005, 1);
+}
+
+// piloto ajustado ao banco mais baixo e volante do Gol Quadrado (capacete sempre abaixo do teto de 1,375 m)
+function golBuildDriver(mb) {
+  const zd = -0.355;
+  mb.mat(CM.INTERIOR, 2).color(0.2, 0.028, 0.03);
+  mb.push(m4translate(m4(), -0.255, 0.455, zd)); mb.push(m4rotZ(m4(), 0.28));
+  mb.rbox(0.08, 0.26, 0, 0.19, 0.52, 0.35, 0.075, 4);
+  mb.rbox(0.08, 0.48, 0, 0.16, 0.10, 0.42, 0.042, 3);
+  mb.pop(); mb.pop();
+  mb.rbox(0.01, 0.485, zd, 0.43, 0.125, 0.33, 0.058, 3);
+  for (const sg of [-1, 1]) mb.tube([[-0.26, 0.915, zd + sg * 0.195], [-0.03, 0.82, zd + sg * 0.205], [0.245, 0.875, zd + sg * 0.162]], 0.041, 8);
+  mb.mat(CM.INTERIOR, 3).color(0.02, 0.02, 0.022);
+  for (const sg of [-1, 1]) mb.rbox(0.255, 0.880, zd + sg * 0.165, 0.082, 0.068, 0.072, 0.028, 2);
+  mb.rbox(-0.265, 0.980, zd, 0.095, 0.065, 0.105, 0.028, 2);
+  mb.mat(CM.INTERIOR, 3).color(0.012, 0.012, 0.013);
+  mb.sweep([[-0.255, 0.95, zd - 0.145], [-0.15, 0.77, zd - 0.02], [-0.085, 0.58, zd + 0.145]], [[-0.022, 0.004], [0.022, 0.004], [0.022, -0.004], [-0.022, -0.004]], { closedProfile: true, hard: true, up: [1, 0.3, 0] });
+  mb.mat(CM.GLOSS).color(0.05, 0.052, 0.058);
+  mb.rbox(-0.245, 1.105, zd, 0.24, 0.235, 0.22, 0.106, 7);
+  mb.rbox(-0.220, 1.034, zd, 0.178, 0.098, 0.198, 0.046, 5);
+  mb.mat(CM.GLOSS, 1).color(0.01, 0.011, 0.014);
+  mb.rbox(-0.185, 1.115, zd, 0.125, 0.076, 0.225, 0.032, 5);
+}
+
+// roda Orbital prateada (aro de liga leve com anel de 9 janelas orbitais e disco de borrão)
+function golBuildWheel(mb, mbBlur) {
+  mb.push(m4rotY(m4(), -PI / 2));
+  mb.push(m4translate(m4(), -0.015, 0, 0));
+  const R = GOL.WR, seg = 64;
+  mb.mat(CM.TIRE, 255).color(0.02, 0.02, 0.021);
+  mb.lathe([[-0.058, 0.168], [-0.066, 0.18], [-0.0735, 0.205], [-0.074, 0.228], [-0.071, 0.25], [-0.066, 0.264, 0.5, 1]], seg);
+  mb.lathe([[0.066, 0.264, 0.5, -1], [0.071, 0.25], [0.074, 0.228], [0.0735, 0.205], [0.066, 0.18], [0.058, 0.168]], seg);
+  mb.mat(CM.TIRE, 0);
+  const tread = [[-0.066, 0.264, 0.5, 1], [-0.061, 0.2745], [-0.052, 0.2795]];
+  const groove = x => { tread.push([x - 0.0045, R], [x - 0.0036, R - 0.0065], [x + 0.0036, R - 0.0065], [x + 0.0045, R]); };
+  tread.push([-0.041, R]); groove(-0.033); groove(-0.011); groove(0.011); groove(0.033); tread.push([0.041, R]);
+  tread.push([0.052, 0.2795], [0.061, 0.2745], [0.066, 0.264, 0.5, -1]);
+  mb.lathe(tread, seg);
+
+  // tambor/disco interno escuro atrás das aberturas da roda Orbital
+  mb.mat(CM.STEEL, 1).color(0.038, 0.038, 0.042);
+  mb.lathe([[0.058, 0.168], [0.064, 0.171], [0.068, 0.168], [0.050, 0.164], [0.026, 0.154], [0.024, 0.0]], 36);
+  mb.lathe([[-0.02, 0.0], [-0.02, 0.10], [-0.05, 0.158], [-0.06, 0.166], [-0.058, 0.168]], 28);
+
+  // face usinada da roda Orbital com 9 janelas periféricas e calota central lisa
+  mb.mat(CM.ALU, 1).color(0.76, 0.78, 0.82);
+  const NS = 9, prof = r => {
+    const t = r / 0.168;
+    return 0.0705 - 0.006 * t * t - 0.0025 * smooth(0.052, 0.058, r) * (1 - smooth(0.058, 0.064, r)) + 0.004 * smooth(0.154, 0.168, r);
+  };
+  mb.patch((u, v, o) => {
+    const a = u * TAU, r = v * 0.1685;
+    o[0] = prof(r); o[1] = r * Math.cos(a); o[2] = r * Math.sin(a);
+  }, 0, 1.003, 0.0, 1, {
+    nu: 180, nv: 28, flip: true, rim: 0.015,
+    rimMat: m => m.mat(CM.STEEL, 1).color(0.06, 0.06, 0.07),
+    uv: (u, v) => { _guv[0] = u; _guv[1] = v; return _guv; },
+    field: (u, v) => {
+      const r = v * 0.1685, da = (u * NS - Math.round(u * NS)) / NS * TAU;
+      const t = r * Math.sin(da), q = Math.max(Math.abs(r - 0.133) - 0.017, 0);
+      return -(Math.hypot(t, q) - 0.0105);
+    },
+  });
+  // sulco central da calotinha Orbital
+  mb.mat(CM.STEEL, 1).color(0.06, 0.06, 0.07);
+  mb.lathe([[0.0702, 0.052], [0.0682, 0.055], [0.0702, 0.058]], 32);
+
+  // disco de borrão em velocidade
+  const bm = mbBlur || mb;
+  if (mbBlur) { bm.push(m4rotY(m4(), -PI / 2)); bm.push(m4translate(m4(), -0.015, 0, 0)); }
+  bm.mat(CM.HUBCAP, 1).color(0.76, 0.78, 0.82);
+  bm.patch((u, v, o) => {
+    const a = u * TAU, r = 0.056 + v * 0.104;
+    o[0] = prof(r) + 0.002; o[1] = r * Math.cos(a); o[2] = r * Math.sin(a);
+  }, 0, 1, 0, 1, { nu: 48, nv: 8, flip: true, uv: (u, v) => { _guv[0] = u; _guv[1] = v; return _guv; } });
+  if (mbBlur) { bm.pop(); bm.pop(); }
+  mb.pop(); mb.pop();
+}
+
+// volante clássico "4 botões" do Gol Quadrado (devolve a matriz da coluna de direção)
+function golBuildSteer(mb) {
+  mb.mat(CM.INTERIOR, 3).color(0.032, 0.032, 0.035);
+  const ring = [];
+  for (let i = 0; i < 40; i++) { const a = i / 40 * TAU; ring.push([0, 0.180 * Math.cos(a), 0.180 * Math.sin(a)]); }
+  mb.tube(ring, 0.0135, 10, { closed: true, up: [1, 0, 0] });
+  // miolo largo + 4 raios
+  mb.rbox(-0.028, -0.008, 0, 0.044, 0.115, 0.175, 0.018, 3);
+  mb.rbox(-0.016, 0.02, 0.11, 0.02, 0.028, 0.14, 0.006, 1);
+  mb.rbox(-0.016, 0.02, -0.11, 0.02, 0.028, 0.14, 0.006, 1);
+  mb.rbox(-0.016, -0.095, 0.055, 0.02, 0.15, 0.028, 0.006, 1);
+  mb.rbox(-0.016, -0.095, -0.055, 0.02, 0.15, 0.028, 0.006, 1);
+  // 4 botões de buzina característicos na face voltada para o motorista (+X local)
+  mb.mat(CM.INTERIOR, 2).color(0.065, 0.067, 0.072);
+  for (const sy of [0.022, -0.032]) for (const sz of [-0.048, 0.048]) {
+    mb.rbox(-0.003, sy, sz, 0.010, 0.038, 0.052, 0.005, 1);
+  }
+  const t0 = m4translate(m4(), 0.31, 0.855, -0.355), t1 = m4rotZ(m4(), 156 * PI / 180);
+  return m4mul(m4(), t0, t1);
+}
+
+function golBuildModel() {
+  golShapeInit(); golWindowsInit(); golSeamInit();
+  const mb = new MeshBuilder(1 << 17), gl = new MeshBuilder(1 << 14);
+  golBuildBody(mb, gl);
+  golBuildParts(mb);
+  let tris = mb.ni / 3 + gl.ni / 3;
+  const dm = new MeshBuilder(1 << 13); golBuildDriver(dm); tris += dm.ni / 3;
+  const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); golBuildWheel(w, wb); tris += 4 * (w.ni + wb.ni) / 3;
+  const s = new MeshBuilder(1 << 12); const steerMat = golBuildSteer(s); tris += s.ni / 3;
+  return {
+    name: 'Gol Quadrado AP 1.8',
+    bodyMesh: mb.upload(),
+    driverMesh: dm.upload(),
+    glassMesh: gl.upload(),
+    wheelMesh: w.upload(),
+    wheelBlurMesh: wb.upload(),
+    steerMesh: s.upload(),
+    steerMat,
+    hubs: [[GOL.AXF, GOL.WR, -0.685], [GOL.AXF, GOL.WR, 0.685], [GOL.AXR, GOL.WR, -0.67], [GOL.AXR, GOL.WR, 0.67]],
+    wheelR: GOL.WR,
+    eyePos: [-0.12, 1.115, -0.355],
+    bodyKind: 1,
+    tris,
+  };
+}
+
 // ---- 40_vehicle.js
 // Física do veículo (sem biblioteca): modelo plano de 4 rodas com transferência de carga, elipse de atrito,
 // tração dianteira, câmbio automático, freio de mão, relevo/inclinação da pista e colisão com barreiras.
 // Passo fixo de 1/120 s. Nenhuma alocação durante a simulação.
 const PHYS_DT = 1 / 120;
-const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512;
+const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V = 128, K_PAD = 256, K_PADS = 512, K_BOOST = 1024, K_HORN = 2048;
 // Entrada analógica do controle: VIN[0] acelerador 0..1, VIN[1] freio 0..1 (valem quando as teclas trazem K_PAD), VIN[2] direção -1..1 (K_PADS).
 // As teclas gravadas da volta roteirizada nunca trazem esses bits: a via digital fica exatamente como era.
 const VIN = new Float64Array(3);
+const VEH_SPECS = [
+  {
+    name: 'Uno Mille EP',
+    m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
+    mu: 1.42, B: 9.5, C: 1.42,
+    gears: [3.91, 2.16, 1.48, 1.12, 0.9], final: 4.07, rev: 3.9, eff: 0.9,
+    cdA: 0.62, crr: 0.014, brakeF: 0.64, halfW: 0.78, front: 1.92, rear: 1.72,
+    t0: 180, tA: 118, tShift: 0.6, tSpan: 5.4, tDrop: 110, tPeak: 6.0,
+  },
+  {
+    name: 'Gol Quadrado AP 1.8',
+    m: 940, Izz: 1290, L: 2.358, a: 0.95, b: 1.408, tw: 1.37, h: 0.46, R: 0.281,
+    mu: 1.44, B: 9.8, C: 1.42,
+    gears: [3.45, 1.94, 1.37, 1.03, 0.83], final: 4.11, rev: 3.6, eff: 0.9,
+    cdA: 0.60, crr: 0.014, brakeF: 0.64, halfW: 0.80, front: 1.94, rear: 1.87,
+    t0: 215, tA: 135, tShift: 0.8, tSpan: 5.0, tDrop: 115, tPeak: 5.8,
+  },
+];
 const VP = {
+  spec: 0,
   m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
   mu: 1.42, B: 9.5, C: 1.42,
   gears: [3.91, 2.16, 1.48, 1.12, 0.9], final: 4.07, rev: 3.9, eff: 0.9,
   cdA: 0.62, crr: 0.014, brakeF: 0.64, halfW: 0.78, front: 1.92, rear: 1.72,
+  t0: 180, tA: 118, tShift: 0.6, tSpan: 5.4, tDrop: 110, tPeak: 6.0,
 };
 const VEH = {
   x: 0, z: 0, yaw: 0, vx: 0, vy: 0, r: 0,                  // posição do CG no plano, direção, velocidades no corpo (frente, direita), guinada
   steer: 0, rpm: 900, gear: 1, throttle: 0, brake: 0, hand: 0,
+  boost: 1, boosting: 0,
   ax: 0, ay: 0,                                              // acelerações filtradas (corpo)
   roll: 0, rollV: 0, pitch: 0, pitchV: 0, heave: 0, heaveV: 0,
   y: 0, gPitch: 0, gRoll: 0,                                 // altura e inclinação do chão sob o carro (filtradas)
@@ -6803,8 +7671,23 @@ const _vl = new Float64Array(4), _vp = new Float64Array(5);
 // posições locais das rodas (x frente, z direita): FL, FR, RL, RR
 const WLX = [VP.a, VP.a, -VP.b, -VP.b], WLZ = [-VP.tw / 2, VP.tw / 2, -VP.tw / 2, VP.tw / 2];
 
-function engineTorque(rpm) { // curva de torque (N·m): um Mille bem mais disposto que o de fábrica
-  const x = rpm / 1000; const t = 180 + 118 * Math.sin(clamp((x - 0.6) / 5.4, 0, 1) * PI) - Math.max(0, x - 6.0) * 110;
+function vehicleApplySpec(idx) {
+  const i = (idx | 0) === 1 ? 1 : 0, S = VEH_SPECS[i];
+  VP.spec = i;
+  VP.m = S.m; VP.Izz = S.Izz; VP.L = S.L; VP.a = S.a; VP.b = S.b; VP.tw = S.tw; VP.h = S.h; VP.R = S.R;
+  VP.mu = S.mu; VP.B = S.B; VP.C = S.C;
+  for (let k = 0; k < 5; k++) VP.gears[k] = S.gears[k];
+  VP.final = S.final; VP.rev = S.rev; VP.eff = S.eff;
+  VP.cdA = S.cdA; VP.crr = S.crr; VP.brakeF = S.brakeF; VP.halfW = S.halfW; VP.front = S.front; VP.rear = S.rear;
+  VP.t0 = S.t0; VP.tA = S.tA; VP.tShift = S.tShift; VP.tSpan = S.tSpan; VP.tDrop = S.tDrop; VP.tPeak = S.tPeak;
+  WLX[0] = WLX[1] = S.a; WLX[2] = WLX[3] = -S.b;
+  WLZ[0] = WLZ[2] = -S.tw * 0.5; WLZ[1] = WLZ[3] = S.tw * 0.5;
+  return i;
+}
+
+function engineTorque(rpm) { // curva de torque (N·m) conforme especificação ativa (Uno Mille / Gol AP 1.8)
+  const P = VP, x = rpm / 1000;
+  const t = P.t0 + P.tA * Math.sin(clamp((x - P.tShift) / P.tSpan, 0, 1) * PI) - Math.max(0, x - P.tPeak) * P.tDrop;
   return Math.max(0, t);
 }
 // consulta do chão sem números por argumento/retorno: entrada _gq[0]=x, _gq[1]=z; saída _gq[8]=altura; devolve a zona (inteiro).
@@ -6834,7 +7717,7 @@ const ZMU = [1.0, 0.96, 0.56, 0.5, 0.5, 0.95, 0.95], ZDRAG = [0, 0.005, 0.07, 0.
 function vehicleReset(s, d, heading) {
   const V = VEH; trackPos(s, d, _vp);
   V.x = _vp[0]; V.z = _vp[2]; V.yaw = Math.atan2(_vp[4], _vp[3]) + (heading || 0);
-  V.vx = V.vy = V.r = 0; V.steer = 0; V.rpm = 900; V.gear = 1; V.ax = V.ay = 0; V.roll = V.rollV = V.pitch = V.pitchV = V.heave = V.heaveV = 0;
+  V.vx = V.vy = V.r = 0; V.steer = 0; V.rpm = 900; V.gear = 1; V.boost = 1; V.boosting = 0; V.ax = V.ay = 0; V.roll = V.rollV = V.pitch = V.pitchV = V.heave = V.heaveV = 0;
   V.hint = -1; V.whint.fill(-1); V.omega.fill(0); V.slip.fill(0);
   _gq[0] = V.x; _gq[1] = V.z; groundQ(-1); V.y = _gq[8]; V.gPitch = 0; V.gRoll = 0; V.lastS = V.s;
   for (let k = 0; k < 6; k++) vehicleGround(1);
@@ -6885,11 +7768,21 @@ function vehicleStep(keys) {
     else if (V.gear > 1 && Math.abs(wheelSpd * P.gears[V.gear - 2] * P.final) * 9.5493 < 5350) V.gear--;
     ratio = P.gears[V.gear - 1] * P.final; rpm = Math.abs(wheelSpd * ratio) * 9.5493;
   }
-  const rpmE = Math.min(6700, Math.max(900, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // embreagem patinando na saída
+  const noExt = typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn);
+  const boostOn = !noExt && (keys & K_BOOST) !== 0 && V.boost > (V.boosting ? 0.02 : 0.08) && V.gear > 0 && thr > 0.1;
+  if (boostOn) {
+    V.boosting = 1;
+    V.boost = Math.max(0, V.boost - 0.28 * dt);
+  } else {
+    V.boosting = 0;
+  }
+  const rpmMax = boostOn ? 6950 : 6700, rpmCut = boostOn ? 6750 : 6500;
+  const rpmE = Math.min(rpmMax, Math.max(900, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // embreagem patinando na saída
   V.rpm += (rpmE - V.rpm) * 0.25;
-  const ex = rpmE / 1000, ek = (ex - 0.6) / 5.4, eT = 180 + 118 * Math.sin((ek < 0 ? 0 : ek > 1 ? 1 : ek) * PI) - (ex > 6 ? (ex - 6) * 110 : 0);   // = engineTorque(rpmE), embutido
+  const ex = rpmE / 1000, ek = (ex - P.tShift) / P.tSpan, eT = P.t0 + P.tA * Math.sin((ek < 0 ? 0 : ek > 1 ? 1 : ek) * PI) - (ex > P.tPeak ? (ex - P.tPeak) * P.tDrop : 0);   // = engineTorque(rpmE), embutido
   let Tdrive = throttle * (eT > 0 ? eT : 0) * ratio * P.eff;                  // torque total nas rodas dianteiras
-  if (rpm > 6500) Tdrive = 0;
+  if (boostOn) Tdrive *= 1.38;
+  if (rpm > rpmCut) Tdrive = 0;
   if (reverse && V.vx < -11) Tdrive = 0;
   Tdrive -= (1 - throttle) * 0.012 * rpmE * Math.sign(wheelSpd) * Math.abs(ratio) * 0.1;   // freio-motor
   // --- carga vertical por roda
@@ -6901,8 +7794,9 @@ function vehicleStep(keys) {
   let Fx = 0, Fy = 0, Mz = 0; const cs = Math.cos(V.steer), sn = Math.sin(V.steer);
   const lw0 = Math.min(1, Math.max(0, (speed - 0.4) / 1.8));
   const lowW = (lw0 * lw0 * (3 - 2 * lw0));
+  const gripMul = (!noExt && typeof ENV !== 'undefined') ? ENV.grip : 1;
   for (let i = 0; i < 4; i++) {
-    const front = i < 2, zone = V.wzone[i], mu = P.mu * ZMU[zone], cap = mu * V.fz[i];
+    const front = i < 2, zone = V.wzone[i], hard = zone === ZONE.ASPHALT || zone === ZONE.KERB || zone === ZONE.PIT, mu = P.mu * ZMU[zone] * (hard ? gripMul : 1), cap = mu * V.fz[i];
     // velocidade do ponto de contato no referencial do corpo
     const vxw = V.vx - V.r * WLZ[i], vyw = V.vy + V.r * WLX[i];
     // no referencial da roda
@@ -6938,6 +7832,11 @@ function vehicleStep(keys) {
     // para o referencial do corpo
     const fbx = front ? fx * cs - fy * sn : fx, fby = front ? fx * sn + fy * cs : fy;
     Fx += fbx; Fy += fby; Mz += WLX[i] * fby - WLZ[i] * fbx;
+  }
+  if (!V.boosting) {
+    let maxSlip = 0;
+    for (let i = 0; i < 4; i++) if (V.slip[i] > maxSlip) maxSlip = V.slip[i];
+    V.boost = Math.min(1, V.boost + (0.055 * Math.min(1, speed / 22) + 0.045 * maxSlip) * dt);
   }
   // arrasto, gravidade nas rampas
   Fx -= 0.5 * 1.2 * P.cdA * V.vx * Math.abs(V.vx);
@@ -7053,6 +7952,523 @@ function aiKeys(t) {
   return keys;
 }
 
+// ---- 43_rivals.js
+// Rivais na pista (Modo Corrida de 3 voltas): 3 carros de IA usando CAR.models[0..1],
+// seguem AI.line/AI.vt com desvio para ultrapassagem, colisão elástica 2D e classificação contínua.
+// Nenhuma alocação em rivStep() ou rivPose().
+const RIV_N = 3;
+const RACE_LAPS = 3;
+const RIV_CAP_H = 0.95;
+const RIV_CAP_R = 0.85;
+
+function rivMakeCar(idx, nome, modelIdx, paintIdx, pace, gridS, gridD) {
+  return {
+    idx, nome, modelIdx, paintIdx, pace, gridS, gridD,
+    activeModel: 0, bodyKind: modelIdx, wheelR: 0.281,
+    hubs: [[1.181, 0.281, -0.67], [1.181, 0.281, 0.67], [-1.181, 0.281, -0.65], [-1.181, 0.281, 0.65]],
+    slotBody: 0, slotWheel: [0, 0, 0, 0],
+    items: [], glassItems: [], vis: false,
+    s: 0, d: 0, lastS: 0, laps: 0, prog: 0, hint: -1,
+    x: 0, y: 0, z: 0, yaw: 0, speed: 0, vLat: 0,
+    gPitch: 0, gRoll: 0, roll: 0, pitch: 0, steer: 0, brake: 0,
+    px: 0, py: 0, pz: 0, pyaw: 0, pgPitch: 0, pgRoll: 0, proll: 0, ppitch: 0, psteer: 0,
+    spin: new Float32Array(4), pspin: new Float32Array(4), omega: new Float32Array(4),
+    finished: false, finishTime: 0,
+  };
+}
+
+const RIV = {
+  active: false,
+  finished: false,
+  vis: false,
+  _init: false,
+  playerRank: 4,
+  playerLap: 1,
+  finishOrder: new Int32Array(4),
+  finishTime: new Float64Array(4),
+  finishCount: 0,
+  cars: [
+    rivMakeCar(0, 'Gol Vermelho', 1, 2, 1.00, -8, -1.8),
+    rivMakeCar(1, 'Uno da Firma', 0, 1, 0.975, -16, 1.8),
+    rivMakeCar(2, 'Gol Prata', 1, 3, 0.95, -24, -1.8),
+  ],
+  _rp: new Float64Array(5),
+  _rq: new Float64Array(12),
+  _col: new Float64Array(8),
+  _podId: new Int32Array(4),
+  _podT: new Float64Array(4),
+  _g: m4(), _b: m4(), _t: m4(), _t2: m4(), _w: m4(),
+};
+
+function rivSetVis(vis) {
+  const v = !!vis;
+  RIV.vis = v;
+  for (let i = 0; i < RIV_N; i++) {
+    const its = RIV.cars[i].items;
+    for (let j = 0; j < its.length; j++) its[j].on = v;
+  }
+}
+
+function rivRenderInit() {
+  if (RIV._init || GAME.mode === 'test' || GAME.mode === 'car' || typeof CAR === 'undefined' || !CAR.models || !CAR.models[0] || !CAR.set) return;
+  RIV._init = true;
+  for (let i = 0; i < RIV_N; i++) {
+    const rv = RIV.cars[i];
+    const mIdx = rv.modelIdx === 1 && CAR.models[1] ? 1 : 0;
+    const M = CAR.models[mIdx];
+    rv.activeModel = mIdx;
+    rv.bodyKind = M.bodyKind !== undefined ? M.bodyKind : mIdx;
+    rv.wheelR = M.wheelR || 0.281;
+    if (M.hubs) rv.hubs = M.hubs;
+    rv.slotBody = objSlot();
+    for (let w = 0; w < 4; w++) rv.slotWheel[w] = objSlot();
+    rv.items.length = 0;
+    rv.glassItems.length = 0;
+    const pushItem = (it, isGlass) => {
+      if (!it) return;
+      it.on = false;
+      rv.items.push(it);
+      if (isGlass) rv.glassItems.push(it);
+    };
+    if (M.bodyMesh) pushItem(CAR.set.add(M.bodyMesh, rv.slotBody, 3), false);
+    if (M.driverMesh) pushItem(CAR.set.add(M.driverMesh, rv.slotBody, 3), false);
+    if (M.glassMesh && CAR.glass) pushItem(CAR.glass.add_(M.glassMesh, rv.slotBody), true);
+    if (M.wheelMesh) {
+      for (let w = 0; w < 4; w++) {
+        pushItem(CAR.set.add(M.wheelMesh, rv.slotWheel[w], 3), false);
+        if (M.wheelBlurMesh) pushItem(CAR.set.add(M.wheelBlurMesh, rv.slotWheel[w], 1), false);
+      }
+    }
+    if (typeof carApplyPaint === 'function') carApplyPaint(rv.slotBody, rv.paintIdx, rv.bodyKind);
+  }
+  RIV.vis = false;
+}
+
+function rivRestart() {
+  const L = TRK.L, N = TRK.N, ds = TRK.ds;
+  const raceOn = !!(typeof GS !== 'undefined' && GS.raceMode && !GS.replayOn && !GS.poseOn && !GS._warm);
+  RIV.active = raceOn;
+  RIV.finished = false;
+  RIV.playerRank = 4;
+  RIV.playerLap = 1;
+  RIV.finishCount = 0;
+  RIV.finishOrder.fill(0);
+  RIV.finishTime.fill(0);
+  for (let i = 0; i < RIV_N; i++) {
+    const rv = RIV.cars[i];
+    rv.s = L > 0 ? ((L + rv.gridS) % L + L) % L : 0;
+    rv.lastS = rv.s;
+    rv.d = rv.gridD;
+    rv.laps = 0;
+    rv.prog = rv.gridS;
+    rv.hint = -1;
+    rv.speed = 0;
+    rv.vLat = 0;
+    rv.roll = 0;
+    rv.pitch = 0;
+    rv.steer = 0;
+    rv.brake = 0;
+    rv.spin.fill(0);
+    rv.pspin.fill(0);
+    rv.omega.fill(0);
+    rv.finished = false;
+    rv.finishTime = 0;
+    rv.vis = false;
+    if (N > 0) {
+      trackPos(rv.s, rv.d, RIV._rp);
+      rv.x = RIV._rp[0]; rv.y = RIV._rp[1]; rv.z = RIV._rp[2];
+      rv.yaw = Math.atan2(RIV._rp[4], RIV._rp[3]);
+      const u = rv.s / ds, i0 = ((Math.floor(u) % N) + N) % N, f = u - Math.floor(u);
+      rv.hint = i0;
+      rv.gPitch = Math.atan(trkAt(TRK.slope, i0, f));
+      rv.gRoll = -Math.atan(trkAt(TRK.bank, i0, f));
+    } else {
+      rv.x = rv.y = rv.z = rv.yaw = rv.gPitch = rv.gRoll = 0;
+    }
+    rv.px = rv.x; rv.py = rv.y; rv.pz = rv.z; rv.pyaw = rv.yaw;
+    rv.pgPitch = rv.gPitch; rv.pgRoll = rv.gRoll;
+    rv.proll = 0; rv.ppitch = 0; rv.psteer = 0;
+  }
+  rivSetVis(raceOn && !(typeof GS !== 'undefined' && GS.frozen));
+  if (raceOn) rivPose();
+}
+
+// Teste cápsula×cápsula 2D sem argumentos numéricos nem alocações: lê/escreve RIV._col.
+function rivCapTest() {
+  const C = RIV._col;
+  const ax = C[0], az = C[1], ay = C[2], bx = C[3], bz = C[4], by = C[5];
+  const h2 = RIV_CAP_H * 2;
+  const d1x = Math.cos(ay) * h2, d1z = Math.sin(ay) * h2;
+  const d2x = Math.cos(by) * h2, d2z = Math.sin(by) * h2;
+  const p1x = ax - d1x * 0.5, p1z = az - d1z * 0.5;
+  const p2x = bx - d2x * 0.5, p2z = bz - d2z * 0.5;
+  const rx = p1x - p2x, rz = p1z - p2z;
+  const a = h2 * h2, e = h2 * h2;
+  const b = d1x * d2x + d1z * d2z;
+  const c = d1x * rx + d1z * rz;
+  const f = d2x * rx + d2z * rz;
+  const denom = a * e - b * b;
+  let s = 0, t = 0;
+  if (denom > 1e-6) {
+    s = (b * f - c * e) / denom;
+    if (s < 0) s = 0; else if (s > 1) s = 1;
+  }
+  t = (b * s + f) / e;
+  if (t < 0) {
+    t = 0;
+    s = -c / a;
+    if (s < 0) s = 0; else if (s > 1) s = 1;
+  } else if (t > 1) {
+    t = 1;
+    s = (b - c) / a;
+    if (s < 0) s = 0; else if (s > 1) s = 1;
+  }
+  const c1x = p1x + d1x * s, c1z = p1z + d1z * s;
+  const c2x = p2x + d2x * t, c2z = p2z + d2z * t;
+  let dx = c1x - c2x, dz = c1z - c2z;
+  const dist = Math.hypot(dx, dz);
+  const minD = RIV_CAP_R * 2;
+  if (dist >= minD) { C[0] = 0; return; }
+  if (dist > 1e-6) {
+    dx /= dist; dz /= dist;
+  } else {
+    dx = ax - bx; dz = az - bz;
+    const dl = Math.hypot(dx, dz);
+    if (dl > 1e-6) { dx /= dl; dz /= dl; }
+    else { dx = -Math.sin(by); dz = Math.cos(by); }
+  }
+  C[0] = minD - dist;
+  C[1] = dx; C[2] = dz;
+  C[3] = (c1x + c2x) * 0.5; C[4] = (c1z + c2z) * 0.5;
+}
+
+function rivSyncFromWorld(rv) {
+  const L = TRK.L, Q = RIV._rq;
+  Q[0] = rv.x; Q[1] = rv.z;
+  trackLocateQ(rv.hint, Q);
+  const ns = Q[2], i0 = Q[4] | 0, f = Q[5];
+  rv.hint = i0;
+  const ds = ns - rv.s;
+  if (ds < -L * 0.5) rv.laps++;
+  else if (ds > L * 0.5) rv.laps--;
+  rv.s = ns;
+  const bLimL = trkAt(TRK.barL, i0, f) - 0.9;
+  const bLimR = trkAt(TRK.barR, i0, f) - 0.9;
+  rv.d = clamp(Q[3], -bLimL, bLimR);
+  trackPos(rv.s, rv.d, RIV._rp);
+  rv.x = RIV._rp[0]; rv.y = RIV._rp[1]; rv.z = RIV._rp[2];
+  rv.prog = (rv.laps - 1) * L + rv.s;
+}
+
+function rivStep() {
+  const raceOn = typeof GS !== 'undefined' && GS.raceMode && !GS.replayOn && !GS.poseOn && !GS._warm && !GS.frozen;
+  if (!RIV.active || !raceOn || !TRK.N || !AI.vt || !AI.line) return;
+  const V = VEH, P = VP, L = TRK.L, N = TRK.N, ds = TRK.ds, dt = PHYS_DT;
+  const totalTarget = RACE_LAPS * L;
+  const playerProg = (V.laps - 1) * L + V.s;
+  const gripF = (typeof ENV !== 'undefined' && !GS.replayOn && !GS.poseOn) ? Math.sqrt(ENV.grip) : 1;
+  const hwLim = TRK.hw - 1.05;
+  const pOx = -(P.L * 0.5 - P.a);
+  const pCy = Math.cos(V.yaw), pSy = Math.sin(V.yaw);
+  const pSpeed = Math.hypot(V.vx, V.vy);
+
+  for (let i = 0; i < RIV_N; i++) {
+    const rv = RIV.cars[i];
+    rv.px = rv.x; rv.py = rv.y; rv.pz = rv.z; rv.pyaw = rv.yaw;
+    rv.pgPitch = rv.gPitch; rv.pgRoll = rv.gRoll;
+    rv.proll = rv.roll; rv.ppitch = rv.pitch; rv.psteer = rv.steer;
+    rv.pspin.set(rv.spin);
+
+    const u = rv.s / ds, i0 = ((Math.floor(u) % N) + N) % N, f = u - Math.floor(u);
+    let vCorner = 1e9;
+    for (let q = 0; q <= 6; q += 3) {
+      const vc = AI.vt[(i0 + q) % N];
+      if (vc < vCorner) vCorner = vc;
+    }
+    const rb = clamp((playerProg - rv.prog) * 0.0005, -0.04, 0.04);
+    const pace = rv.pace * (1 + rb);
+    let vTgt = Math.min(42.5 * pace, vCorner * 0.97 * pace * gripF);
+
+    const la = (i0 + Math.round((4 + rv.speed * 0.18) / ds)) % N;
+    let tgtD = AI.line[la];
+    let bestDs = 14.0;
+    let blockD = 0, blockSpd = 0, hasBlock = false;
+    for (let o = -1; o < RIV_N; o++) {
+      if (o === i) continue;
+      const os = o < 0 ? V.s : RIV.cars[o].s;
+      const od = o < 0 ? V.d : RIV.cars[o].d;
+      const ospd = o < 0 ? pSpeed : RIV.cars[o].speed;
+      let dsO = os - rv.s;
+      if (dsO > L * 0.5) dsO -= L;
+      else if (dsO < -L * 0.5) dsO += L;
+      if (dsO > -2.0 && dsO < bestDs && Math.abs(od - rv.d) < 2.6) {
+        bestDs = dsO;
+        blockD = od;
+        blockSpd = ospd;
+        hasBlock = true;
+      }
+    }
+    if (hasBlock) {
+      const leftRoom = blockD - (-hwLim);
+      const rightRoom = hwLim - blockD;
+      let side;
+      if (rv.d < blockD - 0.15 && leftRoom >= 2.1) side = -1;
+      else if (rv.d > blockD + 0.15 && rightRoom >= 2.1) side = 1;
+      else side = rightRoom > leftRoom ? 1 : -1;
+      tgtD = clamp(blockD + side * 2.45, -hwLim, hwLim);
+      if (bestDs > 1.0 && bestDs < 5.2 && Math.abs(blockD - rv.d) < 1.65) {
+        vTgt = Math.min(vTgt, Math.max(blockSpd + 1.0, 8));
+      }
+    } else {
+      tgtD = clamp(tgtD, -hwLim, hwLim);
+    }
+
+    const prevSpd = rv.speed;
+    if (rv.speed < vTgt) {
+      const acc = (2.1 + 3.4 * Math.max(0, 1 - rv.speed / 30)) * pace;
+      rv.speed = Math.min(vTgt, rv.speed + acc * dt);
+      rv.brake = 0;
+    } else {
+      const brk = Math.min(9.5, (rv.speed - vTgt) * 2.8 + 1.5);
+      rv.speed = Math.max(vTgt, rv.speed - brk * dt);
+      rv.brake = rv.speed > vTgt + 1.2 ? 1 : 0;
+    }
+    const ax = (rv.speed - prevSpd) / dt;
+    const vLatTgt = clamp((tgtD - rv.d) * 2.4, -4.8, 4.8);
+    rv.vLat += (vLatTgt - rv.vLat) * 0.15;
+    const bLimL = trkAt(TRK.barL, i0, f) - 0.9;
+    const bLimR = trkAt(TRK.barR, i0, f) - 0.9;
+    rv.d = clamp(rv.d + rv.vLat * dt, -bLimL, bLimR);
+
+    const curv = trkAt(TRK.k, i0, f);
+    const arcK = clamp(1 - rv.d * curv, 0.55, 1.6);
+    const vFwd = Math.sqrt(Math.max(0, rv.speed * rv.speed - rv.vLat * rv.vLat));
+    rv.lastS = rv.s;
+    rv.s += (vFwd / arcK) * dt;
+    if (rv.s >= L) { rv.s -= L; rv.laps++; }
+    else if (rv.s < 0) { rv.s += L; rv.laps--; }
+    rv.prog = (rv.laps - 1) * L + rv.s;
+
+    trackPos(rv.s, rv.d, RIV._rp);
+    rv.x = RIV._rp[0]; rv.y = RIV._rp[1]; rv.z = RIV._rp[2];
+    rv.yaw = Math.atan2(RIV._rp[4], RIV._rp[3]) + Math.atan2(rv.vLat, Math.max(rv.speed, 4));
+    const u2 = rv.s / ds, j0 = ((Math.floor(u2) % N) + N) % N, jf = u2 - Math.floor(u2);
+    rv.hint = j0;
+    const gp = Math.atan(trkAt(TRK.slope, j0, jf));
+    const gr = -Math.atan(trkAt(TRK.bank, j0, jf));
+    rv.gPitch += (gp - rv.gPitch) * 0.35;
+    rv.gRoll += (gr - rv.gRoll) * 0.35;
+
+    const ay = rv.speed * rv.speed * curv;
+    const rollT = clamp(ay * 0.0058, -0.062, 0.062);
+    const pitchT = clamp(-ax * 0.003, -0.03, 0.03);
+    rv.roll += (rollT - rv.roll) * 0.15;
+    rv.pitch += (pitchT - rv.pitch) * 0.15;
+    const steerT = clamp(Math.atan(2.36 * curv) + Math.atan2(rv.vLat, Math.max(rv.speed, 6)) * 0.5, -0.45, 0.45);
+    rv.steer += (steerT - rv.steer) * 0.25;
+    const w = rv.speed / rv.wheelR;
+    for (let k = 0; k < 4; k++) {
+      rv.omega[k] = w;
+      rv.spin[k] += w * dt;
+    }
+  }
+
+  // Colisão rival × rival
+  const C = RIV._col;
+  for (let i = 0; i < RIV_N; i++) {
+    const a = RIV.cars[i];
+    for (let j = i + 1; j < RIV_N; j++) {
+      const b = RIV.cars[j];
+      C[0] = a.x; C[1] = a.z; C[2] = a.yaw;
+      C[3] = b.x; C[4] = b.z; C[5] = b.yaw;
+      rivCapTest();
+      const pen = C[0];
+      if (pen > 0) {
+        const nx = C[1], nz = C[2], push = pen * 0.5;
+        a.x += nx * push; a.z += nz * push;
+        b.x -= nx * push; b.z -= nz * push;
+        const ca = Math.cos(a.yaw), sa = Math.sin(a.yaw);
+        const cb = Math.cos(b.yaw), sb = Math.sin(b.yaw);
+        const avx = a.speed * ca, avz = a.speed * sa;
+        const bvx = b.speed * cb, bvz = b.speed * sb;
+        const vn = (avx - bvx) * nx + (avz - bvz) * nz;
+        if (vn < 0) {
+          const imp = -1.35 * vn * 0.5;
+          a.speed = Math.max(0, (avx + nx * imp) * ca + (avz + nz * imp) * sa);
+          b.speed = Math.max(0, (bvx - nx * imp) * cb + (bvz - nz * imp) * sb);
+        }
+        rivSyncFromWorld(a);
+        rivSyncFromWorld(b);
+      }
+    }
+  }
+
+  // Colisão jogador × rival
+  let pcx = V.x + pCy * pOx, pcz = V.z + pSy * pOx;
+  for (let i = 0; i < RIV_N; i++) {
+    const rv = RIV.cars[i];
+    C[0] = pcx; C[1] = pcz; C[2] = V.yaw;
+    C[3] = rv.x; C[4] = rv.z; C[5] = rv.yaw;
+    rivCapTest();
+    const pen = C[0];
+    if (pen > 0) {
+      const nx = C[1], nz = C[2], cpx = C[3], cpz = C[4];
+      const push = pen * 0.5;
+      V.x += nx * push; V.z += nz * push;
+      pcx += nx * push; pcz += nz * push;
+      rv.x -= nx * push; rv.z -= nz * push;
+      let wvx = V.vx * pCy - V.vy * pSy, wvz = V.vx * pSy + V.vy * pCy;
+      const cr = Math.cos(rv.yaw), sr = Math.sin(rv.yaw);
+      const rvx = rv.speed * cr, rvz = rv.speed * sr;
+      const vn = (wvx - rvx) * nx + (wvz - rvz) * nz;
+      if (vn < 0) {
+        const imp = -1.35 * vn * 0.5;
+        wvx += nx * imp; wvz += nz * imp;
+        V.vx = wvx * pCy + wvz * pSy;
+        V.vy = -wvx * pSy + wvz * pCy;
+        const rx = cpx - V.x, rz = cpz - V.z;
+        V.r += (rx * nz - rz * nx) * imp * 0.28;
+        V.r *= 0.92;
+        rv.speed = Math.max(0, (rvx - nx * imp) * cr + (rvz - nz * imp) * sr);
+        if (vn < -1.8) V.hits++;
+      }
+      rivSyncFromWorld(rv);
+    }
+  }
+
+  // Registro de chegada dos rivais antes do jogador
+  if (!RIV.finished) {
+    for (let i = 0; i < RIV_N; i++) {
+      const rv = RIV.cars[i];
+      if (!rv.finished && rv.prog >= totalTarget) {
+        const fr = rv.speed > 1e-3 ? clamp(rv.s / (rv.speed * dt), 0, 1) : 0;
+        rv.finishTime = V.time - fr * dt;
+        rv.finished = true;
+      }
+    }
+  }
+
+  // Chegada do jogador: fecha corrida e ordena os 4 tempos para o pódio
+  if (!RIV.finished && playerProg >= totalTarget) {
+    RIV.finished = true;
+    const st = V.vx * dt, fr = st > 1e-6 ? clamp(V.s / st, 0, 1) : 0;
+    const pTime = V.time - fr * dt;
+    const pid = RIV._podId, pt = RIV._podT;
+    pid[0] = 0; pt[0] = pTime;
+    for (let i = 0; i < RIV_N; i++) {
+      const rv = RIV.cars[i];
+      pid[i + 1] = i + 1;
+      if (rv.finished) {
+        pt[i + 1] = rv.finishTime;
+      } else {
+        const rem = Math.max(0, totalTarget - rv.prog);
+        rv.finishTime = V.time + rem / Math.max(rv.speed, 18);
+        pt[i + 1] = rv.finishTime;
+      }
+    }
+    for (let a = 1; a < 4; a++) {
+      const keyId = pid[a], keyT = pt[a];
+      let b = a - 1;
+      while (b >= 0 && pt[b] > keyT) {
+        pid[b + 1] = pid[b];
+        pt[b + 1] = pt[b];
+        b--;
+      }
+      pid[b + 1] = keyId;
+      pt[b + 1] = keyT;
+    }
+    for (let k = 0; k < 4; k++) {
+      RIV.finishOrder[k] = pid[k];
+      RIV.finishTime[k] = pt[k];
+      if (pid[k] === 0) RIV.playerRank = k + 1;
+    }
+    RIV.finishCount = 4;
+    RIV.playerLap = RACE_LAPS;
+  } else if (!RIV.finished) {
+    RIV.playerLap = clamp(V.laps, 1, RACE_LAPS);
+    let rank = 1;
+    for (let i = 0; i < RIV_N; i++) {
+      if (RIV.cars[i].prog > playerProg) rank++;
+    }
+    RIV.playerRank = rank;
+  }
+}
+
+function rivPose() {
+  if (!RIV._init) return;
+  const vis = !!(RIV.active && typeof GS !== 'undefined' && GS.raceMode && !GS.replayOn && !GS.poseOn && !GS._warm && !GS.frozen);
+  if (!vis) {
+    if (RIV.vis) rivSetVis(false);
+    for (let i = 0; i < RIV_N; i++) RIV.cars[i].vis = false;
+    return;
+  }
+  if (!RIV.vis) rivSetVis(true);
+  const al = GS.alpha, lights = GS.lightsOn ? 1 : 0, cut = !!GS.cut;
+  const G0 = RIV._g, B = RIV._b, T = RIV._t, D2 = RIV._t2, W = RIV._w;
+  for (let i = 0; i < RIV_N; i++) {
+    const rv = RIV.cars[i], sb = rv.slotBody;
+    if (!sb) continue;
+    const x = rv.px + (rv.x - rv.px) * al;
+    const y = rv.py + (rv.y - rv.py) * al;
+    const z = rv.pz + (rv.z - rv.pz) * al;
+    let dy = rv.yaw - rv.pyaw; if (dy > PI) dy -= TAU; else if (dy < -PI) dy += TAU;
+    const yaw = rv.pyaw + dy * al;
+    const gp = rv.pgPitch + (rv.gPitch - rv.pgPitch) * al;
+    const gr = rv.pgRoll + (rv.gRoll - rv.pgRoll) * al;
+    const roll = rv.proll + (rv.roll - rv.proll) * al;
+    const pitch = rv.ppitch + (rv.pitch - rv.ppitch) * al;
+    const steer = rv.psteer + (rv.steer - rv.psteer) * al;
+    const c = Math.cos(yaw), s = Math.sin(yaw);
+    G0[0] = c; G0[1] = 0; G0[2] = s; G0[3] = 0;
+    G0[4] = 0; G0[5] = 1; G0[6] = 0; G0[7] = 0;
+    G0[8] = -s; G0[9] = 0; G0[10] = c; G0[11] = 0;
+    G0[12] = x; G0[13] = y; G0[14] = z; G0[15] = 1;
+    let cg = Math.cos(gp), sg = Math.sin(gp);
+    T.fill(0); T[0] = cg; T[1] = sg; T[4] = -sg; T[5] = cg; T[10] = 1; T[15] = 1;
+    m4mul(G0, G0, T);
+    cg = Math.cos(-gr); sg = Math.sin(-gr);
+    T.fill(0); T[0] = 1; T[5] = cg; T[6] = sg; T[9] = -sg; T[10] = cg; T[15] = 1;
+    m4mul(G0, G0, T);
+    m4ident(T); T[13] = 0.18; m4mul(B, G0, T);
+    cg = Math.cos(-pitch); sg = Math.sin(-pitch);
+    T.fill(0); T[0] = cg; T[1] = sg; T[4] = -sg; T[5] = cg; T[10] = 1; T[15] = 1;
+    m4mul(B, B, T);
+    cg = Math.cos(-roll); sg = Math.sin(-roll);
+    T.fill(0); T[0] = 1; T[5] = cg; T[6] = sg; T[9] = -sg; T[10] = cg; T[15] = 1;
+    m4mul(B, B, T);
+    m4ident(T); T[13] = -0.18; m4mul(B, B, T);
+
+    const mb = objModel(sb), pb = objPrev(sb), keepPrev = rv.vis && !cut;
+    pb.set(keepPrev ? mb : B);
+    mb.set(B);
+    const bp = objParams(sb);
+    bp[0] = rv.brake;
+    bp[1] = 0;
+    bp[2] = lights;
+    bp[3] = 0;
+    if (typeof carApplyPaint === 'function') carApplyPaint(sb, rv.paintIdx, rv.bodyKind);
+
+    m4inv(T, B);
+    m4mul(D2, pb, T);
+    for (let w = 0; w < 4; w++) {
+      const sw = rv.slotWheel[w], mw = objModel(sw), h = rv.hubs[w], left = (w & 1) === 0;
+      const a = -(w < 2 ? steer : 0) + (left ? PI : 0), ca = Math.cos(a), sa = Math.sin(a);
+      const sp = rv.pspin[w] + (rv.spin[w] - rv.pspin[w]) * al;
+      const g = left ? sp : -sp, cg2 = Math.cos(g), sg2 = Math.sin(g);
+      W[0] = ca * cg2; W[1] = sg2; W[2] = -sa * cg2; W[3] = 0;
+      W[4] = -ca * sg2; W[5] = cg2; W[6] = sa * sg2; W[7] = 0;
+      W[8] = sa; W[9] = 0; W[10] = ca; W[11] = 0;
+      W[12] = h[0]; W[13] = h[1]; W[14] = h[2]; W[15] = 1;
+      m4mul(mw, B, W);
+      m4mul(objPrev(sw), D2, mw);
+      objParams(sw)[0] = Math.abs(rv.omega[w]);
+    }
+    rv.vis = true;
+  }
+}
+
+if (typeof BUILD !== 'undefined') BUILD.push(async () => { rivRenderInit(); });
+
 // ---- 44_fx.js
 // Efeitos: marcas de pneu (decalque em anel de quads) e fumaça/poeira (partículas em CPU, instanciadas). Tudo pré-alocado.
 const SK_N = 4096, PT_N = 900;
@@ -7087,6 +8503,9 @@ function fxRnd() { const s = FX.seed; let x = s[0]; x ^= x << 13; x ^= x >>> 17;
 // por passo de física: estende as marcas e emite partículas nas rodas que derrapam
 function fxStep() {
   const V = VEH, L = FX.last;
+  const wetOn = (typeof ENV !== 'undefined' && ENV.wet > 0.5) && !(typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn));
+  const speed = Math.sqrt(V.vx * V.vx + V.vy * V.vy);
+  const c = Math.cos(V.yaw), s = Math.sin(V.yaw), wvx = V.vx * c - V.vy * s, wvz = V.vx * s + V.vy * c;
   for (let i = 0; i < 4; i++) {
     const sl = V.slip[i], zone = V.wzone[i], hard = zone === ZONE.ASPHALT || zone === ZONE.KERB || zone === ZONE.PIT;
     const x = V.wx[i], y = V.wy[i] + 0.012, z = V.wz[i], o = i * 8;
@@ -7111,14 +8530,20 @@ function fxStep() {
       }
     } else FX.active[i] = 0;
     // partículas
-    const speed = Math.sqrt(V.vx * V.vx + V.vy * V.vy);
-    const rate = hard ? (sl > 0.62 ? (sl - 0.62) * 1.0 * Math.min(1, speed * 0.1) : 0) : Math.min(1, speed / 14) * 0.3;
+    const smokeRate = hard ? (sl > 0.62 ? (sl - 0.62) * 1.0 * Math.min(1, speed * 0.1) : 0) : Math.min(1, speed / 14) * 0.3;
+    const spray = wetOn && hard && speed > 8;
+    const rate = spray ? Math.min(0.65, (speed - 8) / 35) * (0.55 + 0.45 * sl) : (wetOn && hard ? 0 : smokeRate);
     for (let rep = 0; rep < 2; rep++) if (rate > 0 && fxRnd() < rate * (rep ? 0.6 : 1) * 65536) {
       const q = FX.pNext * 12, p = FX.p, K = 1 / 65536; FX.pNext = (FX.pNext + 1) % PT_N;
-      const c = Math.cos(V.yaw), s = Math.sin(V.yaw), wvx = V.vx * c - V.vy * s, wvz = V.vx * s + V.vy * c;
-      p[q] = x + ((fxRnd() * K) - 0.5) * 0.25; p[q + 1] = y + 0.08; p[q + 2] = z + ((fxRnd() * K) - 0.5) * 0.25;
-      p[q + 3] = wvx * 0.18 + ((fxRnd() * K) - 0.5) * 1.1; p[q + 4] = 0.5 + (fxRnd() * K) * 0.7; p[q + 5] = wvz * 0.18 + ((fxRnd() * K) - 0.5) * 1.1;
-      p[q + 6] = 0; p[q + 7] = hard ? 0.8 + (fxRnd() * K) * 0.9 : 0.8 + (fxRnd() * K) * 0.7; p[q + 8] = 0.16 + (fxRnd() * K) * 0.14; p[q + 9] = (fxRnd() * K) * 6.28; p[q + 10] = hard ? 0 : (zone === ZONE.GRAVEL ? 1 : 2); p[q + 11] = (fxRnd() * K);
+      if (spray) {
+        p[q] = x - c * 0.22 + ((fxRnd() * K) - 0.5) * 0.2; p[q + 1] = y + 0.08 + (fxRnd() * K) * 0.08; p[q + 2] = z - s * 0.22 + ((fxRnd() * K) - 0.5) * 0.2;
+        p[q + 3] = wvx * 0.22 - c * (1.2 + (fxRnd() * K) * 1.4) + ((fxRnd() * K) - 0.5) * 0.9; p[q + 4] = 0.65 + (fxRnd() * K) * 0.85; p[q + 5] = wvz * 0.22 - s * (1.2 + (fxRnd() * K) * 1.4) + ((fxRnd() * K) - 0.5) * 0.9;
+        p[q + 6] = 0; p[q + 7] = 0.45 + (fxRnd() * K) * 0.45; p[q + 8] = 0.11 + (fxRnd() * K) * 0.11; p[q + 9] = (fxRnd() * K) * 6.28; p[q + 10] = 3; p[q + 11] = (fxRnd() * K);
+      } else {
+        p[q] = x + ((fxRnd() * K) - 0.5) * 0.25; p[q + 1] = y + 0.08; p[q + 2] = z + ((fxRnd() * K) - 0.5) * 0.25;
+        p[q + 3] = wvx * 0.18 + ((fxRnd() * K) - 0.5) * 1.1; p[q + 4] = 0.5 + (fxRnd() * K) * 0.7; p[q + 5] = wvz * 0.18 + ((fxRnd() * K) - 0.5) * 1.1;
+        p[q + 6] = 0; p[q + 7] = hard ? 0.8 + (fxRnd() * K) * 0.9 : 0.8 + (fxRnd() * K) * 0.7; p[q + 8] = 0.16 + (fxRnd() * K) * 0.14; p[q + 9] = (fxRnd() * K) * 6.28; p[q + 10] = hard ? 0 : (zone === ZONE.GRAVEL ? 1 : 2); p[q + 11] = (fxRnd() * K);
+      }
     }
   }
 }
@@ -7134,9 +8559,9 @@ function fxFrame() {
     p[q + 3] = p[q + 3] * k + R.wind[0] * 0.6 * dt; p[q + 5] = p[q + 5] * k + R.wind[1] * 0.6 * dt; p[q + 4] = p[q + 4] * Math.exp(-dt * 0.9) + 0.25 * dt;
     p[q] += p[q + 3] * dt; p[q + 1] += p[q + 4] * dt; p[q + 2] += p[q + 5] * dt;
     const t = age / life, kind = p[q + 10], w = n * 12;
-    o[w] = p[q]; o[w + 1] = p[q + 1] + p[q + 8] * 0.5; o[w + 2] = p[q + 2]; o[w + 3] = p[q + 8] * (1 + Math.sqrt(t) * (kind === 0 ? 3.4 : 3.2));
-    const a = Math.min(1, t * 45) * Math.pow(1 - t, 1.6) * (kind === 0 ? 0.5 : 0.42) / (1 + t * 2.2);
-    if (kind === 0) { o[w + 4] = 0.5; o[w + 5] = 0.52; o[w + 6] = 0.55; } else if (kind === 1) { o[w + 4] = 0.55; o[w + 5] = 0.48; o[w + 6] = 0.38; } else { o[w + 4] = 0.5; o[w + 5] = 0.44; o[w + 6] = 0.33; }
+    o[w] = p[q]; o[w + 1] = p[q + 1] + p[q + 8] * 0.5; o[w + 2] = p[q + 2]; o[w + 3] = p[q + 8] * (1 + Math.sqrt(t) * (kind === 0 ? 3.4 : kind === 3 ? 2.6 : 3.2));
+    const a = Math.min(1, t * 45) * Math.pow(1 - t, 1.6) * (kind === 0 ? 0.5 : kind === 3 ? 0.34 : 0.42) / (1 + t * 2.2);
+    if (kind === 0) { o[w + 4] = 0.5; o[w + 5] = 0.52; o[w + 6] = 0.55; } else if (kind === 1) { o[w + 4] = 0.55; o[w + 5] = 0.48; o[w + 6] = 0.38; } else if (kind === 3) { o[w + 4] = 0.62; o[w + 5] = 0.67; o[w + 6] = 0.72; } else { o[w + 4] = 0.5; o[w + 5] = 0.44; o[w + 6] = 0.33; }
     o[w + 7] = a; o[w + 8] = p[q + 9] + t * 0.8; o[w + 9] = p[q + 11]; n++;
   }
   FX.pAlive = n;
@@ -7146,6 +8571,19 @@ BUILD.push(async () => { if (GAME.mode !== 'test' && GAME.mode !== 'car') fxInit
 
 // ---- 45_game.js
 // Jogo: entrada, laço de passo fixo, reprodução dos comandos gravados, câmeras e pose do carro.
+const PAINTS = [
+  { nome: 'Azul Metálico',   rgb: [0.168, 0.275, 0.425], metal: 0.58 },
+  { nome: 'Branco de Firma', rgb: [0.76, 0.77, 0.75],    metal: 0.08 },
+  { nome: 'Vermelho Flash',  rgb: [0.52, 0.035, 0.028],  metal: 0.16 },
+  { nome: 'Prata Lunar',     rgb: [0.54, 0.56, 0.58],    metal: 0.78 },
+  { nome: 'Cinza Chumbo',    rgb: [0.11, 0.12, 0.135],   metal: 0.68 },
+  { nome: 'Vinho Clássico',  rgb: [0.24, 0.022, 0.045],  metal: 0.52 },
+];
+function carApplyPaint(slot, paintIdx, bodyKind) {
+  const n = PAINTS.length, idx = ((paintIdx | 0) % n + n) % n, p = PAINTS[idx], par = objParams(slot);
+  par[4] = p.rgb[0]; par[5] = p.rgb[1]; par[6] = p.rgb[2]; par[7] = p.metal;
+  if (bodyKind !== undefined) par[8] = bodyKind;
+}
 const GS = {
   held: 0, keys: 0, prevKeys: 0, cam: 0, replay: null, replayOn: false, ai: false, tick60: 0, acc: 0, sub: 0, alpha: 1, cut: true,
   body: m4(), tmp: m4(), tmp2: m4(), ground: m4(), spin: new Float32Array(4), susp: new Float32Array(4),
@@ -7154,19 +8592,44 @@ const GS = {
   tvData: new Float32Array(64 * 4), tvN: 0, tvCur: -1, tvAim: new Float32Array(3), tvFov: 0.3, pl: new Float64Array(2),
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
+  paintIdx: 0, carIdx: 0, carBest: new Float64Array(2), _bestCar: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false, boostF: 0, raceMode: false, _warm: false,
 };
 // Cronômetro: LAP[0] instante (s de simulação) em que a volta atual começou, [1] última volta, [2] melhor volta, [3] 1 = cronômetro correndo
 const LAP = new Float64Array(4);
+function carSyncLapBest(ci) {
+  const cur = GS._bestCar;
+  if (cur !== ci) {
+    GS.carBest[cur] = LAP[2];
+    GS._bestCar = ci;
+    LAP[2] = GS.carBest[ci];
+  } else {
+    GS.carBest[ci] = LAP[2];
+  }
+}
+function carSyncActive(forceUno) {
+  const ci = forceUno ? 0 : (GS.carIdx ? 1 : 0), C = carObj();
+  if (C.select) C.select(ci);
+  if (typeof vehicleApplySpec === 'function') vehicleApplySpec(ci);
+  carSyncLapBest(ci);
+  return ci;
+}
 // Controle (Gamepad API): PADV[0] gatilho direito, [1] gatilho esquerdo, [2] analógico esquerdo já com zona morta e curva. Preenchido por padPoll.
 const PADV = new Float64Array(3);
-const KEYMAP = { KeyW: K_W, ArrowUp: K_W, KeyS: K_S, ArrowDown: K_S, KeyA: K_A, ArrowLeft: K_A, KeyD: K_D, ArrowRight: K_D, Space: K_SPACE, KeyC: K_C, KeyR: K_R, KeyV: K_V };
-function onKeyDown(e) { const k = KEYMAP[e.code]; if (k) { GS.held |= k; e.preventDefault(); } }
-function onKeyUp(e) { const k = KEYMAP[e.code]; if (k) { GS.held &= ~k; e.preventDefault(); } }
+const KEYMAP = { KeyW: K_W, ArrowUp: K_W, KeyS: K_S, ArrowDown: K_S, KeyA: K_A, ArrowLeft: K_A, KeyD: K_D, ArrowRight: K_D, Space: K_SPACE, KeyC: K_C, KeyR: K_R, KeyV: K_V, ShiftLeft: K_BOOST, ShiftRight: K_BOOST, KeyE: K_HORN };
+function onKeyDown(e) {
+  const c = e.code, k = KEYMAP[c];
+  if (k) { GS.held |= k; if (e.preventDefault) e.preventDefault(); return; }
+  if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (c === 'KeyL') { GS.lightsOn = !GS.lightsOn; if (e.preventDefault) e.preventDefault(); }
+    else if (c === 'KeyK') { GS.hazardOn = !GS.hazardOn; if (e.preventDefault) e.preventDefault(); }
+  }
+}
+function onKeyUp(e) { const k = KEYMAP[e.code]; if (k) { GS.held &= ~k; if (e.preventDefault) e.preventDefault(); } }
 function onBlur() { GS.held = 0; }
 
 // carro provisório (caixa) com o mesmo contrato do modelo real, usado enquanto CAR não existe
 const CARP = {
-  wheelR: VP.R, hubs: [[VP.L / 2, VP.R, -0.67], [VP.L / 2, VP.R, 0.67], [-VP.L / 2, VP.R, -0.65], [-VP.L / 2, VP.R, 0.65]], slotBody: 0, slotWheel: [0, 0, 0, 0], _t: m4(), _u: m4(),
+  wheelR: VP.R, hubs: [[VP.L / 2, VP.R, -0.67], [VP.L / 2, VP.R, 0.67], [-VP.L / 2, VP.R, -0.65], [-VP.L / 2, VP.R, 0.65]], eyePos: [-0.10, 1.175, -0.355], slotBody: 0, slotWheel: [0, 0, 0, 0], _t: m4(), _u: m4(),
   build() {
     const fam = R.families.test || mkFamily('test', { src: 'mat_test' }), set = new MeshSet(fam); R.drawables.push(set);
     this.slotBody = objSlot(); for (let i = 0; i < 4; i++) this.slotWheel[i] = objSlot();
@@ -7226,17 +8689,19 @@ function gameInit() {
 // três câmeras, ré, freio de mão, fora da pista, reposição — para o V8 otimizar o laço com informação de tipos completa.
 // Sem isso, a primeira troca de câmera ou a primeira ré desotimizaria funções do laço e geraria lixo temporário.
 function gameWarmup() {
-  const fx = GS.fxOn, rp = GS.replayOn; GS.replayOn = false; GS.ai = false; RT[2] = 1 / 120;
+  const fx = GS.fxOn, rp = GS.replayOn; GS.replayOn = false; GS.ai = false; GS._unoForced = false; GS._warm = true; RT[2] = 1 / 120;
+  carSyncActive(true);
   if (typeof GH !== 'undefined') GH.warm = true;
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0);
   for (let i = 0; i < 9000; i++) {
     const ph = (i / 300) | 0, t = i / 120; let k = aiKeys(t);
     if (ph % 7 === 3) k = K_S; else if (ph % 7 === 5) k = K_W | K_D | (i % 60 < 30 ? K_SPACE : 0); else if (ph % 11 === 9) k = K_W | K_A;
-    if (i % 1500 === 1499) k |= K_R; if (i % 400 === 399) k |= K_C;
+    if (i % 1500 === 1499) k |= K_R; if (i % 400 === 399) k |= K_C; if (ph % 5 === 2) k |= K_HORN; if (ph % 6 === 1) k |= K_BOOST;
+    GS.lightsOn = (ph & 2) !== 0; GS.hazardOn = (ph & 4) !== 0;
     // metade das fases com as mesmas manobras vindas do controle (gatilhos e alavanca analógicos, olhar para trás)
-    if (ph & 1) { const f = 0.3 + (i % 71) / 100; GS.padKeys = K_PAD | K_PADS | (ph % 4 === 1 ? K_V : 0) | (k & (K_W | K_S | K_SPACE | K_C | K_R)); PADV[0] = (k & K_W) ? f : 0; PADV[1] = (k & K_S) ? f : 0; PADV[2] = (((k & K_D) ? 1 : 0) - ((k & K_A) ? 1 : 0)) * f; k = i % 9 === 0 ? k & (K_A | K_D) : 0; } else GS.padKeys = 0;
+    if (ph & 1) { const f = 0.3 + (i % 71) / 100; GS.padKeys = K_PAD | K_PADS | (ph % 4 === 1 ? K_V : 0) | (k & (K_W | K_S | K_SPACE | K_C | K_R | K_BOOST | K_HORN)); PADV[0] = (k & K_W) ? f : 0; PADV[1] = (k & K_S) ? f : 0; PADV[2] = (((k & K_D) ? 1 : 0) - ((k & K_A) ? 1 : 0)) * f; k = i % 9 === 0 ? k & (K_A | K_D) : 0; } else GS.padKeys = 0;
     GS.held = k; GS.acc = PHYS_DT * (1 + (i % 3 === 0 ? 0.5 : 0)); gameTick(i % 4 === 0); sndControl();
-    for (let q = 0; q < 3; q++) cascadeSetup(q);   // cascatas de sombra das três câmeras (inclusive o modo foco da TV): só contas, refeitas a cada quadro
+    for (let q = 0; q < 3; q++) cascadeSetup(q);   // cascatas de sombra das cinco câmeras (inclusive o modo foco da TV): só contas, refeitas a cada quadro
   }
   // Cascatas de sombra: o encaixe em texel tem um ramo para coordenada de luz positiva e outro para negativa (e um caso em que
   // o arredondamento dá -0). A volta de aquecimento quase só passa por um deles; aqui os dois modos (normal e foco da TV)
@@ -7251,9 +8716,9 @@ function gameWarmup() {
     }
   }
   if (typeof GH !== 'undefined') GH.warm = false;
-  GS.held = 0; GS.padKeys = 0; LAP[2] = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
+  GS._warm = false; GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; GS.boostF = 0; LAP[2] = 0; GS.carBest.fill(0); GS._bestCar = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
 }
-// Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas três câmeras (com fumaça e marcas),
+// Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas cinco câmeras (com fumaça e marcas),
 // para o driver compilar todas as variantes de pipeline e carregar todas as texturas agora, e não no meio da volta.
 // De quebra mede o custo de GPU de cada vista (tempo de parede para a GPU concluir 4 quadros seguidos) e devolve o pior caso
 // em ms por quadro: main() usa esse número para escolher a cadência (120 ou 60 quadros por segundo).
@@ -7261,7 +8726,7 @@ async function gamePrewarm() {
   RT[2] = 1 / 60; GS.frozen = true; let worst = 0;
   for (let i = 0; i < 36; i++) {
     vehicleReset(i * TRK.L / 36, (i % 3) - 1, 0); VEH.slip.fill(1); VEH.vx = 25; for (let k = 0; k < 6; k++) fxStep(); VEH.slip.fill(0); VEH.vx = 0;   // com velocidade: emite fumaça (estreia o pipeline de partículas)
-    GS.cam = i % 4; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true; gameTick(true); renderFrame(); gameTick(true); renderFrame();
+    GS.cam = i % 5; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true; gameTick(true); renderFrame(); gameTick(true); renderFrame();
     if (i >= 6) {   // as primeiras vistas ainda pagam compilação de pipelines: não entram na medida
       await G.dev.queue.onSubmittedWorkDone(); const t0 = performance.now();
       for (let k = 0; k < 4; k++) { gameTick(true); renderFrame(); }
@@ -7271,16 +8736,24 @@ async function gamePrewarm() {
   GS.frozen = false; gameRestart(); return worst;
 }
 function gameRestart() {
+  const unoF = GS.replayOn || GS.poseOn;
+  const raceOn = !!(GS.raceMode && !unoF && !GS._warm);
+  GS._unoForced = unoF;
+  carSyncActive(unoF);
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   const qCam = +(Q.get('cam') || 0);
-  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
+  vehicleReset(raceOn ? TRK.L - 32 : TRK.L + TRK.startS, raceOn ? 1.8 : TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = (!unoF && typeof ENV !== 'undefined') ? ENV.idx > 0 : false; GS.hazardOn = false; GS.boostF = 0;
+  GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 || qCam === 4 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
   if (typeof ghRestart === 'function') ghRestart();
+  if (typeof rivRestart === 'function') rivRestart();
   GS.alpha = 1; gamePose(); gameCamera();
 }
 // um passo de física; a cada 2 passos (1/60 s) lê as teclas (gravadas, piloto automático ou teclado)
 function gameStep() {
+  const unoF = GS.replayOn || GS.poseOn;
+  if (unoF !== GS._unoForced) { GS._unoForced = unoF; carSyncActive(unoF); }
   if ((GS.sub & 1) === 0) {
     const t = GS.tick60 / 60; let k;
     if (GS.replayOn && GS.tick60 < GS.replay.length) k = GS.replay[GS.tick60];
@@ -7289,7 +8762,7 @@ function gameStep() {
     GS.prevKeys = GS.keys; GS.keys = k; GS.tick60++;
     const edge = k & ~GS.prevKeys;
     if ((k ^ GS.prevKeys) & K_V) { GS.cut = true; GS.chaseInit = false; }   // olhar para trás é um corte de câmera
-    if (edge & K_C) { GS.cam = GS.replayOn ? (GS.cam + 1) % 3 : (GS.cam === 0 ? 3 : GS.cam === 3 ? 1 : GS.cam === 1 ? 2 : 0); GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
+    if (edge & K_C) { GS.cam = GS.replayOn ? (GS.cam + 1) % 3 : (GS.cam === 0 ? 3 : GS.cam === 3 ? 4 : GS.cam === 4 ? 1 : GS.cam === 1 ? 2 : 0); GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
     if (edge & K_R) { // devolve o carro à pista: no eixo, alinhado, parado
       const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0); GS.cut = true; GS.chaseInit = false;
     }
@@ -7297,6 +8770,7 @@ function gameStep() {
   GS.sub++;
   vehicleStep(GS.keys);
   if (VEH.laps !== GS.lapSeen) lapCross();
+  if (typeof rivStep === 'function') rivStep();
   if (typeof ghStep === 'function') ghStep();
   if (GS.fxOn && typeof fxStep === 'function') fxStep();
 }
@@ -7312,11 +8786,15 @@ function padMerge(k) {
 function lapCross() {
   const V = VEH;
   if (V.laps > GS.lapMax) {
+    if (!GS.replayOn && !GS.poseOn) {
+      const ci = GS.carIdx ? 1 : 0;
+      if (GS._bestCar !== ci) carSyncLapBest(ci);
+    }
     const st = V.vx * PHYS_DT, fr = st > 1e-6 ? V.s / st : 0, t = V.time - (fr < 0 ? 0 : fr > 1 ? 1 : fr) * PHYS_DT;
     if (LAP[3] === 1) {
-      const lt = t - LAP[0], rec = !GS.replayOn && (LAP[2] === 0 || lt < LAP[2]);
+      const lt = t - LAP[0], rec = !GS.replayOn && !GS.raceMode && (LAP[2] === 0 || lt < LAP[2]);
       LAP[1] = lt;
-      if (rec) { LAP[2] = lt; GS.lapNew = true; }
+      if (rec) { LAP[2] = lt; GS.carBest[GS._bestCar] = lt; GS.lapNew = true; }
       if (typeof ghLapCross === 'function') ghLapCross(lt, rec);
     } else if (typeof ghRestart === 'function') {
       ghRestart();
@@ -7343,6 +8821,8 @@ function gameTick(fixed) {
 }
 // pose interpolada do carro → matrizes dos objetos
 function gamePose() {
+  const unoF = GS.replayOn || GS.poseOn;
+  if (unoF !== GS._unoForced) { GS._unoForced = unoF; carSyncActive(unoF); }
   const V = VEH, C = carObj(), P = VP, al = GS.alpha;
   const x = V.px + (V.x - V.px) * al, z = V.pz + (V.z - V.pz) * al, y = V.py + (V.y - V.py) * al;
   let dy = V.yaw - V.pyaw; if (dy > PI) dy -= TAU; else if (dy < -PI) dy += TAU; const yaw = V.pyaw + dy * al;
@@ -7364,16 +8844,24 @@ function gamePose() {
     GS.susp[i] = su; GS.spin[i] = V.pspin[i] + (V.spin[i] - V.pspin[i]) * al;
   }
   C.inp[0] = GS.steer; C.inp[1] = GS.steer * 14; C.place(B, GS.spin, GS.susp);
-  const bp = objParams(C.slotBody), k = GS.keys; bp[0] = ((k & K_S) && V.gear !== 0) || ((k & K_W) && V.gear === 0) ? 1 : 0; bp[1] = V.gear === 0 ? 1 : 0; bp[2] = 1;
+  if (C.setDriverVis) C.setDriverVis(GS.freeCam || GS.cam !== 4);
+  const bp = objParams(C.slotBody), k = GS.keys;
+  bp[0] = ((k & K_S) && V.gear !== 0) || ((k & K_W) && V.gear === 0) ? 1 : 0;
+  bp[1] = V.gear === 0 ? 1 : 0;
+  bp[2] = GS.lightsOn ? 1 : 0;
+  bp[3] = GS.hazardOn ? (((RT[0] * 3.2) | 0) & 1) : 0;
+  carApplyPaint(C.slotBody, unoF ? 0 : GS.paintIdx, unoF ? 0 : (C.bodyKind !== undefined ? C.bodyKind : (GS.carIdx ? 1 : 0)));
   for (let i = 0; i < 4; i++) { const w = V.omega[i]; objParams(C.slotWheel[i])[0] = w < 0 ? -w : w; }
   FR.data.set(B, FO.carMat); m4inv(T, B); FR.data.set(T, FO.carInv);
   // rodas: a matriz anterior passa a ser a roda atual levada pelo deslocamento rígido da carroceria (anterior × atual⁻¹).
   // Assim o desfoque de movimento não espalha o pneu pelo asfalto por causa do giro; a rotação é mostrada pelo material.
   if (C.slotWheel[0] !== C.slotBody) { const D2 = GS.tmp2; m4mul(D2, objPrev(C.slotBody), T); for (let i = 0; i < 4; i++) m4mul(objPrev(C.slotWheel[i]), D2, objModel(C.slotWheel[i])); }
-  const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = 0;
+  const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = bp[2];
   f[FO.car2] = (GS.tick60 < 30 && GS.speed < 0.5) ? 1 : 0;   // luzes de largada: acesas só enquanto o carro espera no grid
+  f[FO.car2 + 1] = (!unoF && typeof ENV !== 'undefined') ? ENV.wet : 0;
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
   if (typeof ghPose === 'function') ghPose();
+  if (typeof rivPose === 'function') rivPose();
 }
 // rotações lendo o ângulo do registrador ROTQ[0] (sem números por argumento)
 const ROTQ = new Float64Array(1);
@@ -7382,6 +8870,9 @@ function rotXQ(o) { const a = ROTQ[0], c = Math.cos(a), s = Math.sin(a); o.fill(
 function camCut() { GS.cut = true; }
 function gameCamera() {
   const V = VEH, c = Math.cos(GS.yaw), s = Math.sin(GS.yaw), dt = RT[1], q = CAMQ, lb = (GS.keys & K_V) ? -1 : 1;   // lb = -1: olhando para trás
+  const noExt = !GS.replayOn && !GS.poseOn;
+  GS.boostF += ((noExt && V.boosting ? 1 : 0) - GS.boostF) * (1 - Math.exp(-dt * 9));
+  const boostFov = noExt ? 0.065 * GS.boostF : 0;
   if (GS.cam === 0 || GS.cam === 3) {
     // perseguição (0 baixa, 3 alta): segue a direção do movimento com atraso
     const hi = GS.cam === 3;
@@ -7396,17 +8887,29 @@ function gameCamera() {
     let ey = GS.chaseY + (hi ? 2.65 : 1.62) - V.gPitch * dist * 0.6 * pitchLb;
     _gq[0] = ex; _gq[1] = ez; hfAtQ(_gq); if (ey < _gq[6] + 0.55) ey = _gq[6] + 0.55;
     let rl = -V.ay * 0.004; rl = rl < -0.05 ? -0.05 : rl > 0.05 ? 0.05 : rl;
-    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * aim * lb; q[4] = GS.cy + (hi ? 1.15 : 0.95) + V.gPitch * aim * pitchLb; q[5] = GS.cz + s * aim * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042; q[7] = rl;
+    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * aim * lb; q[4] = GS.cy + (hi ? 1.15 : 0.95) + V.gPitch * aim * pitchLb; q[5] = GS.cz + s * aim * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042 + boostFov; q[7] = rl;
   } else if (GS.cam === 1) {
     // capô: presa à carroceria
     const B = GS.body;
     q[0] = B[0] * 0.5 + B[4] * 1.15 + B[12]; q[1] = B[1] * 0.5 + B[5] * 1.15 + B[13]; q[2] = B[2] * 0.5 + B[6] * 1.15 + B[14];   // acima da base do para-brisa: capô inteiro, com a grelha de ventilação junto à base do quadro
     q[3] = B[0] * 6.5 + B[4] * 0.52 + B[12]; q[4] = B[1] * 6.5 + B[5] * 0.52 + B[13]; q[5] = B[2] * 6.5 + B[6] * 0.52 + B[14];
-    q[6] = 1.0; q[7] = -(V.gRoll + V.roll) * 0.8;
+    q[6] = 1.0 + boostFov; q[7] = -(V.gRoll + V.roll) * 0.8;
     if (lb < 0) {   // para trás: do alto da tampa traseira, sem o carro no quadro
       q[0] = B[0] * -2.0 + B[4] * 1.05 + B[12]; q[1] = B[1] * -2.0 + B[5] * 1.05 + B[13]; q[2] = B[2] * -2.0 + B[6] * 1.05 + B[14];
       q[3] = B[0] * -9 + B[4] * 0.6 + B[12]; q[4] = B[1] * -9 + B[5] * 0.6 + B[13]; q[5] = B[2] * -9 + B[6] * 0.6 + B[14]; q[7] = -q[7];
     }
+  } else if (GS.cam === 4) {
+    // cockpit: nos olhos do motorista, vendo painel, volante e capô
+    const B = GS.body, C = carObj(), ep = C.eyePos;
+    const ex0 = ep ? ep[0] : -0.10, ey0 = ep ? ep[1] : 1.175, ez0 = ep ? ep[2] : -0.355;
+    const tx0 = lb < 0 ? -6.0 : 4.5, ty0 = lb < 0 ? 1.05 : 0.96, tz0 = lb < 0 ? 0.0 : -0.355;
+    q[0] = B[0] * ex0 + B[4] * ey0 + B[8] * ez0 + B[12];
+    q[1] = B[1] * ex0 + B[5] * ey0 + B[9] * ez0 + B[13];
+    q[2] = B[2] * ex0 + B[6] * ey0 + B[10] * ez0 + B[14];
+    q[3] = B[0] * tx0 + B[4] * ty0 + B[8] * tz0 + B[12];
+    q[4] = B[1] * tx0 + B[5] * ty0 + B[9] * tz0 + B[13];
+    q[5] = B[2] * tx0 + B[6] * ty0 + B[10] * tz0 + B[14];
+    q[6] = 1.02 + boostFov; q[7] = -(V.gRoll + V.roll) * 0.8 * lb;
   } else {
     // TV: câmera fixa à beira da pista mais próxima à frente do carro, com lente longa
     let best = GS.tvCur, bd = 1e9; const n = GS.tvN, TV = GS.tvData;
@@ -7419,6 +8922,7 @@ function gameCamera() {
     const k = 1 - Math.exp(-dt * 16); GS.tvAim[0] += (ax - GS.tvAim[0]) * k; GS.tvAim[1] += (ay - GS.tvAim[1]) * k; GS.tvAim[2] += (az - GS.tvAim[2]) * k; GS.tvFov += (fov - GS.tvFov) * (1 - Math.exp(-dt * 3));
     q[0] = tx; q[1] = ty; q[2] = tz; q[3] = GS.tvAim[0]; q[4] = GS.tvAim[1]; q[5] = GS.tvAim[2]; q[6] = GS.tvFov; q[7] = 0;
   }
+  const C = carObj(); if (C.setDriverVis) C.setDriverVis(GS.cam !== 4);
   // sombras: com a lente longa da TV, as cascatas acompanham o carro
   R.casc.focusOn = GS.cam === 2; if (R.casc.focusOn) { R.casc.focus[0] = GS.cx; R.casc.focus[1] = GS.cy + 0.6; R.casc.focus[2] = GS.cz; }
   setCameraQ();
@@ -7536,18 +9040,23 @@ const POSES = [
 function poseApply(i) {
   const P = POSES[i];
   GS.fxOn = true;
-  if (P.tipo === 'carro') {
-    gameRestart(); vehicleReset(P.s, P.d, P.yaw); GS.frozen = true; GS.freeCam = true; GS.alpha = 1; gamePose();
-    const B = GS.body, o = P.olho, a = P.alvo, q = CAMQ;
-    q[0] = B[0] * o[0] + B[4] * o[1] + B[8] * o[2] + B[12]; q[1] = B[1] * o[0] + B[5] * o[1] + B[9] * o[2] + B[13]; q[2] = B[2] * o[0] + B[6] * o[1] + B[10] * o[2] + B[14];
-    q[3] = B[0] * a[0] + B[4] * a[1] + B[8] * a[2] + B[12]; q[4] = B[1] * a[0] + B[5] * a[1] + B[9] * a[2] + B[13]; q[5] = B[2] * a[0] + B[6] * a[1] + B[10] * a[2] + B[14];
-    q[6] = P.fov; q[7] = 0; setCameraQ(); GS.cut = true; R.casc.focusOn = false;
-    RT[2] = 1 / 60; for (let k = 0; k < 60; k++) { gameTick(true); renderFrame(); }
-  } else {
-    GS.frozen = false; GS.freeCam = false; const was = GS.replayOn; GS.replayOn = true; gameRestart(); GS.cam = P.cam; GS.cut = true;
-    const n = Math.round(P.t * 60), warm = 45; RT[2] = 1 / 60;
-    for (let k = 0; k < n; k++) { const camKeep = GS.cam; gameTick(true); GS.cam = P.cam; if (k >= n - warm) renderFrame(); }
-    GS.replayOn = was;
+  GS.poseOn = true;
+  try {
+    if (P.tipo === 'carro') {
+      gameRestart(); vehicleReset(P.s, P.d, P.yaw); GS.frozen = true; GS.freeCam = true; GS.alpha = 1; gamePose();
+      const B = GS.body, o = P.olho, a = P.alvo, q = CAMQ;
+      q[0] = B[0] * o[0] + B[4] * o[1] + B[8] * o[2] + B[12]; q[1] = B[1] * o[0] + B[5] * o[1] + B[9] * o[2] + B[13]; q[2] = B[2] * o[0] + B[6] * o[1] + B[10] * o[2] + B[14];
+      q[3] = B[0] * a[0] + B[4] * a[1] + B[8] * a[2] + B[12]; q[4] = B[1] * a[0] + B[5] * a[1] + B[9] * a[2] + B[13]; q[5] = B[2] * a[0] + B[6] * a[1] + B[10] * a[2] + B[14];
+      q[6] = P.fov; q[7] = 0; setCameraQ(); GS.cut = true; R.casc.focusOn = false;
+      RT[2] = 1 / 60; for (let k = 0; k < 60; k++) { gameTick(true); renderFrame(); }
+    } else {
+      GS.frozen = false; GS.freeCam = false; const was = GS.replayOn; GS.replayOn = true; gameRestart(); GS.cam = P.cam; GS.cut = true;
+      const n = Math.round(P.t * 60), warm = 45; RT[2] = 1 / 60;
+      for (let k = 0; k < n; k++) { const camKeep = GS.cam; gameTick(true); GS.cam = P.cam; if (k >= n - warm) renderFrame(); }
+      GS.replayOn = was;
+    }
+  } finally {
+    GS.poseOn = false;
   }
 }
 
@@ -7564,28 +9073,77 @@ function medalOf(cs) {
   return -1;
 }
 
+function ghCarIdx(idx) {
+  if (idx !== undefined) return (idx | 0) === 1 ? 1 : 0;
+  return typeof GS !== 'undefined' && GS.carIdx === 1 ? 1 : 0;
+}
+function ghStoragePrefix(idx) {
+  return ghCarIdx(idx) === 1 ? 'gol' : 'uno';
+}
+function ghMakeSlot() {
+  return {
+    hasSplit: false, hasGhost: false, savePending: false, bestLen: 0, bestTime: 0,
+    bestSplit: new Float32Array(2048).fill(-1),
+    bestFrames: new Float32Array(10800 * 8),
+  };
+}
+const _ghSlots = [ghMakeSlot(), ghMakeSlot()];
+
 const GH = {
   on: true, warm: false, hasSplit: false, hasGhost: false, savePending: false,
   deltaCs: GH_NONE, vis: false, drawOn: false, qMask: 0, curLen: 0, bestLen: 0, bestTime: 0,
-  curSplit: new Float32Array(2048).fill(-1), bestSplit: new Float32Array(2048).fill(-1),
-  curFrames: new Float32Array(10800 * 8), bestFrames: new Float32Array(10800 * 8),
+  slotIdx: 0, slots: _ghSlots,
+  curSplit: new Float32Array(2048).fill(-1), bestSplit: _ghSlots[0].bestSplit,
+  curFrames: new Float32Array(10800 * 8), bestFrames: _ghSlots[0].bestFrames,
   gx: 0, gy: 0, gz: 0, gyaw: 0, gpitch: 0, groll: 0, gsteer: 0, gspin: 0,
   slotBody: 0, slotWheel: [0, 0, 0, 0], fam: null, bg: null,
   _b: m4(), _t: m4(), _w: m4(),
 };
 
+function ghFlushSlot() {
+  const S = GH.slots[GH.slotIdx];
+  S.hasSplit = GH.hasSplit;
+  S.hasGhost = GH.hasGhost;
+  S.savePending = GH.savePending;
+  S.bestLen = GH.bestLen;
+  S.bestTime = GH.bestTime;
+}
+function ghLoadSlot(i) {
+  const S = GH.slots[i];
+  GH.slotIdx = i;
+  GH.hasSplit = S.hasSplit;
+  GH.hasGhost = S.hasGhost;
+  GH.savePending = S.savePending;
+  GH.bestLen = S.bestLen;
+  GH.bestTime = S.bestTime;
+  GH.bestSplit = S.bestSplit;
+  GH.bestFrames = S.bestFrames;
+}
+function ghSyncSlot(idx) {
+  const i = ghCarIdx(idx);
+  if (i === GH.slotIdx) return i;
+  ghFlushSlot();
+  ghLoadSlot(i);
+  return i;
+}
+
 function ghInit() {
   GH.warm = false;
-  GH.hasSplit = false;
-  GH.hasGhost = false;
-  GH.savePending = false;
-  GH.bestLen = 0;
-  GH.bestTime = 0;
-  GH.bestSplit.fill(-1);
+  for (let i = 0; i < GH.slots.length; i++) {
+    const S = GH.slots[i];
+    S.hasSplit = false;
+    S.hasGhost = false;
+    S.savePending = false;
+    S.bestLen = 0;
+    S.bestTime = 0;
+    S.bestSplit.fill(-1);
+  }
+  ghLoadSlot(ghCarIdx());
   ghRestart();
 }
 
 function ghRestart() {
+  ghSyncSlot();
   GH.curSplit.fill(-1);
   GH.curLen = 0;
   GH.qMask = 0;
@@ -7603,7 +9161,8 @@ function ghToggle() {
 // Registra splits e pose a 60 Hz (após vehicleStep + lapCross, no passo ímpar de 120 Hz). Sem alocações.
 function ghStep() {
   if ((GS.sub & 1) !== 1) return;
-  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
+  ghSyncSlot();
+  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || GS.raceMode || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
   const N = TRK.N, ds = TRK.ds;
   const q = ((VEH.s / TRK.L) * 4) | 0;
   GH.qMask |= 1 << (q & 3);
@@ -7647,7 +9206,8 @@ function ghFillSplits(arr, n, lt) {
 }
 
 function ghLapCross(lt, isRecord) {
-  if (!GH.warm && !GS.replayOn && !GS.ai && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (LAP[2] === 0 || lt <= LAP[2] + 1e-6)) {
+  ghSyncSlot();
+  if (!GH.warm && !GS.replayOn && !GS.ai && !GS.raceMode && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (GH.bestTime === 0 || lt <= GH.bestTime + 1e-6)) {
     GH.bestSplit.set(GH.curSplit);
     ghFillSplits(GH.bestSplit, TRK.N, lt);
     GH.hasSplit = true;
@@ -7657,6 +9217,7 @@ function ghLapCross(lt, isRecord) {
     GH.hasGhost = n > 30;
     GH.bestTime = lt;
     GH.savePending = true;
+    ghFlushSlot();
   }
   GH.curSplit.fill(-1);
   GH.curLen = 0;
@@ -7666,7 +9227,8 @@ function ghLapCross(lt, isRecord) {
 
 // Interpola a pose do fantasma para o instante atual da volta e atualiza matrizes + fade de proximidade. Sem alocações.
 function ghPose() {
-  let vis = GH.on && GH.hasGhost && LAP[3] === 1 && !GS.replayOn && !GS.ai && !GS.frozen;
+  ghSyncSlot();
+  let vis = GH.on && GH.hasGhost && LAP[3] === 1 && !GS.replayOn && !GS.ai && !GS.frozen && !GS.raceMode;
   if (vis) {
     const f = (VEH.time - LAP[0]) * 60;
     if (f < 0 || f >= GH.bestLen - 1) {
@@ -7733,61 +9295,70 @@ function ghB64Dec(str) {
   return u8;
 }
 
-function ghSaveData() {
-  if (!GH.hasSplit || !GH.hasGhost || TRK.N <= 0) return '';
-  const N = TRK.N, sn = Math.ceil(N / 2), sp = new Uint16Array(sn);
-  for (let k = 0; k < sn; k++) {
-    const v = GH.bestSplit[k * 2];
-    sp[k] = v >= 0 ? clamp(Math.round(v * 100), 0, 65535) : 0;
+function ghSaveData(carIdx) {
+  const prev = GH.slotIdx, target = carIdx === undefined ? ghCarIdx() : ghCarIdx(carIdx);
+  if (target !== GH.slotIdx) { ghFlushSlot(); ghLoadSlot(target); }
+  let out = '';
+  if (GH.hasSplit && GH.hasGhost && TRK.N > 0) {
+    const N = TRK.N, sn = Math.ceil(N / 2), sp = new Uint16Array(sn);
+    for (let k = 0; k < sn; k++) {
+      const v = GH.bestSplit[k * 2];
+      sp[k] = v >= 0 ? clamp(Math.round(v * 100), 0, 65535) : 0;
+    }
+    const len = GH.bestLen, needLast = len > 1 && (len - 1) % 3 !== 0;
+    const fn = Math.ceil(len / 3) + (needLast ? 1 : 0);
+    const fr = new Int16Array(fn * 8), B = GH.bestFrames;
+    for (let k = 0; k < fn; k++) {
+      const srcIdx = k * 3 < len ? k * 3 : len - 1, so = srcIdx * 8, doff = k * 8;
+      fr[doff]     = clamp(Math.round(B[so]     * 20), -32767, 32767);
+      fr[doff + 1] = clamp(Math.round(B[so + 1] * 20), -32767, 32767);
+      fr[doff + 2] = clamp(Math.round(B[so + 2] * 20), -32767, 32767);
+      fr[doff + 3] = clamp(Math.round(wrapPi(B[so + 3]) * 5000), -32767, 32767);
+      fr[doff + 4] = clamp(Math.round(B[so + 4] * 5000), -32767, 32767);
+      fr[doff + 5] = clamp(Math.round(B[so + 5] * 5000), -32767, 32767);
+      fr[doff + 6] = clamp(Math.round(B[so + 6] * 5000), -32767, 32767);
+      fr[doff + 7] = clamp(Math.round(ghWrapSpin(B[so + 7]) * 500), -32767, 32767);
+    }
+    out = JSON.stringify({
+      v: 1,
+      t: GH.bestTime,
+      n: N,
+      l: len,
+      sp: ghB64Enc(sp),
+      fr: ghB64Enc(fr),
+    });
   }
-  const len = GH.bestLen, needLast = len > 1 && (len - 1) % 3 !== 0;
-  const fn = Math.ceil(len / 3) + (needLast ? 1 : 0);
-  const fr = new Int16Array(fn * 8), B = GH.bestFrames;
-  for (let k = 0; k < fn; k++) {
-    const srcIdx = k * 3 < len ? k * 3 : len - 1, so = srcIdx * 8, doff = k * 8;
-    fr[doff]     = clamp(Math.round(B[so]     * 20), -32767, 32767);
-    fr[doff + 1] = clamp(Math.round(B[so + 1] * 20), -32767, 32767);
-    fr[doff + 2] = clamp(Math.round(B[so + 2] * 20), -32767, 32767);
-    fr[doff + 3] = clamp(Math.round(wrapPi(B[so + 3]) * 5000), -32767, 32767);
-    fr[doff + 4] = clamp(Math.round(B[so + 4] * 5000), -32767, 32767);
-    fr[doff + 5] = clamp(Math.round(B[so + 5] * 5000), -32767, 32767);
-    fr[doff + 6] = clamp(Math.round(B[so + 6] * 5000), -32767, 32767);
-    fr[doff + 7] = clamp(Math.round(ghWrapSpin(B[so + 7]) * 500), -32767, 32767);
-  }
-  return JSON.stringify({
-    v: 1,
-    t: GH.bestTime,
-    n: N,
-    l: len,
-    sp: ghB64Enc(sp),
-    fr: ghB64Enc(fr),
-  });
+  if (carIdx !== undefined && prev !== GH.slotIdx) { ghFlushSlot(); ghLoadSlot(prev); }
+  return out;
 }
 
-function ghLoadData(str, expectedBestSec) {
-  if (!str || typeof str !== 'string') return false;
+function ghLoadData(str, expectedBestSec, carIdx) {
+  const prev = GH.slotIdx, target = carIdx === undefined ? ghCarIdx() : ghCarIdx(carIdx);
+  if (target !== GH.slotIdx) { ghFlushSlot(); ghLoadSlot(target); }
+  const restore = () => { if (carIdx !== undefined && prev !== GH.slotIdx) { ghFlushSlot(); ghLoadSlot(prev); } };
+  if (!str || typeof str !== 'string') { restore(); return false; }
   let obj;
-  try { obj = JSON.parse(str); } catch (e) { return false; }
-  if (!obj || typeof obj !== 'object') return false;
-  if (typeof obj.t !== 'number' || !Number.isFinite(obj.t) || obj.t <= 0) return false;
-  if (typeof expectedBestSec !== 'number' || !Number.isFinite(expectedBestSec) || expectedBestSec <= 0) return false;
-  if (Math.abs(obj.t - expectedBestSec) > 0.05 || obj.n !== TRK.N) return false;
-  if (typeof obj.sp !== 'string' || typeof obj.fr !== 'string') return false;
+  try { obj = JSON.parse(str); } catch (e) { restore(); return false; }
+  if (!obj || typeof obj !== 'object') { restore(); return false; }
+  if (typeof obj.t !== 'number' || !Number.isFinite(obj.t) || obj.t <= 0) { restore(); return false; }
+  if (typeof expectedBestSec !== 'number' || !Number.isFinite(expectedBestSec) || expectedBestSec <= 0) { restore(); return false; }
+  if (Math.abs(obj.t - expectedBestSec) > 0.05 || obj.n !== TRK.N) { restore(); return false; }
+  if (typeof obj.sp !== 'string' || typeof obj.fr !== 'string') { restore(); return false; }
 
   let spU8, frU8;
-  try { spU8 = ghB64Dec(obj.sp); frU8 = ghB64Dec(obj.fr); } catch (e) { return false; }
+  try { spU8 = ghB64Dec(obj.sp); frU8 = ghB64Dec(obj.fr); } catch (e) { restore(); return false; }
   const N = TRK.N, sn = Math.ceil(N / 2);
-  if (N <= 0 || N > GH.bestSplit.length) return false;
-  if (spU8.byteLength !== sn * 2) return false;
-  if (frU8.byteLength < 32 || (frU8.byteLength & 15) !== 0) return false;
-  if (obj.l !== undefined && (!Number.isInteger(obj.l) || obj.l < 2 || obj.l > 10800)) return false;
+  if (N <= 0 || N > GH.bestSplit.length) { restore(); return false; }
+  if (spU8.byteLength !== sn * 2) { restore(); return false; }
+  if (frU8.byteLength < 32 || (frU8.byteLength & 15) !== 0) { restore(); return false; }
+  if (obj.l !== undefined && (!Number.isInteger(obj.l) || obj.l < 2 || obj.l > 10800)) { restore(); return false; }
 
   const sp = new Uint16Array(spU8.buffer), fr = new Int16Array(frU8.buffer), fn = fr.length / 8;
   const bestLen = typeof obj.l === 'number' ? obj.l : Math.min(10800, (fn - 1) * 3 + 1);
-  if (bestLen < 2 || bestLen > 10800) return false;
+  if (bestLen < 2 || bestLen > 10800) { restore(); return false; }
   const hasTrailing = bestLen > 1 && (bestLen - 1) % 3 !== 0;
   const expectedFn = Math.ceil(bestLen / 3) + (hasTrailing ? 1 : 0);
-  if (typeof obj.l === 'number' && fn !== expectedFn) return false;
+  if (typeof obj.l === 'number' && fn !== expectedFn) { restore(); return false; }
 
   GH.bestSplit.fill(-1);
   for (let k = 0; k < sn; k++) {
@@ -7830,6 +9401,8 @@ function ghLoadData(str, expectedBestSec) {
   GH.hasSplit = true;
   GH.hasGhost = bestLen > 30;
   GH.savePending = false;
+  ghFlushSlot();
+  restore();
   return true;
 }
 
@@ -7852,6 +9425,7 @@ function ghRenderInit() {
       if (!GH.drawOn || !GH.fam || !GH.fam.pipe) return;
       if (!GH.bg) GH.bg = fwdBindGroup(GH.fam);
       const bm = CAR.bodyMesh, wm = CAR.wheelMesh;
+      if (!bm) return;
       pass.setPipeline(GH.fam.pipe);
       pass.setBindGroup(3, GH.bg);
       R.dyn2[0] = GH.slotBody * 256;
@@ -7879,7 +9453,7 @@ if (typeof BUILD !== 'undefined') BUILD.push(async () => { ghRenderInit(); });
 // partir de 16 controles inteiros tirados da simulação (sndControl). Nenhuma alocação por bloco de áudio nem por quadro.
 //
 // Controles (inteiros; no jogo viajam como AudioParams de taxa k, um número por bloco):
-//  0 bits: 1 = jogo andando (0 = pausa: a saída some e o estado congela), 2 = mudo, 4/8 = câmera (0 perseguição, 1 capô, 2 TV)
+//  0 bits: 1 = jogo andando (0 = pausa: a saída some e o estado congela), 2 = mudo, 4/8/16 = câmera (0..4; 4 = cockpit), 32 = buzina
 //  1 giro (rpm)   2 acelerador ×1000   3 marcha (0 = ré)   4 velocidade do carro (cm/s)
 //  5/6 canto de pneu esquerdo/direito ×1000   7 rodas na grama/brita ×1000   8 rodas na zebra ×1000
 //  9 distância do ouvinte ao carro (dm)   10 fator Doppler ×10000   11 velocidade do ouvinte (cm/s)
@@ -7896,7 +9470,7 @@ function sndCore(sr) {
   const L2 = mk(), R2 = mk(), L4 = mk(), R4 = mk(), L5 = mk(), R5 = mk();   // barramentos estéreo: vento, ambiente, público
   const CG = new Float64Array([1, 0.8, 0.92, 0.74]);  // cilindros desiguais: dão as meias-ordens (o "ronco" de quatro cilindros)
   // ganhos dos ressonadores do motor por câmera: [direto, 105, 235, 470, 980, 2100 Hz, admissão, tuchos]
-  const VG = new Float64Array([0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.4, 0.55, 0.7, 0.85, 0.7, 0.42, 0.7, 0.3, 0.45, 0.8, 0.8, 0.7, 0.55, 0.32, 0.4, 0.1, 0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06]);
+  const VG = new Float64Array([0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.4, 0.55, 0.7, 0.85, 0.7, 0.42, 0.7, 0.3, 0.45, 0.8, 0.8, 0.7, 0.55, 0.32, 0.4, 0.1, 0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.55, 1.15, 0.95, 0.75, 0.52, 0.28, 0.82, 0.22]);
   const kc = t => 1 - Math.exp(-NC / (sr * t)), K8 = kc(0.008), K20 = kc(0.02), K50 = kc(0.05), K200 = kc(0.2), K30 = kc(0.03);
   const fset = (k, hz, Q, g) => { F[3 * k] = 2 * Math.sin(PI * Math.min(hz, sr * 0.16) / sr); F[3 * k + 1] = 1 / Q; F[3 * k + 2] = g; };
   // filtros fixos
@@ -7916,7 +9490,7 @@ function sndCore(sr) {
   fset(33, 20, 0.7, 1);                               // tira o nível contínuo que a saturação do motor cria
   // índices do estado
   const MG = 0, RP = 1, LD = 2, FP = 3, AMP = 4, CYL = 5, GP = 6, SHT = 7, DG = 8, DP = 9, SPD = 10, SQ = 11, SQP = 13, SQJ = 15, LSP = 17, GUST = 18, LOO = 19, KRB = 20, KPH = 21,
-    CRW = 22, CPN = 23, HIT = 24, HITE = 25, CLK = 26, TM = 27, CRE = 28, VGS = 32, NEXT = 40, BV = 44, FOL = 41, SQA = 100, SQW = 102;
+    CRW = 22, CPN = 23, HIT = 24, HITE = 25, CLK = 26, TM = 27, CRE = 28, HRN = 29, HP1 = 30, HP2 = 31, VGS = 32, NEXT = 40, BV = 44, FOL = 41, SQA = 100, SQW = 102;
   // estado inicial (também usado para zerar o sintetizador depois do aquecimento)
   function reset() { st.fill(0, 0, PH0); Z.fill(0); BI.fill(0); ctl.fill(0); RS[0] = 0x2F6E2B1; RS[1] = 0x1B873593; st[RP] = 900; st[DG] = 1; st[DP] = 1; st[GP] = 1; st[NEXT] = sr * 0.7; for (let k = 0; k < 8; k++) st[VGS + k] = VG[k]; }
   reset();
@@ -7956,7 +9530,7 @@ function sndCore(sr) {
     }
   }
   function chunk(m) {
-    const fl = ctl[0] | 0, view = (fl >> 2) & 3, on = (fl & 3) === 1 ? 1 : 0, mg0 = st[MG];
+    const fl = ctl[0] | 0, vRaw = (fl >> 2) & 7, view = vRaw > 4 ? 4 : vRaw, on = (fl & 3) === 1 ? 1 : 0, mg0 = st[MG];
     if (!on && mg0 < 2e-4) { st[MG] = 0; oL.fill(0); oR.fill(0); return; }   // pausa ou mudo: saída exatamente zero, estado congelado
     const mg1 = mg0 + (on - mg0) * K8 * 1.6; st[MG] = mg1;
     noise(wA); noise(wB);
@@ -7965,14 +9539,18 @@ function sndCore(sr) {
     if (gear !== st[GP]) { if (gear > 0 && st[GP] > 0) st[SHT] = 0.21 * sr; st[CLK] = 1; st[GP] = gear; }
     const sht = st[SHT]; if (sht > 0) st[SHT] = sht - m;
     const rp = st[RP] += ((ctl[1] < 600 ? 600 : ctl[1]) - st[RP]) * (sht > 0 ? K50 : K20 * 1.3);
-    const ld = st[LD] += ((sht > 0 ? 0.04 : ctl[2] * 0.001) - st[LD]) * (sht > 0 ? K8 * 2 : K20);
+    const rawLd = ctl[2] < 0 ? 0 : ctl[2] > 1400 ? 1.4 : ctl[2] * 0.001;
+    const ld = st[LD] += ((sht > 0 ? 0.04 : rawLd) - st[LD]) * (sht > 0 ? K8 * 2 : K20);
     const dp = st[DP] += (ctl[10] * 1e-4 - st[DP]) * K50, dist = ctl[9] * 0.1;
     const dg = st[DG] += (Math.pow(9 / (9 + (dist > 7 ? dist - 7 : 0)), 0.85) - st[DG]) * K20;
     const spd = st[SPD] += (ctl[4] * 0.01 - st[SPD]) * K20, lsp = st[LSP] += (ctl[11] * 0.01 - st[LSP]) * K50;
     for (let k = 0; k < 8; k++) st[VGS + k] += (VG[view * 8 + k] - st[VGS + k]) * K20;
     // ---- motor: um pulso de pressão por explosão (4 por ciclo de 2 voltas), largura em tempo fixo → formantes fixos
-    const fc = rp / 30 * dp / sr, ifc = 1 / fc; let tp = (0.0035 - 0.0027 * ld) * sr; if (tp > 0.85 * ifc) tp = 0.85 * ifc;
-    const itp = 1 / tp, itk = 1 / (0.0007 * sr), idle = rp < 2500 ? (2500 - rp) / 1600 : 0, jit = 0.07 + (0.22 * (1 - ld) + 0.1) * idle + 0.1 * (1 - ld);
+    const fc = rp / 30 * dp / sr, ifc = 1 / fc;
+    let tp = (0.0035 - 0.0027 * (ld > 1 ? 1 + (ld - 1) * 0.25 : ld)) * sr;
+    if (tp < 0.0004 * sr) tp = 0.0004 * sr;
+    if (tp > 0.85 * ifc) tp = 0.85 * ifc;
+    const itp = 1 / tp, itk = 1 / (0.0007 * sr), idle = rp < 2500 ? (2500 - rp) / 1600 : 0, ldm = ld > 1 ? 1 : ld, jit = 0.07 + (0.22 * (1 - ldm) + 0.1) * idle + 0.1 * (1 - ldm);
     let fp = st[FP], amp = st[AMP], cyl = st[CYL] | 0;
     for (let i = 0; i < m; i++) {
       fp += fc; if (fp >= 1) { fp -= 1; cyl = (cyl + 1) & 3; amp = CG[cyl] * (1 + jit * (rnd16() / 32768 - 1)); }
@@ -8004,7 +9582,7 @@ function sndCore(sr) {
     // ---- barramento do carro visto do ouvinte: absorção do ar com a distância
     const air = 15000 / (1 + dist * 0.02); F[90] = F[93] = 2 * Math.sin(PI * (air < sr * 0.16 ? air : sr * 0.16) / sr);
     // ---- vento (velocidade do ouvinte) e rodagem (velocidade do carro)
-    const gust = st[GUST] += ((rnd16() / 65536) - st[GUST]) * 0.004, wv = lsp / 42, wg = wv * wv * (0.7 + 0.6 * gust) * (view === 1 ? 0.85 : 0.6), wf = 2 * Math.sin(PI * (260 + 21 * lsp) / sr);
+    const gust = st[GUST] += ((rnd16() / 65536) - st[GUST]) * 0.004, wv = lsp / 42, wg = wv * wv * (0.7 + 0.6 * gust) * (view === 1 ? 0.85 : view === 4 ? 0.28 : 0.6), wf = 2 * Math.sin(PI * (260 + 21 * lsp) / sr);
     F[30] = F[33] = wf; F[32] = F[35] = wg;
     svf(wA, L2, m, 10, 1, 0); svf(wB, R2, m, 11, 1, 0);
     const rv = spd / 40; F[36] = 2 * Math.sin(PI * (130 + 9 * spd) / sr); F[38] = Math.pow(rv, 1.3) * 0.5 * dg;
@@ -8046,13 +9624,32 @@ function sndCore(sr) {
       const dn = 0.0035 * (0.4 + sw); for (let i = 0; i < m; i++) t1[i] = wA[i] < -1 + dn ? 9 * (0.3 + wB[i] * wB[i]) : 0;
       svf(t1, t2, m, 29, 1, 0); for (let i = 0; i < m; i++) { L5[i] += t2[i] * gl; R5[i] += t2[i] * gr; }
     } else { L5.fill(0); R5.fill(0); }
-    // ---- mistura, absorção do ar no barramento do carro, limitador suave
-    const m0 = mix[0], m1 = mix[1], m2 = mix[2], m3 = mix[3], m4 = mix[4] * AMB, m5 = mix[5] * AMB, near = view === 1 ? 1.25 : 1;
+    // ---- mistura, absorção do ar no barramento do carro, buzina bitonal, limitador suave
+    const m0 = mix[0], m1 = mix[1], m2 = mix[2], m3 = mix[3], m4 = mix[4] * AMB, m5 = mix[5] * AMB, near = view === 1 ? 1.25 : view === 4 ? 1.15 : 1;
     for (let i = 0; i < m; i++) { const e = eg[i] * m0 * near, c = cb[i] * m3; t1[i] = e + c + (sL[i] * 0.85 + sR[i] * 0.4) * m1; t2[i] = e + c + (sL[i] * 0.4 + sR[i] * 0.85) * m1; }
     svf(t1, t1, m, 30, 0, 0); svf(t2, t2, m, 31, 0, 0);
+    const hornOn = (fl & 32) !== 0 ? 1 : 0; let hrn = st[HRN], hornAct = 0;
+    if (hornOn || hrn > 1e-4) {
+      hornAct = 1;
+      hrn += (hornOn - hrn) * (hornOn ? K8 * 2 : K20);
+      if (!hornOn && hrn < 1e-4) hrn = 0;
+      st[HRN] = hrn;
+      const dpH = dp > 0.2 ? dp : 1, f1 = 415 * dpH / sr, f2 = 500 * dpH / sr, hg = hrn * dg * (view === 4 ? 0.18 : 0.26);
+      let hp1 = st[HP1], hp2 = st[HP2];
+      for (let i = 0; i < m; i++) {
+        hp1 += f1; if (hp1 >= 1) hp1 -= 1;
+        hp2 += f2; if (hp2 >= 1) hp2 -= 1;
+        const a1 = 6.283185307 * hp1, a2 = 6.283185307 * hp2;
+        const w1 = Math.sin(a1) + 0.32 * Math.sin(2 * a1) + 0.16 * Math.sin(3 * a1) + 0.06 * Math.sin(4 * a1);
+        const w2 = Math.sin(a2) + 0.32 * Math.sin(2 * a2) + 0.16 * Math.sin(3 * a2) + 0.06 * Math.sin(4 * a2);
+        ex[i] = (w1 + w2) * 0.5 * hg;
+      }
+      st[HP1] = hp1; st[HP2] = hp2;
+    }
     const dm = (mg1 - mg0) / m;
     for (let i = 0; i < m; i++) {
-      const g = mg0 + dm * (i + 1); let l = (t1[i] + L2[i] * m2 + L4[i] * m4 + L5[i] * m5) * g, r = (t2[i] + R2[i] * m2 + R4[i] * m4 + R5[i] * m5) * g;
+      const g = mg0 + dm * (i + 1), hi = hornAct ? ex[i] : 0;
+      let l = (t1[i] + hi + L2[i] * m2 + L4[i] * m4 + L5[i] * m5) * g, r = (t2[i] + hi + R2[i] * m2 + R4[i] * m4 + R5[i] * m5) * g;
       let a = l < 0 ? -l : l; if (a > 0.55) { a = 0.55 + (a - 0.55) / (1 + (a - 0.55) / 0.42); l = l < 0 ? -a : a; }
       a = r < 0 ? -r : r; if (a > 0.55) { a = 0.55 + (a - 0.55) / (1 + (a - 0.55) / 0.42); r = r < 0 ? -a : a; }
       oL[i] = l * VOL; oR[i] = r * VOL;
@@ -8088,8 +9685,9 @@ function sndControl() {
   // público: distância do ouvinte ao eixo da arquibancada e de que lado ela fica
   const A = SND.stand, bx = A[2] - A[0], bz = A[3] - A[1]; let t = ((cp[0] - A[0]) * bx + (cp[2] - A[1]) * bz) / (bx * bx + bz * bz); t = t < 0 ? 0 : t > 1 ? 1 : t;
   const px = A[0] + bx * t - cp[0], pz = A[1] + bz * t - cp[2], pd = Math.sqrt(px * px + pz * pz) + 0.01, fw = cam.fwd, fl = Math.sqrt(fw[0] * fw[0] + fw[2] * fw[2]) + 1e-6;
-  c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | (view << 2);
-  c[1] = V.rpm; c[2] = V.ctl[0] * 1000; c[3] = V.gear; c[4] = sp * 100; c[5] = sl * 1000; c[6] = sr * 1000; c[7] = loose * kv * 1000; c[8] = kerb * kv * 1000;
+  const horn = (typeof K_HORN !== 'undefined' && (GS.keys & K_HORN)) ? 32 : 0;
+  c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | ((view & 7) << 2) | horn;
+  c[1] = V.rpm; c[2] = Math.min(1400, V.ctl[0] * 1000 + (V.boosting ? 320 : 0)); c[3] = V.gear; c[4] = sp * 100; c[5] = sl * 1000; c[6] = sr * 1000; c[7] = loose * kv * 1000; c[8] = kerb * kv * 1000;
   c[9] = dist * 10; c[10] = dop * 10000; c[11] = lsp * 100; c[12] = 1000 / (1 + pd * pd / 2025); c[13] = (px * -fw[2] + pz * fw[0]) / (pd * fl) * 1000; c[14] = V.hits & 1023;
 }
 // O contexto de áudio só pode nascer num gesto do usuário: é chamado no clique de "Começar".
@@ -8104,7 +9702,7 @@ function sndStart() {
   if (!ctx.audioWorklet) { fallback(); return; }
   // (o construtor do processador roda ~4 s de áudio com controles variados e zera o estado: o V8 otimiza o sintetizador
   // antes do primeiro bloco de verdade, em vez de passar o primeiro segundo no interpretador, alocando)
-  const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;for(let i=0;i<1600;i++){c[0]=1|((i>>8)&3)<<2;c[1]=900+i*37%5600;c[2]=i*13%1001;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
+  const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;for(let i=0;i<1600;i++){c[0]=1|((((i>>7)%5)&7)<<2)|((i&64)?32:0);c[1]=900+i*37%5600;c[2]=i*13%1401;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
   // O módulo vai por URL data: — aberto como arquivo (file://) a página tem origem opaca e o Chrome recusa módulo por URL blob:.
   // Se o navegador recusar data:, tenta blob:; se não houver worklet de jeito nenhum, cai no ScriptProcessor.
   const mod = u => ctx.audioWorklet.addModule(u);
@@ -8120,7 +9718,7 @@ function sndFrame() {
   const P = SND.P; if (!P) return; const c = SND.sc, l = SND.last;
   for (let i = 0; i < 16; i++) { const v = c[i]; if (v !== l[i]) { l[i] = v; P[i].value = v; } }
 }
-function sndFlags() { const c = SND.sc; c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | (c[0] & 12); if (SND.P) { SND.P[0].value = c[0]; SND.last[0] = c[0]; } }
+function sndFlags() { const c = SND.sc; c[0] = (SND.run ? 1 : 0) | (SND.mute ? 2 : 0) | (c[0] & 60); if (SND.P) { SND.P[0].value = c[0]; SND.last[0] = c[0]; } }
 // pausa (menu) e retomada: o sintetizador some em poucos milissegundos e o contexto de áudio é suspenso em seguida
 function sndRun(on) {
   SND.run = on; if (!SND.ctx) return; sndFlags();
@@ -8144,20 +9742,32 @@ function sndOffline(mix, mudoDe, pausaDe) {
 }
 
 // ---- 51_painel.js
-// Painel na tela: velocímetro, conta-giros, marcha, cronômetro da volta, última/melhor volta, delta, medalha, minimapa e estatísticas.
+// Painel na tela: velocímetro, conta-giros, marcha, barra de turbo, cronômetro/posição da corrida, última/melhor volta, delta, medalha, minimapa com rivais e estatísticas.
 // Quatro canvas 2D pequenos por cima do jogo, só no jogo aberto por uma pessoa (GAME.ui). Nenhuma alocação por quadro:
 // mostradores, minimapa, medalhas e rótulos são desenhados uma vez em canvas de fundo; a cada quadro só há cópias de imagem
 // (algarismos de atlas pré-coloridos), ponteiros e primitivas inteiras no minimapa, e só quando o valor quantizado mudou.
 const HUD = {
   cg: null, ct: null, cs: null, cm: null, g: null, t: null, s: null, m: null,
-  face: null, hub: null, bgT: null, bgS: null, bgM: null, A: null, B: null, BG: null, BR: null, C: null, medals: null,
-  L: new Int32Array(40), K: new Int32Array(16), acc: new Float64Array(4), stats: false, vis: false,
-  V: new Int32Array(14),  // km/h × 10, rpm, marcha, volta, última, melhor, deltaCs, medalha, px, py, pa, gv, gx, gy
+  face: null, hub: null, bgT: null, bgR: null, bgS: null, bgM: null, A: null, B: null, BG: null, BR: null, C: null, medals: null,
+  rivCol: ['#bf352f', '#e2e3e0', '#c2c5c8'],
+  L: new Int32Array(50), K: new Int32Array(28), acc: new Float64Array(4), stats: false, vis: false,
+  V: new Int32Array(25),  // km/h × 10, rpm, marcha, volta, última, melhor, deltaCs, medalha, px, py, pa, gv, gx, gy, boost, boosting, raceOn, rx0,ry0, rx1,ry1, rx2,ry2, rank, lap
   M: new Float64Array(3), // minimapa: ox, oy, escala
   MC: new Float64Array(64), MS: new Float64Array(64),
 };
-const HCH = '0123456789:.,-R+';
+const HCH = '0123456789:.,-R+/';
 const HMED = ['#4be3ff', '#ffd23f', '#cfd6de', '#cd7f32'];
+function hudPaintHex(idx) {
+  if (typeof PAINTS === 'undefined' || !PAINTS[idx]) return '#cfd6de';
+  const rgb = PAINTS[idx].rgb;
+  let hex = '#';
+  for (let c = 0; c < 3; c++) {
+    const v = rgb[c] <= 0.0031308 ? 12.92 * rgb[c] : 1.055 * Math.pow(rgb[c], 1 / 2.4) - 0.055;
+    const b = Math.max(0, Math.min(255, Math.round(v * 255)));
+    hex += (b < 16 ? '0' : '') + b.toString(16);
+  }
+  return hex;
+}
 // atlas de algarismos: cada caractere centrado numa célula; os algarismos têm todos a mesma largura (números não "dançam")
 function hudAtlas(px, col) {
   const c = document.createElement('canvas'), g = c.getContext('2d'), font = '600 ' + px + 'px "Helvetica Neue",Helvetica,Arial,sans-serif', n = HCH.length, w = new Int32Array(n), x = new Int32Array(n);
@@ -8235,14 +9845,20 @@ function hudInit() {
   hudLayout(); addEventListener('resize', hudLayout);
 }
 // tira com rótulos fixos e vãos para os números; devolve o canvas de fundo e grava em L[o + i] o x de cada número
-function hudStrip(cv, labels, widths, units, At, px, o) {
+function hudStrip(cv, labels, widths, units, At, px, o, fixedW) {
   const dpr = devicePixelRatio || 1, f = document.createElement('canvas'), g = f.getContext('2d'), font = '600 ' + Math.round(px * 0.62) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif', pad = Math.round(px * 0.7), L = HUD.L;
   g.font = font; let X = pad; const xs = [];
   for (let i = 0; i < labels.length; i++) { const lw = g.measureText(labels[i]).width, uw = units[i] ? g.measureText(units[i]).width + px * 0.25 : 0; xs.push(X); L[o + i] = Math.round(X + lw + px * 0.4); X = L[o + i] + widths[i] + uw + pad * 1.3; }
-  const W = Math.round(X - pad * 0.3), Hh = Math.round(px * 1.75); f.width = cv.width = W; f.height = cv.height = Hh; cv.style.width = W / dpr + 'px'; cv.style.height = Hh / dpr + 'px';
-  g.fillStyle = 'rgba(9,11,14,.62)'; g.beginPath(); g.roundRect(0, 0, W, Hh, Hh * 0.3); g.fill();
+  const pillW = Math.round(X - pad * 0.3), W = fixedW > pillW ? fixedW : pillW, Hh = Math.round(px * 1.75), ox = fixedW > pillW ? Math.round((fixedW - pillW) * 0.5) : 0;
+  f.width = W; f.height = Hh;
+  if (cv) { cv.width = W; cv.height = Hh; cv.style.width = W / dpr + 'px'; cv.style.height = Hh / dpr + 'px'; }
+  g.fillStyle = 'rgba(9,11,14,.62)'; g.beginPath(); g.roundRect(ox, 0, pillW, Hh, Hh * 0.3); g.fill();
   g.font = font; g.textBaseline = 'alphabetic'; g.fillStyle = 'rgba(255,255,255,.62)';
-  for (let i = 0; i < labels.length; i++) { g.fillText(labels[i], xs[i], Hh * 0.5 + px * 0.26); if (units[i]) g.fillText(units[i], L[o + i] + widths[i] + px * 0.25, Hh * 0.5 + px * 0.26); }
+  for (let i = 0; i < labels.length; i++) {
+    g.fillText(labels[i], ox + xs[i], Hh * 0.5 + px * 0.26);
+    L[o + i] += ox;
+    if (units[i]) g.fillText(units[i], L[o + i] + widths[i] + px * 0.25, Hh * 0.5 + px * 0.26);
+  }
   L[o + 6] = Math.round((Hh - At.h) / 2); L[o + 7] = W; L[o + 8] = Hh;
   return f;
 }
@@ -8267,16 +9883,28 @@ function hudLayout() {
     f.fillStyle = 'rgba(255,255,255,.6)'; f.font = '600 ' + Math.round(r * 0.115) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif'; f.fillText(unit, cx, cy + r * 0.84);
   };
   dial(cx1, 200, 20, 10, 0, 'km/h'); dial(cx2, 7, 1, 0.5, 6.25, 'rpm × 1000');
+  // trilha e rótulo da barra de turbo entre os dois mostradores
+  const bw = Math.round(r * 0.72), bh = Math.max(6, Math.round(r * 0.13)), bx = Math.round((W - bw) * 0.5), by = Math.round(cy + r * 0.74), br = bh >> 1;
+  L[35] = bx; L[36] = by; L[37] = bw; L[38] = bh; L[39] = br;
+  f.fillStyle = 'rgba(255,255,255,.65)'; f.font = '600 ' + Math.round(r * 0.105) + 'px "Helvetica Neue",Helvetica,Arial,sans-serif';
+  f.fillText('TURBO', W * 0.5, by - Math.round(r * 0.11));
+  f.beginPath(); f.roundRect(bx, by, bw, bh, br); f.fillStyle = 'rgba(9,11,14,.72)'; f.fill();
+  f.lineWidth = Math.max(1, r * 0.016); f.strokeStyle = 'rgba(255,255,255,.32)'; f.stroke();
   const hb = H.hub = document.createElement('canvas'), hr = Math.round(r * 0.085); hb.width = hb.height = hr * 2; const hg = hb.getContext('2d'); hg.beginPath(); hg.arc(hr, hr, hr, 0, TAU); hg.fillStyle = '#16181b'; hg.fill(); hg.lineWidth = hr * 0.25; hg.strokeStyle = '#ff5a36'; hg.stroke();
   L[6] = hr; L[7] = Math.round(cy + r * 0.3);                                   // raio do cubo; y dos números grandes
   const g = H.g; g.setTransform(1 / 16, 0, 0, 1 / 16, 0, 0); g.lineCap = 'round'; g.lineWidth = Math.round(r * 0.034 * 16); g.strokeStyle = '#ff5a36';
-  // cronômetro (m:ss.cc), medalha, delta, minimapa e estatísticas
+  // cronômetro (m:ss.cc), medalha, delta, tira de corrida, minimapa e estatísticas
   const tw = B.w[0] * 5 + B.w[10] + B.w[11], pxB = B.h / 1.16, msz = Math.max(12, Math.round(pxB * 1.1)), mgap = Math.round(pxB * 0.35);
   const dw = Math.max(B.w[13], B.w[15]) + B.w[0] * 4 + B.w[11];
+  const fw = B.w[0] * 2 + B.w[16];
   H.medals = hudMedalIcons(msz);
   H.bgT = hudStrip(H.ct, ['VOLTA', 'ÚLTIMA', 'MELHOR', 'DELTA'], [tw, tw, tw + mgap + msz, dw], ['', '', '', ''], B, pxB, 10);
+  H.bgR = hudStrip(null, ['POS', 'VOLTAS', 'TEMPO', 'ÚLTIMA'], [fw, fw, tw, tw], ['', '', '', ''], B, pxB, 40, L[17]);
   L[14] = L[12] + tw + mgap; L[15] = Math.round((L[18] - msz) / 2);
   H.bgS = hudStrip(H.cs, ['QPS', 'QUADRO', 'GPU'], [C.w[0] * 3, C.w[0] * 4 + C.w[12], C.w[0] * 4 + C.w[12]], ['', 'ms', 'ms'], C, C.h / 1.16, 20);
+  if (typeof RIV !== 'undefined' && RIV.cars) {
+    for (let i = 0; i < 3; i++) if (RIV.cars[i]) H.rivCol[i] = hudPaintHex(RIV.cars[i].paintIdx);
+  }
   for (let k = 0; k < 64; k++) { const a = k * (TAU / 64); H.MC[k] = Math.cos(a); H.MS[k] = Math.sin(a); }
   H.bgM = hudMinimapBg(r, dpr);
   H.K.fill(-1000001);
@@ -8285,6 +9913,12 @@ function hudLayout() {
 function hudCh(g, A, i, x, y, q) { const w = A.w[i]; g.drawImage(A.c, A.x[i], 0, w, A.h, x * q, y * q, w * q, A.h * q); return w; }
 // inteiro v alinhado à direita em n células, sem zeros à esquerda
 function hudInt(g, A, v, n, x, y, q) { const w = A.w[0]; for (let k = n - 1; k >= 0; k--) { hudCh(g, A, v % 10, x + k * w, y, q); v = (v / 10) | 0; if (v === 0) break; } }
+// fração a/b (ex: 1/4, 2/3) usando o glifo '/' no índice 16 do atlas
+function hudFrac(g, A, a, b, x, y) {
+  x += hudCh(g, A, clamp(a | 0, 0, 9), x, y, 1);
+  x += hudCh(g, A, 16, x, y, 1);
+  hudCh(g, A, clamp(b | 0, 0, 9), x, y, 1);
+}
 // tempo em centésimos como m:ss.cc; negativo = sem tempo (-:--.--)
 function hudTime(g, A, cs, x, y) {
   if (cs > 59999) cs = 59999;
@@ -8346,14 +9980,37 @@ function hudRead() {
   } else {
     V[11] = 0; V[12] = -1; V[13] = -1;
   }
+  V[14] = v.boost !== undefined ? clamp(Math.round(v.boost * 100), 0, 100) : 100;
+  V[15] = v.boosting ? 1 : 0;
+  const raceOn = typeof GS !== 'undefined' && !!GS.raceMode && typeof RIV !== 'undefined' && !!RIV.active && !GS.replayOn && !GS.poseOn;
+  V[16] = raceOn ? 1 : 0;
+  if (raceOn) {
+    for (let i = 0; i < 3; i++) {
+      const rv = RIV.cars[i];
+      V[17 + i * 2] = rv ? clamp(Math.round(rv.x * sc + ox), 0, mw) : -1;
+      V[18 + i * 2] = rv ? clamp(Math.round(rv.z * sc + oy), 0, mh) : -1;
+    }
+    V[23] = clamp(RIV.playerRank | 0, 1, 4);
+    V[24] = clamp(RIV.playerLap | 0, 1, typeof RACE_LAPS !== 'undefined' ? RACE_LAPS : 3);
+  } else {
+    V[17] = V[18] = V[19] = V[20] = V[21] = V[22] = -1;
+    V[23] = 0; V[24] = 0;
+  }
 }
 function hudDraw() {
   const H = HUD, L = H.L, K = H.K, V = H.V, an = V[0], ki = ((an + 5) / 10) | 0, ar = (V[1] / 10) | 0, gear = V[2];
-  if (ki !== K[0] || an !== K[1] || ar !== K[2] || gear !== K[3]) {
-    K[0] = ki; K[1] = an; K[2] = ar; K[3] = gear;
+  const boost = V[14], boosting = V[15];
+  if (ki !== K[0] || an !== K[1] || ar !== K[2] || gear !== K[3] || boost !== K[15] || boosting !== K[16]) {
+    K[0] = ki; K[1] = an; K[2] = ar; K[3] = gear; K[15] = boost; K[16] = boosting;
     const g = H.g, A = H.A, r = L[3], cy = L[1], w = A.w[0];
     g.clearRect(0, 0, L[4] * 16, L[5] * 16); g.drawImage(H.face, 0, 0, L[4] * 16, L[5] * 16);
     hudInt(g, A, ki, 3, L[0] - ((w * 3) >> 1), L[7], 16); hudCh(g, A, gear === 0 ? 14 : gear, L[2] - (A.w[gear === 0 ? 14 : gear] >> 1), L[7], 16);
+    if (boost > 0) {
+      const fw = Math.max(2, Math.round(L[37] * boost / 100));
+      const br = Math.min(L[39], fw >> 1);
+      g.fillStyle = boosting ? '#4be3ff' : '#ff5a36';
+      g.beginPath(); g.roundRect(L[35] * 16, L[36] * 16, fw * 16, L[38] * 16, br * 16); g.fill();
+    }
     g.beginPath();
     for (let d = 0; d < 2; d++) {
       const a = (145 + (d ? ar * (250 / 700) : an * (250 / 2000))) * 0.017453292519943295, co = Math.cos(a), si = Math.sin(a), cx = L[d * 2] * 16, cY = cy * 16, len = r * 16;
@@ -8363,15 +10020,31 @@ function hudDraw() {
     const hr = L[6]; g.drawImage(H.hub, (L[0] - hr) * 16, (cy - hr) * 16, hr * 32, hr * 32); g.drawImage(H.hub, (L[2] - hr) * 16, (cy - hr) * 16, hr * 32, hr * 32);
   }
   const cur = V[3], last = V[4], best = V[5], delta = V[6], med = V[7];
-  if (cur !== K[4] || last !== K[5] || best !== K[6] || delta !== K[7] || med !== K[8]) {
-    K[4] = cur; K[5] = last; K[6] = best; K[7] = delta; K[8] = med; const t = H.t, B = H.B, y = L[16];
-    t.clearRect(0, 0, L[17], L[18]); t.drawImage(H.bgT, 0, 0); hudTime(t, B, cur, L[10], y); hudTime(t, B, last, L[11], y); hudTime(t, B, best, L[12], y);
-    if (med >= 0 && med < 4) t.drawImage(H.medals[med], L[14], L[15]);
-    hudDelta(t, delta, L[13], y);
+  const ra = V[16], rank = V[23], rlap = V[24];
+  if (cur !== K[4] || last !== K[5] || best !== K[6] || delta !== K[7] || med !== K[8] || ra !== K[24] || (ra === 1 && (rank !== K[25] || rlap !== K[26]))) {
+    K[4] = cur; K[5] = last; K[6] = best; K[7] = delta; K[8] = med; K[24] = ra;
+    const t = H.t, B = H.B;
+    t.clearRect(0, 0, L[17], L[18]);
+    if (ra === 1) {
+      K[25] = rank; K[26] = rlap;
+      const y = L[46];
+      t.drawImage(H.bgR, 0, 0);
+      hudFrac(t, B, rank, 4, L[40], y);
+      hudFrac(t, B, rlap, typeof RACE_LAPS !== 'undefined' ? RACE_LAPS : 3, L[41], y);
+      hudTime(t, B, cur, L[42], y);
+      hudTime(t, B, last, L[43], y);
+    } else {
+      const y = L[16];
+      t.drawImage(H.bgT, 0, 0); hudTime(t, B, cur, L[10], y); hudTime(t, B, last, L[11], y); hudTime(t, B, best, L[12], y);
+      if (med >= 0 && med < 4) t.drawImage(H.medals[med], L[14], L[15]);
+      hudDelta(t, delta, L[13], y);
+    }
   }
   const px = V[8], py = V[9], pa = V[10], gv = V[11], gx = V[12], gy = V[13];
-  if (px !== K[9] || py !== K[10] || pa !== K[11] || gv !== K[12] || gx !== K[13] || gy !== K[14]) {
+  if (px !== K[9] || py !== K[10] || pa !== K[11] || gv !== K[12] || gx !== K[13] || gy !== K[14] ||
+      ra !== K[17] || V[17] !== K[18] || V[18] !== K[19] || V[19] !== K[20] || V[20] !== K[21] || V[21] !== K[22] || V[22] !== K[23]) {
     K[9] = px; K[10] = py; K[11] = pa; K[12] = gv; K[13] = gx; K[14] = gy;
+    K[17] = ra; K[18] = V[17]; K[19] = V[18]; K[20] = V[19]; K[21] = V[20]; K[22] = V[21]; K[23] = V[22];
     const m = H.m;
     if (m) {
       m.clearRect(0, 0, L[30], L[31]); m.drawImage(H.bgM, 0, 0);
@@ -8379,6 +10052,16 @@ function hudDraw() {
         m.beginPath(); m.arc(gx, gy, L[32], 0, TAU);
         m.fillStyle = '#4be3ff'; m.fill();
         m.lineWidth = L[34]; m.strokeStyle = '#07222b'; m.stroke();
+      }
+      if (ra === 1) {
+        for (let i = 0; i < 3; i++) {
+          const rx = V[17 + i * 2], ry = V[18 + i * 2];
+          if (rx >= 0) {
+            m.beginPath(); m.arc(rx, ry, L[32], 0, TAU);
+            m.fillStyle = H.rivCol[i]; m.fill();
+            m.lineWidth = L[34]; m.strokeStyle = '#090b0e'; m.stroke();
+          }
+        }
       }
       const ar = L[33], co = H.MC[pa], si = H.MS[pa];
       m.beginPath();
@@ -8404,11 +10087,14 @@ function hudShow(on) { HUD.vis = on; const d = on ? 'block' : 'none'; HUD.cg.sty
 function hudStats(on) { HUD.stats = on; HUD.cs.style.display = on ? 'block' : 'none'; HUD.acc[0] = 0; HUD.acc[1] = 0; if (on) { const L = HUD.L; HUD.s.clearRect(0, 0, L[27], L[28]); HUD.s.drawImage(HUD.bgS, 0, 0); } }
 
 // ---- 52_ui.js
-// Interface do jogo aberto por uma pessoa (GAME.ui): tela de início, pausa, benchmark, volta roteirizada para assistir,
+// Interface do jogo aberto por uma pessoa (GAME.ui): tela de início, pausa, seletores, benchmark, volta roteirizada para assistir,
 // poses, teclas de ferramenta e leitura do controle. Nas ferramentas de trabalho/ (captura, poses, teste, medição) nada
 // disto é ligado: sem menu, sem painel, sem som.
 const ST = { INICIO: 0, JOGO: 1, PAUSA: 2, BENCH: 3, FITA: 4, RESULT: 5, POSE: 6 };
-const UI = { st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, med: null, b0: null, b1: null, bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false };
+const UI = {
+  st: ST.INICIO, back: ST.JOGO, el: null, tag: null, res: null, med: null, cfg: null, tit: null, sub: null, b0: null, b1: null,
+  bench: null, benchN: 0, padPrev: 0, padN: 0, pose: -1, stats: false, warm: false, raceDone: false,
+};
 const MED_UI = [
   { nome: 'Firma', tempo: '0:53,50', cor: '#4be3ff', sym: '★' },
   { nome: 'Ouro',  tempo: '0:56,00', cor: '#ffd23f', sym: '●' },
@@ -8416,16 +10102,190 @@ const MED_UI = [
   { nome: 'Bronze', tempo: '1:06,00', cor: '#cd7f32', sym: '●' },
 ];
 const $ = id => document.getElementById(id);
+function uiPaintCss(rgb) {
+  let s = 'rgb(';
+  for (let c = 0; c < 3; c++) {
+    const v = rgb[c] <= 0.0031308 ? 12.92 * rgb[c] : 1.055 * Math.pow(rgb[c], 1 / 2.4) - 0.055;
+    s += (c ? ',' : '') + Math.max(0, Math.min(255, Math.round(v * 255)));
+  }
+  return s + ')';
+}
+function uiFmtTime(sec) {
+  const cs = Math.max(0, Math.round(sec * 100));
+  const m = (cs / 6000) | 0, s = ((cs / 100) | 0) % 60, c = cs % 100;
+  return m + ':' + (s < 10 ? '0' : '') + s + ',' + (c < 10 ? '0' : '') + c;
+}
+function uiSetBtn(btn, on) {
+  if (btn.classList) { btn.classList.toggle('on', on); return; }
+  const sw = btn.hasAttribute && btn.hasAttribute('data-paint');
+  btn.className = sw ? (on ? 'sw on' : 'sw') : (on ? 'on' : '');
+}
+function uiSavePrefs() {
+  try {
+    localStorage.setItem('uno-prefs-v1', JSON.stringify({
+      raceMode: typeof GS !== 'undefined' && !!GS.raceMode,
+      carIdx: typeof GS !== 'undefined' && GS.carIdx ? 1 : 0,
+      paintIdx: typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0,
+      envIdx: typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0,
+    }));
+  } catch (e) { /* sem armazenamento local */ }
+}
+function uiRenderMed() {
+  if (!UI.med) return;
+  if (typeof GS !== 'undefined' && GS.raceMode) {
+    const laps = typeof RACE_LAPS !== 'undefined' ? RACE_LAPS : 3;
+    UI.med.innerHTML = 'Corrida de ' + laps + ' voltas · Grid com 3 rivais (largada em 4º)';
+    return;
+  }
+  const cs = LAP[2] > 0 ? Math.round(LAP[2] * 100) : 0;
+  const m = typeof medalOf === 'function' ? medalOf(cs) : -1;
+  let html = '';
+  for (let i = 0; i < MED_UI.length; i++) {
+    const d = MED_UI[i], hit = i === m;
+    if (i > 0) html += ' · ';
+    html += '<span' + (hit ? ' class="on" data-hit="1" style="color:' + d.cor + '"' : ' style="opacity:.78"') + '>' +
+      '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + d.tempo + '</span>';
+  }
+  UI.med.innerHTML = html;
+}
+function uiSyncCfg() {
+  const ci = typeof GS !== 'undefined' && GS.carIdx ? 1 : 0;
+  const pi = typeof GS !== 'undefined' ? (GS.paintIdx | 0) : 0;
+  const ei = typeof ENV !== 'undefined' ? (ENV.idx | 0) : 0;
+  const rm = typeof GS !== 'undefined' && !!GS.raceMode;
+  if (UI.tit) UI.tit.textContent = ci ? 'Gol Quadrado' : 'Uno com escada';
+  if (UI.sub) UI.sub.textContent = ci ? 'VW Gol AP 1.8 1993 · circuito' : 'Fiat Uno Mille EP 1996 · circuito';
+  if (!UI.cfg || !UI.cfg.querySelectorAll) return;
+  const btns = UI.cfg.querySelectorAll('button');
+  for (let i = 0; i < btns.length; i++) {
+    const b = btns[i];
+    const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
+    if (dm !== null) { uiSetBtn(b, (+dm === 1) === rm); continue; }
+    const dc = b.getAttribute ? b.getAttribute('data-car') : null;
+    if (dc !== null) { uiSetBtn(b, +dc === ci); continue; }
+    const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
+    if (dp !== null) {
+      const idx = +dp | 0;
+      if (typeof PAINTS !== 'undefined' && PAINTS[idx]) {
+        b.title = PAINTS[idx].nome;
+        if (b.style) b.style.background = uiPaintCss(PAINTS[idx].rgb);
+      }
+      uiSetBtn(b, idx === pi);
+      continue;
+    }
+    const de = b.getAttribute ? b.getAttribute('data-env') : null;
+    if (de !== null) uiSetBtn(b, +de === ei);
+  }
+}
+function uiBindCfg() {
+  if (!UI.cfg || !UI.cfg.querySelectorAll) return;
+  const btns = UI.cfg.querySelectorAll('button');
+  for (let i = 0; i < btns.length; i++) {
+    const b = btns[i];
+    const dm = b.getAttribute ? b.getAttribute('data-mode') : null;
+    if (dm !== null) {
+      b.onclick = () => {
+        const next = +dm === 1;
+        if (typeof GS !== 'undefined' && 'raceMode' in GS && GS.raceMode !== next) {
+          GS.raceMode = next;
+          if (UI.st === ST.PAUSA) UI.back = ST.JOGO;
+          if (GS.replayOn) GS.replayOn = false;
+          if (typeof gameRestart === 'function') gameRestart();
+        }
+        uiSavePrefs(); uiSyncCfg(); uiRenderMed();
+      };
+      continue;
+    }
+    const dc = b.getAttribute ? b.getAttribute('data-car') : null;
+    if (dc !== null) {
+      b.onclick = () => {
+        const next = +dc === 1 ? 1 : 0;
+        if (typeof GS !== 'undefined' && 'carIdx' in GS && GS.carIdx !== next) {
+          GS.carIdx = next;
+          if (typeof carSyncActive === 'function') carSyncActive(false);
+          if (UI.st === ST.PAUSA) UI.back = ST.JOGO;
+          if (GS.replayOn) GS.replayOn = false;
+          if (typeof gameRestart === 'function') gameRestart();
+          else if (typeof ghRestart === 'function') ghRestart();
+        }
+        uiSavePrefs(); uiSyncCfg(); uiRenderMed();
+      };
+      continue;
+    }
+    const dp = b.getAttribute ? b.getAttribute('data-paint') : null;
+    if (dp !== null) {
+      b.onclick = () => {
+        const next = +dp | 0;
+        if (typeof GS !== 'undefined' && 'paintIdx' in GS) GS.paintIdx = next;
+        if (typeof carApplyPaint === 'function' && typeof CAR !== 'undefined' && CAR.slotBody) {
+          carApplyPaint(CAR.slotBody, next, CAR.bodyKind);
+        }
+        uiSavePrefs(); uiSyncCfg();
+      };
+      continue;
+    }
+    const de = b.getAttribute ? b.getAttribute('data-env') : null;
+    if (de !== null) {
+      b.onclick = () => {
+        const next = +de | 0;
+        if (typeof envApply === 'function') envApply(next);
+        if (typeof gamePose === 'function') gamePose();
+        uiSavePrefs(); uiSyncCfg();
+      };
+    }
+  }
+}
 function uiInit() {
-  UI.el = $('ui'); UI.tag = $('tag'); UI.res = $('res'); UI.med = $('med'); UI.b0 = $('b0'); UI.b1 = $('b1');
+  UI.el = $('ui'); UI.tag = $('tag'); UI.res = $('res'); UI.med = $('med'); UI.cfg = $('cfg');
+  UI.tit = $('tit') || (document.querySelector ? document.querySelector('#ui h1') : null);
+  UI.sub = $('sub') || (document.querySelector ? document.querySelector('#ui .sub') : null);
+  UI.b0 = $('b0'); UI.b1 = $('b1');
   hudInit(); uiWarmup();
   try {
-    const b = +localStorage.getItem('uno-melhor');
-    if (b > 20 && b < 600) LAP[2] = b;
-    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('uno-ta-v1'), LAP[2]);
+    const b0 = +localStorage.getItem('uno-melhor');
+    if (b0 > 20 && b0 < 600) {
+      if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[0] = b0;
+      if (typeof GS === 'undefined' || !GS.carIdx) LAP[2] = b0;
+    }
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('uno-ta-v1'), b0, 0);
+    const b1 = +localStorage.getItem('gol-melhor');
+    if (b1 > 20 && b1 < 600) {
+      if (typeof GS !== 'undefined' && GS.carBest) GS.carBest[1] = b1;
+      if (typeof GS !== 'undefined' && GS.carIdx === 1) LAP[2] = b1;
+    }
+    if (typeof ghLoadData === 'function') ghLoadData(localStorage.getItem('gol-ta-v1'), b1, 1);
   } catch (e) { /* sem armazenamento local: a melhor volta vale só nesta sessão */ }
+  try {
+    const raw = localStorage.getItem('uno-prefs-v1');
+    if (raw) {
+      const pr = JSON.parse(raw);
+      if (pr && typeof pr === 'object' && typeof GS !== 'undefined') {
+        if (typeof pr.raceMode === 'boolean' && 'raceMode' in GS) GS.raceMode = pr.raceMode;
+        if (typeof pr.carIdx === 'number' && 'carIdx' in GS) GS.carIdx = pr.carIdx === 1 ? 1 : 0;
+        if (typeof pr.paintIdx === 'number' && typeof PAINTS !== 'undefined' && PAINTS.length) {
+          const pn = PAINTS.length;
+          GS.paintIdx = ((pr.paintIdx | 0) % pn + pn) % pn;
+        }
+        const activeOk = !GS.replayOn && !GS.poseOn;
+        if (typeof carSyncActive === 'function' && activeOk) carSyncActive(false);
+        if (typeof pr.envIdx === 'number' && typeof envApply === 'function' && typeof ENV !== 'undefined' && activeOk) {
+          const en = ENV.presets.length, ei = ((pr.envIdx | 0) % en + en) % en;
+          if (ei > 0 || ei !== ENV.idx) envApply(ei);
+        }
+        if (typeof gameRestart === 'function' && activeOk) gameRestart();
+      }
+    }
+  } catch (e) { /* ignora preferências inválidas */ }
+  uiBindCfg();
   UI.b0.onclick = () => { if (UI.st === ST.INICIO) { sndStart(); uiSet(ST.JOGO); } else uiResume(); };
-  UI.b1.onclick = () => benchStart();
+  UI.b1.onclick = () => {
+    if (UI.st === ST.RESULT && UI.raceDone) {
+      if (typeof GS !== 'undefined' && 'raceMode' in GS) GS.raceMode = false;
+      uiSavePrefs(); uiSyncCfg(); uiDrive();
+    } else {
+      benchStart();
+    }
+  };
   addEventListener('keydown', uiKey);
   document.addEventListener('visibilitychange', () => { if (document.hidden && (UI.st === ST.JOGO || UI.st === ST.FITA || UI.st === ST.BENCH)) uiPause(); });
   addEventListener('gamepadconnected', padCount); addEventListener('gamepaddisconnected', padCount);
@@ -8435,22 +10295,13 @@ function uiInit() {
 // troca de estado: mostra/esconde menu, painel e etiqueta, pausa/retoma o som
 function uiSet(st) {
   const menu = st === ST.INICIO || st === ST.PAUSA || st === ST.RESULT;
+  if (st !== ST.RESULT) UI.raceDone = false;
   UI.st = st; UI.el.style.display = menu ? 'flex' : 'none'; UI.el.className = st === ST.INICIO ? 'ini' : '';
-  UI.b0.textContent = st === ST.INICIO ? 'Começar' : st === ST.RESULT ? 'Voltar a dirigir' : 'Continuar';
-  UI.b1.style.display = st === ST.INICIO ? 'none' : ''; UI.b1.textContent = st === ST.RESULT ? 'Repetir benchmark' : 'Benchmark';
+  UI.b0.textContent = st === ST.INICIO ? 'Começar' : st === ST.RESULT ? (UI.raceDone ? 'Correr novamente' : 'Voltar a dirigir') : 'Continuar';
+  UI.b1.style.display = st === ST.INICIO ? 'none' : '';
+  UI.b1.textContent = st === ST.RESULT ? (UI.raceDone ? 'Volta livre' : 'Repetir benchmark') : 'Benchmark';
   UI.res.style.display = st === ST.RESULT ? 'block' : 'none';
-  if (menu && UI.med) {
-    const cs = LAP[2] > 0 ? Math.round(LAP[2] * 100) : 0;
-    const m = typeof medalOf === 'function' ? medalOf(cs) : -1;
-    let html = '';
-    for (let i = 0; i < MED_UI.length; i++) {
-      const d = MED_UI[i], hit = i === m;
-      if (i > 0) html += ' · ';
-      html += '<span' + (hit ? ' class="on" data-hit="1" style="color:' + d.cor + '"' : ' style="opacity:.78"') + '>' +
-        '<span style="color:' + d.cor + '">' + d.sym + '</span> ' + d.nome + ' ' + d.tempo + '</span>';
-    }
-    UI.med.innerHTML = html;
-  }
+  if (menu) { uiSyncCfg(); uiRenderMed(); }
   UI.tag.textContent = st === ST.BENCH ? 'Benchmark: volta roteirizada de 60 s · Esc cancela' : st === ST.FITA ? 'Volta roteirizada · R assume o volante · Esc menu' : st === ST.POSE ? 'Pose ' + (UI.pose + 1) + ' · ' + POSES[UI.pose].nome + ' · 1 a 6 trocam · Esc volta a dirigir' : '';
   UI.tag.style.display = UI.tag.textContent ? 'block' : 'none';
   hudShow(st === ST.JOGO || st === ST.FITA || (st === ST.PAUSA && UI.back !== ST.BENCH));
@@ -8479,6 +10330,21 @@ function uiKey(e) {
   else if (c === 'KeyR' && st === ST.FITA) uiDrive();
   else if (c.length === 6 && c.startsWith('Digit') && c[5] >= '1' && c[5] <= '6') uiPose(+c[5] - 1);
 }
+function raceEnd() {
+  const ci = typeof GS !== 'undefined' && GS.carIdx ? 1 : 0;
+  const carName = typeof VEH_SPECS !== 'undefined' && VEH_SPECS[ci] ? VEH_SPECS[ci].name : (ci ? 'Gol Quadrado AP 1.8' : 'Uno Mille EP');
+  const laps = typeof RACE_LAPS !== 'undefined' ? RACE_LAPS : 3;
+  let rows = '';
+  for (let k = 0; k < 4; k++) {
+    const id = RIV.finishOrder[k], isMe = id === 0;
+    const nome = isMe ? ('Você (' + carName + ')') : (RIV.cars[id - 1] ? RIV.cars[id - 1].nome : ('Rival ' + id));
+    rows += '<tr' + (isMe ? ' class="me"' : '') + '><td>' + (k + 1) + 'º</td><td style="text-align:left">' + nome + '</td><td>' + uiFmtTime(RIV.finishTime[k]) + '</td></tr>';
+  }
+  UI.res.innerHTML = '<h2>Corrida encerrada · ' + laps + ' voltas · ' + RIV.playerRank + 'º lugar</h2>' +
+    '<table><tr><th>Pos.</th><th style="text-align:left">Piloto / Carro</th><th>Tempo</th></tr>' + rows + '</table>';
+  UI.raceDone = true;
+  uiSet(ST.RESULT);
+}
 // ---- benchmark: a volta roteirizada de 60 s em tempo real, sem painel, medindo tempo de quadro e (se houver) tempo de GPU
 function benchStart() {
   if (!GS.replay || UI.st === ST.INICIO) return;
@@ -8487,7 +10353,7 @@ function benchStart() {
 }
 function benchStop() { PERF.rec = false; perfAttach(UI.stats, 12); GS.replayOn = false; }
 function benchEnd() {
-  const id = UI.benchN; PERF.rec = false; uiSet(ST.RESULT);
+  const id = UI.benchN; PERF.rec = false; UI.raceDone = false; uiSet(ST.RESULT);
   setTimeout(() => {   // espera as últimas leituras de tempo de GPU chegarem
     if (id !== UI.benchN || UI.st !== ST.RESULT) return;
     const r = perfReport(), stat = a => { a = a.slice(5).filter(x => x > 0).sort((p, q) => p - q); const n = a.length; return n ? { n, media: a.reduce((p, q) => p + q, 0) / n, p99: a[Math.min(n - 1, Math.round(0.99 * (n - 1)))], max: a[n - 1], acima: a.filter(x => Math.round(x * 10) > 167).length } : null; };   // acima: quadros que passaram de 16,7 ms (na resolução de 0,1 ms do relógio)
@@ -8520,6 +10386,8 @@ function padApply() {
   PADV[2] = x;
   if (rt > 0.06) k |= K_W; if (lt > 0.06) k |= K_S;
   if (m & 1) k |= K_SPACE; if (m & 8) k |= K_C; if (m & 4) k |= K_R; if (m & 32) k |= K_V;
+  if (typeof K_BOOST !== 'undefined' && (m & 2)) k |= K_BOOST;
+  if (typeof K_HORN !== 'undefined' && (m & 1024)) k |= K_HORN;
   GS.padKeys = k;
   const edge = m & ~UI.padPrev; UI.padPrev = m;
   if (edge & 516) padMenu(edge);
@@ -8543,10 +10411,13 @@ function uiWarmup() {
     V[0] = (i * 7) % 2100; V[1] = (i * 13) % 7400; V[2] = j % 6; V[3] = (i * 331) % 70000; V[4] = i % 5 ? (i * 17) % 9000 : -1; V[5] = i % 3 ? (i * 19) % 9000 : -1;
     V[6] = dc === 0 ? -999999 : dc === 1 ? 0 : dc === 2 ? -245 : dc === 3 ? 245 : dc === 4 ? -1234 : 1234;
     V[7] = (j % 5) - 1; V[8] = 10 + (j % 80); V[9] = 10 + (j % 60); V[10] = j & 63; V[11] = j & 1; V[12] = 15 + (j % 70); V[13] = 15 + (j % 50);
+    V[14] = (i * 7) % 101; V[15] = (j >> 1) & 1; V[16] = j % 3 === 0 ? 1 : 0;
+    V[17] = 12 + (j % 70); V[18] = 12 + (j % 50); V[19] = 18 + (j % 60); V[20] = 18 + (j % 45); V[21] = 24 + (j % 50); V[22] = 24 + (j % 40);
+    V[23] = 1 + (j & 3); V[24] = 1 + (j % 3);
     hudDraw(); hudRead();
     RT[3] = 300 + i % 300; PERF.live[0] = i % 4 ? i % 40 : 0; hudStatsFrame();
   }
-  H.g = g; H.t = t; H.s = s; H.m = m; H.K.fill(-1000001); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
+  H.g = g; H.t = t; H.s = s; H.m = m; H.K.fill(-1000001); H.V.fill(0); H.acc.fill(0); RT[3] = rt3; PERF.live[0] = 0; GS.padKeys = 0; UI.padPrev = 0; PADB[0] = -1; PERF.on = po; UI.warm = false;
 }
 // chamado no começo de cada quadro; devolve true quando o jogo está parado num menu (não simula nem renderiza)
 function uiFrame() {
@@ -8561,8 +10432,18 @@ function uiAfter() {
   else {
     if (st === ST.FITA && GS.tick60 >= GS.replay.length) { GS.replayOn = false; uiSet(ST.JOGO); }
     if (HUD.vis) hudFrame();
-    if (GS.lapNew) { GS.lapNew = false; try { localStorage.setItem('uno-melhor', LAP[2].toFixed(3)); } catch (e) { /* idem */ } }
-    if (typeof GH !== 'undefined' && GH.savePending) { GH.savePending = false; const d = ghSaveData(); if (d) { try { localStorage.setItem('uno-ta-v1', d); } catch (e) { /* idem */ } } }
+    if (GS.lapNew) {
+      GS.lapNew = false;
+      const pfx = typeof ghStoragePrefix === 'function' ? ghStoragePrefix() : 'uno';
+      try { localStorage.setItem(pfx + '-melhor', LAP[2].toFixed(3)); } catch (e) { /* idem */ }
+    }
+    if (typeof GH !== 'undefined' && GH.savePending) {
+      GH.savePending = false;
+      const pfx = typeof ghStoragePrefix === 'function' ? ghStoragePrefix() : 'uno';
+      const d = ghSaveData();
+      if (d) { try { localStorage.setItem(pfx + '-ta-v1', d); } catch (e) { /* idem */ } }
+    }
+    if (st === ST.JOGO && typeof GS !== 'undefined' && GS.raceMode && typeof RIV !== 'undefined' && RIV.finished) raceEnd();
   }
   if (HUD.stats) hudStatsFrame();
   sndFrame();
