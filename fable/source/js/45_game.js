@@ -11,6 +11,7 @@ function carApplyPaint(slot, paintIdx, bodyKind) {
   const n = PAINTS.length, idx = ((paintIdx | 0) % n + n) % n, p = PAINTS[idx], par = objParams(slot);
   par[4] = p.rgb[0]; par[5] = p.rgb[1]; par[6] = p.rgb[2]; par[7] = p.metal;
   if (bodyKind !== undefined) par[8] = bodyKind;
+  par[10] = idx;
 }
 const GS = {
   held: 0, keys: 0, prevKeys: 0, cam: 0, replay: null, replayOn: false, ai: false, tick60: 0, acc: 0, sub: 0, alpha: 1, cut: true,
@@ -20,7 +21,7 @@ const GS = {
   tvData: new Float32Array(64 * 4), tvN: 0, tvCur: -1, tvAim: new Float32Array(3), tvFov: 0.3, pl: new Float64Array(2),
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
-  paintIdx: 0, carIdx: 0, carBest: new Float64Array(2), _bestCar: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false, boostF: 0, raceMode: false, _warm: false,
+  paintIdx: 0, carIdx: 0, carBest: new Float64Array(5), _bestCar: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false, boostF: 0, fluxF: 0, flameF: 0, _fxStepped: false, raceMode: false, _warm: false,
 };
 // Cronômetro: LAP[0] instante (s de simulação) em que a volta atual começou, [1] última volta, [2] melhor volta, [3] 1 = cronômetro correndo
 const LAP = new Float64Array(4);
@@ -35,11 +36,27 @@ function carSyncLapBest(ci) {
   }
 }
 function carSyncActive(forceUno) {
-  const ci = forceUno ? 0 : (GS.carIdx ? 1 : 0), C = carObj();
+  const maxC = typeof VEH_SPECS !== 'undefined' ? VEH_SPECS.length - 1 : 4;
+  const ci = forceUno ? 0 : clamp(GS.carIdx | 0, 0, maxC), C = carObj();
   if (C.select) C.select(ci);
   if (typeof vehicleApplySpec === 'function') vehicleApplySpec(ci);
   carSyncLapBest(ci);
   return ci;
+}
+function carFxStep(dt, unoF, spd, str) {
+  const V = VEH, C = carObj();
+  const maxC = typeof VEH_SPECS !== 'undefined' ? VEH_SPECS.length - 1 : 4;
+  const bodyKind = !unoF ? (C.bodyKind !== undefined ? C.bodyKind : clamp(GS.carIdx | 0, 0, maxC)) : 0;
+  if (!unoF && bodyKind === 2 && typeof TRK !== 'undefined' && TRK.N > 0) {
+    const i0 = ((Math.floor(V.s / TRK.ds) % TRK.N) + TRK.N) % TRK.N;
+    const onStraight = Math.abs(str) < 0.085 && Math.abs(TRK.k[i0]) < 0.011;
+    const tgtFlux = onStraight ? sat((spd - 35.0) / 4.3) : 0;
+    GS.fluxF += (tgtFlux - GS.fluxF) * (1 - Math.exp(-dt * (tgtFlux > GS.fluxF ? 6.5 : 9.0)));
+  } else {
+    GS.fluxF = 0;
+  }
+  const tgtFlame = (!unoF && V.boosting) ? (0.14 + 0.86 * V.boost) : 0;
+  GS.flameF += (tgtFlame - GS.flameF) * (1 - Math.exp(-dt * (tgtFlame > GS.flameF ? 22 : 16)));
 }
 // Controle (Gamepad API): PADV[0] gatilho direito, [1] gatilho esquerdo, [2] analógico esquerdo já com zona morta e curva. Preenchido por padPoll.
 const PADV = new Float64Array(3);
@@ -154,7 +171,7 @@ function gameWarmup() {
     }
   }
   if (typeof GH !== 'undefined') GH.warm = false;
-  GS._warm = false; GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; GS.boostF = 0; LAP[2] = 0; GS.carBest.fill(0); GS._bestCar = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
+  GS._warm = false; GS.held = 0; GS.padKeys = 0; GS.lightsOn = false; GS.hazardOn = false; GS.boostF = 0; GS.fluxF = 0; GS.flameF = 0; GS._fxStepped = false; LAP[2] = 0; GS.carBest.fill(0); GS._bestCar = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
 }
 // Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas cinco câmeras (com fumaça e marcas),
 // para o driver compilar todas as variantes de pipeline e carregar todas as texturas agora, e não no meio da volta.
@@ -180,7 +197,7 @@ function gameRestart() {
   carSyncActive(unoF);
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   const qCam = +(Q.get('cam') || 0);
-  vehicleReset(raceOn ? TRK.L - 32 : TRK.L + TRK.startS, raceOn ? 1.8 : TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = (!unoF && typeof ENV !== 'undefined') ? ENV.idx > 0 : false; GS.hazardOn = false; GS.boostF = 0;
+  vehicleReset(raceOn ? TRK.L - 32 : TRK.L + TRK.startS, raceOn ? 1.8 : TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = (!unoF && typeof ENV !== 'undefined') ? ENV.idx > 0 : false; GS.hazardOn = false; GS.boostF = 0; GS.fluxF = 0; GS.flameF = 0; GS._fxStepped = false;
   GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 || qCam === 4 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
@@ -210,6 +227,8 @@ function gameStep() {
   }
   GS.sub++;
   vehicleStep(GS.keys);
+  carFxStep(PHYS_DT, unoF, Math.hypot(VEH.vx, VEH.vy), VEH.steer);
+  GS._fxStepped = true;
   if (VEH.laps !== GS.lapSeen) lapCross();
   if (typeof rivStep === 'function') rivStep();
   if (typeof ghStep === 'function') ghStep();
@@ -228,7 +247,8 @@ function lapCross() {
   const V = VEH;
   if (V.laps > GS.lapMax) {
     if (!GS.replayOn && !GS.poseOn) {
-      const ci = GS.carIdx ? 1 : 0;
+      const maxC = typeof VEH_SPECS !== 'undefined' ? VEH_SPECS.length - 1 : 4;
+      const ci = clamp(GS.carIdx | 0, 0, maxC);
       if (GS._bestCar !== ci) carSyncLapBest(ci);
     }
     const st = V.vx * PHYS_DT, fr = st > 1e-6 ? V.s / st : 0, t = V.time - (fr < 0 ? 0 : fr > 1 ? 1 : fr) * PHYS_DT;
@@ -291,7 +311,12 @@ function gamePose() {
   bp[1] = V.gear === 0 ? 1 : 0;
   bp[2] = GS.lightsOn ? 1 : 0;
   bp[3] = GS.hazardOn ? (((RT[0] * 3.2) | 0) & 1) : 0;
-  carApplyPaint(C.slotBody, unoF ? 0 : GS.paintIdx, unoF ? 0 : (C.bodyKind !== undefined ? C.bodyKind : (GS.carIdx ? 1 : 0)));
+  if (!GS._fxStepped) carFxStep(RT[1], unoF, GS.speed, GS.steer);
+  GS._fxStepped = false;
+  const maxC = typeof VEH_SPECS !== 'undefined' ? VEH_SPECS.length - 1 : 4;
+  carApplyPaint(C.slotBody, unoF ? 0 : GS.paintIdx, unoF ? 0 : (C.bodyKind !== undefined ? C.bodyKind : clamp(GS.carIdx | 0, 0, maxC)));
+  bp[9] = GS.fluxF;
+  bp[11] = GS.flameF;
   for (let i = 0; i < 4; i++) { const w = V.omega[i]; objParams(C.slotWheel[i])[0] = w < 0 ? -w : w; }
   FR.data.set(B, FO.carMat); m4inv(T, B); FR.data.set(T, FO.carInv);
   // rodas: a matriz anterior passa a ser a roda atual levada pelo deslocamento rígido da carroceria (anterior × atual⁻¹).
@@ -300,6 +325,8 @@ function gamePose() {
   const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = bp[2];
   f[FO.car2] = (GS.tick60 < 30 && GS.speed < 0.5) ? 1 : 0;   // luzes de largada: acesas só enquanto o carro espera no grid
   f[FO.car2 + 1] = (!unoF && typeof ENV !== 'undefined') ? ENV.wet : 0;
+  f[FO.car2 + 2] = GS.fluxF;
+  f[FO.car2 + 3] = unoF ? 1.0 : (C.aoScale || 1.0);
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
   if (typeof ghPose === 'function') ghPose();
   if (typeof rivPose === 'function') rivPose();
@@ -313,7 +340,9 @@ function gameCamera() {
   const V = VEH, c = Math.cos(GS.yaw), s = Math.sin(GS.yaw), dt = RT[1], q = CAMQ, lb = (GS.keys & K_V) ? -1 : 1;   // lb = -1: olhando para trás
   const noExt = !GS.replayOn && !GS.poseOn;
   GS.boostF += ((noExt && V.boosting ? 1 : 0) - GS.boostF) * (1 - Math.exp(-dt * 9));
-  const boostFov = noExt ? 0.065 * GS.boostF : 0;
+  const boostFov = noExt ? 0.105 * GS.boostF : 0;
+  const boostOff = noExt ? 0.55 * GS.boostF : 0;
+  const boostVib = noExt ? Math.sin(RT[0] * 58) * 0.003 * GS.flameF : 0;
   if (GS.cam === 0 || GS.cam === 3) {
     // perseguição (0 baixa, 3 alta): segue a direção do movimento com atraso
     const hi = GS.cam === 3;
@@ -322,18 +351,18 @@ function gameCamera() {
     let dy = tgt - GS.chaseYaw; while (dy > PI) dy -= TAU; while (dy < -PI) dy += TAU;
     GS.chaseYaw += dy * (1 - Math.exp(-dt * 5.5)); GS.chaseY += (GS.cy - GS.chaseY) * (1 - Math.exp(-dt * 7));
     // (os fatores lb abaixo valem 1 olhando para a frente: na câmera 0 a conta fica bit a bit a de antes)
-    const dist = (hi ? 6.8 : 5.3) + GS.speed * (hi ? 0.025 : 0.022), cc = Math.cos(GS.chaseYaw), ss = Math.sin(GS.chaseYaw);
+    const dist = (hi ? 6.8 : 5.3) + GS.speed * (hi ? 0.025 : 0.022) + boostOff, cc = Math.cos(GS.chaseYaw), ss = Math.sin(GS.chaseYaw);
     const pitchLb = hi ? lb : 1, aim = hi ? 3.2 : 1.6;
     const ex = GS.cx + c * 0.2 * lb - cc * dist * lb, ez = GS.cz + s * 0.2 * lb - ss * dist * lb;
     let ey = GS.chaseY + (hi ? 2.65 : 1.62) - V.gPitch * dist * 0.6 * pitchLb;
     _gq[0] = ex; _gq[1] = ez; hfAtQ(_gq); if (ey < _gq[6] + 0.55) ey = _gq[6] + 0.55;
     let rl = -V.ay * 0.004; rl = rl < -0.05 ? -0.05 : rl > 0.05 ? 0.05 : rl;
-    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * aim * lb; q[4] = GS.cy + (hi ? 1.15 : 0.95) + V.gPitch * aim * pitchLb; q[5] = GS.cz + s * aim * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042 + boostFov; q[7] = rl;
+    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * aim * lb; q[4] = GS.cy + (hi ? 1.15 : 0.95) + V.gPitch * aim * pitchLb + boostVib; q[5] = GS.cz + s * aim * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042 + boostFov; q[7] = rl;
   } else if (GS.cam === 1) {
     // capô: presa à carroceria
     const B = GS.body;
     q[0] = B[0] * 0.5 + B[4] * 1.15 + B[12]; q[1] = B[1] * 0.5 + B[5] * 1.15 + B[13]; q[2] = B[2] * 0.5 + B[6] * 1.15 + B[14];   // acima da base do para-brisa: capô inteiro, com a grelha de ventilação junto à base do quadro
-    q[3] = B[0] * 6.5 + B[4] * 0.52 + B[12]; q[4] = B[1] * 6.5 + B[5] * 0.52 + B[13]; q[5] = B[2] * 6.5 + B[6] * 0.52 + B[14];
+    q[3] = B[0] * 6.5 + B[4] * 0.52 + B[12]; q[4] = B[1] * 6.5 + B[5] * 0.52 + B[13] + boostVib; q[5] = B[2] * 6.5 + B[6] * 0.52 + B[14];
     q[6] = 1.0 + boostFov; q[7] = -(V.gRoll + V.roll) * 0.8;
     if (lb < 0) {   // para trás: do alto da tampa traseira, sem o carro no quadro
       q[0] = B[0] * -2.0 + B[4] * 1.05 + B[12]; q[1] = B[1] * -2.0 + B[5] * 1.05 + B[13]; q[2] = B[2] * -2.0 + B[6] * 1.05 + B[14];
@@ -348,7 +377,7 @@ function gameCamera() {
     q[1] = B[1] * ex0 + B[5] * ey0 + B[9] * ez0 + B[13];
     q[2] = B[2] * ex0 + B[6] * ey0 + B[10] * ez0 + B[14];
     q[3] = B[0] * tx0 + B[4] * ty0 + B[8] * tz0 + B[12];
-    q[4] = B[1] * tx0 + B[5] * ty0 + B[9] * tz0 + B[13];
+    q[4] = B[1] * tx0 + B[5] * ty0 + B[9] * tz0 + B[13] + boostVib;
     q[5] = B[2] * tx0 + B[6] * ty0 + B[10] * tz0 + B[14];
     q[6] = 1.02 + boostFov; q[7] = -(V.gRoll + V.roll) * 0.8 * lb;
   } else {

@@ -36,7 +36,43 @@ function carBumper(mb, path, prof, sign, field, nu, nv, sC, side, yTop, taper) {
     o[0] = _cp[0] + nx * _cq[0] * k; o[1] = yTop - (yTop - _cq[1]) * hk; o[2] = _cp[1] + nz * _cq[0] * k;
   }, 0, 1, 0, 1, { nu, nv, flip: sign < 0, field, rim: 0.02, uv: (u, v, P) => { _cuv[0] = P[2]; _cuv[1] = P[1]; return _cuv; } });
 }
-function carBuildParts(mb, gl) {
+function carAddExhaustFlame(mb, x0, y0, z0, dx, dy, len, rad) {
+  const dl = Math.hypot(dx, dy) || 1, ux = dx / dl, uy = dy / dl, vx = -uy, vy = ux;
+  const us = [0, 0.45, 1.0], rs = [rad * 0.72, rad * 1.35, rad * 0.25], seg = 8;
+  mb.mat(19).color(1, 0.72, 0.25);
+  const base = mb.nv;
+  for (let j = 0; j < 3; j++) {
+    const cx = x0 + ux * len * us[j], cy = y0 + uy * len * us[j], r = rs[j];
+    for (let i = 0; i <= seg; i++) {
+      const a = i / seg * TAU, ca = Math.cos(a), sa = Math.sin(a);
+      mb.v(cx + vx * r * ca, cy + vy * r * ca, z0 + r * sa, vx * ca, vy * ca, sa, us[j], i / seg);
+    }
+  }
+  const stride = seg + 1;
+  for (let j = 0; j < 2; j++) {
+    for (let i = 0; i < seg; i++) {
+      const a = base + j * stride + i, b = a + 1, c = a + stride + 1, d = a + stride;
+      mb.quadI(a, b, c, d);
+    }
+  }
+  // Duas aletas internas cruzadas para volume visto de qualquer ângulo traseiro/lateral
+  const fin = (fx, fy, fz, nx, ny, nz, va, vb) => {
+    const fb = mb.nv;
+    for (let j = 0; j < 3; j++) {
+      const cx = x0 + ux * len * us[j], cy = y0 + uy * len * us[j], r = rs[j];
+      mb.v(cx - fx * r, cy - fy * r, z0 - fz * r, nx, ny, nz, us[j], va);
+      mb.v(cx + fx * r, cy + fy * r, z0 + fz * r, nx, ny, nz, us[j], vb);
+    }
+    for (let j = 0; j < 2; j++) {
+      const a = fb + j * 2, b = a + 1, c = a + 3, d = a + 2;
+      mb.quadI(a, b, c, d);
+      mb.quadI(a, d, c, b);
+    }
+  };
+  fin(vx, vy, 0, 0, 0, 1, 0, 0.5);
+  fin(0, 0, 1, vx, vy, 0, 0.25, 0.75);
+}
+function carBuildParts(mb, gl, fb) {
   const v0 = mb.nv, i0 = mb.ni, gv0 = gl.nv, gi0 = gl.ni;
   // ================= para-choques (plástico preto texturizado) =================
   mb.mat(CM.PLASTIC).color(0.02, 0.02, 0.021);
@@ -161,11 +197,12 @@ function carBuildParts(mb, gl) {
   carLadder(mb);
   // limpadores
   carWipers(mb);
-  // escapamento: silencioso transversal (aço fosco) + ponteira curta saindo para trás, como na foto
+  // escapamento: silencioso transversal (aço fosco) + ponteira esquerda saindo sob o para-choque
   mb.mat(CM.STEEL, 1).color(0.03, 0.03, 0.032);
   mb.push(m4translate(m4(), -1.43, 0.272, 0.0)); mb.push(m4rotX(m4(), PI / 2)); mb.cyl(0, 0, 0, 0.062, 0.34, 0.062, 20, true, true); mb.pop(); mb.pop();
   mb.mat(CM.STEEL, 1).color(0.035, 0.035, 0.038);
-  mb.tube([[-1.44, 0.268, -0.2], [-1.56, 0.26, -0.2], [-1.705, 0.256, -0.2]], 0.019, 10);   // ponteira curta, escura, reta para trás
+  mb.tube([[-1.44, 0.268, -0.28], [-1.62, 0.252, -0.41], [-1.83, 0.24, -0.44]], 0.021, 10);
+  carAddExhaustFlame(fb || mb, -1.83, 0.24, -0.44, -1, 0, 0.50, 0.042);
   // volante: coluna fixa
   mb.mat(CM.INTERIOR, 3).color(0.04, 0.04, 0.045);
   mb.tube([[0.36, 0.875, -0.36], [0.56, 0.80, -0.36]], 0.03, 10);
@@ -262,6 +299,8 @@ const CAT = {
   golPlate: [0, 180 / 512, 0.5, 350 / 512],
   vw: [540 / 1024, 230 / 512, 700 / 1024, 390 / 512],
   gol18: [520 / 1024, 400 / 512, 980 / 1024, 500 / 512],
+  outatime: [0, 360 / 512, 0.5, 510 / 512],
+  dmc: [720 / 1024, 220 / 512, 1012 / 1024, 340 / 512],
 };
 function carDecals(mb) {
   // quad sobre a superfície traseira/dianteira: centro (z, y), largura w, altura h; rear: texto lido por quem olha de trás
@@ -295,6 +334,14 @@ const CGLYPH = {
   8: [[[0.4, 0.52], [0.16, 0.62], [0.12, 0.8], [0.24, 0.96], [0.4, 1], [0.56, 0.96], [0.68, 0.8], [0.64, 0.62], [0.4, 0.52], [0.14, 0.4], [0.08, 0.2], [0.2, 0.04], [0.4, 0], [0.6, 0.04], [0.72, 0.2], [0.66, 0.4], [0.4, 0.52]]],
   9: [[[0.7, 0.62], [0.55, 0.46], [0.3, 0.46], [0.1, 0.6], [0.1, 0.85], [0.3, 1], [0.52, 1], [0.7, 0.85], [0.7, 0.3], [0.55, 0.05], [0.3, 0], [0.12, 0.1]]],
   G: [[[0.74, 0.84], [0.6, 0.96], [0.36, 1], [0.14, 0.88], [0.04, 0.64], [0.04, 0.36], [0.14, 0.12], [0.36, 0], [0.62, 0.04], [0.76, 0.22], [0.76, 0.48], [0.44, 0.48]]],
+  C: [[[0.74, 0.84], [0.6, 0.96], [0.38, 1], [0.14, 0.88], [0.04, 0.64], [0.04, 0.36], [0.14, 0.12], [0.38, 0], [0.6, 0.04], [0.74, 0.16]]],
+  D: [[[0.06, 0], [0.06, 1], [0.46, 1], [0.68, 0.88], [0.78, 0.66], [0.78, 0.34], [0.68, 0.12], [0.46, 0], [0.06, 0]]],
+  B: [[[0.06, 0], [0.06, 1], [0.5, 1], [0.7, 0.88], [0.7, 0.64], [0.5, 0.52], [0.06, 0.52]], [[0.5, 0.52], [0.74, 0.38], [0.74, 0.14], [0.52, 0], [0.06, 0]]],
+  R: [[[0.06, 0], [0.06, 1], [0.52, 1], [0.72, 0.88], [0.72, 0.64], [0.52, 0.52], [0.06, 0.52]], [[0.42, 0.52], [0.74, 0]]],
+  S: [[[0.7, 0.86], [0.52, 1], [0.24, 1], [0.08, 0.84], [0.12, 0.64], [0.36, 0.54], [0.64, 0.44], [0.74, 0.24], [0.56, 0.02], [0.24, 0], [0.06, 0.14]]],
+  K: [[[0.08, 0], [0.08, 1]], [[0.72, 1], [0.12, 0.48], [0.74, 0]]],
+  0: [[[0.4, 0], [0.14, 0.08], [0, 0.3], [0, 0.7], [0.14, 0.92], [0.4, 1], [0.66, 0.92], [0.8, 0.7], [0.8, 0.3], [0.66, 0.08], [0.4, 0]]],
+  2: [[[0.08, 0.82], [0.24, 1], [0.58, 1], [0.74, 0.84], [0.7, 0.6], [0.08, 0], [0.76, 0]]],
   L: [[[0.1, 1], [0.1, 0], [0.72, 0]]], V: [[[0, 1], [0.4, 0], [0.8, 1]]], W: [[[0, 1], [0.22, 0], [0.48, 0.68], [0.74, 0], [0.96, 1]]],
   '-': [[[0.1, 0.48], [0.5, 0.48]]], '.': [[[0.14, 0.02], [0.14, 0.1]]], ' ': [],
 };
@@ -354,6 +401,16 @@ function carAtlas() {
   g.strokeStyle = '#15171b'; const gx = carText(g, 'GOL ', 536, 480, 62, 16, 0.18, 16); carText(g, '1.8', gx + 6, 480, 62, 16, 0.18, 16);
   g.strokeStyle = '#e2e6eb'; const gx2 = carText(g, 'GOL ', 536, 480, 62, 9.5, 0.18, 16);
   g.strokeStyle = '#d42c1d'; carText(g, '1.8', gx2 + 6, 480, 62, 10.5, 0.18, 16);
+  // placa OUTATIME (DeLorean BTTF) e emblema DMC na grade frontal
+  g.fillStyle = '#e4e8ec'; g.fillRect(0, 360, 512, 150);
+  g.fillStyle = '#e06424'; g.fillRect(6, 366, 500, 28);
+  g.strokeStyle = '#1b3f7a'; g.lineWidth = 6; g.strokeRect(5, 365, 502, 140);
+  g.strokeStyle = '#1b3f7a'; carText(g, 'CALIFORNIA', 148, 388, 18, 2.5, 0.1);
+  g.strokeStyle = '#1a3b75'; carText(g, 'OUTATIME', 28, 486, 70, 10, 0.08, 10);
+  g.fillStyle = '#d43622'; g.fillRect(452, 370, 44, 20);
+  g.fillStyle = '#25529c'; g.fillRect(16, 370, 44, 20);
+  g.strokeStyle = '#14161a'; carText(g, 'DMC', 746, 314, 80, 14, 0.12, 14);
+  g.strokeStyle = '#e8edf2'; carText(g, 'DMC', 746, 314, 80, 7.5, 0.12, 14);
   const im = g.getImageData(0, 0, W, H);
   const tex = mkTex(W, H, 'rgba8unorm-srgb', TU.RT | TU.TB | TU.CD, { mipLevelCount: 6 });
   G.dev.queue.writeTexture({ texture: tex }, im.data, { bytesPerRow: W * 4 }, [W, H]);

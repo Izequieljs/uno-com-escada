@@ -26,12 +26,29 @@ fn vert(in: VIn) -> VSOut {
   let V = normalize(F.camPos.xyz - in.pos.xyz);
   let ph = 0.55 + 0.45 * pow(sat(dot(-V, F.sunDir.xyz) * 0.5 + 0.5), 3.0) * 2.2;
   let amb = max(F.sh[0].rgb + F.sh[1].rgb * 0.5, vec3f(0.0));
-  o.col = vec4f(in.col.rgb * (F.sunCol.rgb * (0.15 + 0.85 * sh) * ph / PI + amb * 1.2), in.col.a);
-  o.ext = vec4f(in.misc.y, 0.0, 0.0, 0.0);
+  let kind = in.misc.z;
+  if (kind > 3.5) {
+    let hdr = select(2.6, 3.4, kind < 4.5);
+    o.col = vec4f(in.col.rgb * hdr, in.col.a);
+    o.ext = vec4f(in.misc.y, kind, 0.0, 0.0);
+  } else {
+    o.col = vec4f(in.col.rgb * (F.sunCol.rgb * (0.15 + 0.85 * sh) * ph / PI + amb * 1.2), in.col.a);
+    o.ext = vec4f(in.misc.y, 0.0, 0.0, 0.0);
+  }
   return o;
 }
 fn shade(in: V2F, ff: bool) -> vec4f {
   let r = length(in.uv);
+  if (in.ext.y > 3.5) {
+    let n = textureSampleLevel(tNoise, sLin, in.uv * 0.28 + vec2f(in.ext.x * 7.3, in.ext.x * 3.1), 0.0);
+    let core = smoothstep(1.0, 0.12, r);
+    let edge = sat(core + (n.r - 0.5) * 0.35 * core);
+    var a = smoothstep(0.08, 0.55, edge) * in.col.a;
+    let zs = F.camFwd.w / max(textureLoad(gD, vec2i(in.pos.xy), 0), 1e-6); let zf = F.camFwd.w / in.pos.z;
+    a *= smoothstep(0.0, 0.5, zs - zf) * smoothstep(0.5, 2.2, zf);
+    let hot = mix(in.col.rgb, vec3f(1.0, 0.98, 0.92) * 3.2, core * core * 0.55);
+    return vec4f(hot * a, a);
+  }
   // dois níveis de ruído deslocados pela semente: bordas rasgadas e miolo com relevo
   let sd = vec2f(in.ext.x * 7.3, in.ext.x * 3.1);
   let n = textureSampleLevel(tNoise, sLin, in.uv * 0.19 + sd, 1.0);

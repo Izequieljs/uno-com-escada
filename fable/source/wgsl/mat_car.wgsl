@@ -1,9 +1,9 @@
 // Materiais do carro (Fiat Uno Mille EP): pintura metálica com verniz, plásticos, borracha, pneus, calotas, lentes, alumínio...
 // id (mat.x): 1 pintura | 2 plástico preto | 3 borracha | 4 pneu | 5 calota | 6 aço | 7 cromado | 8 interior | 9 lente opaca
 //             10 alumínio | 11 cinta | 12 decalque do atlas | 13 fundo | 14 refletor do farol | 15 espelho | 16 palhetas da grade
-//             17 pintura lisa brilhante (capacete; a=1 preto vítreo)
+//             17 pintura lisa brilhante (capacete; a=1 preto vítreo) | 18 bobinas de fluxo (a=0) / arcos de raio 3D (a=1) | 19 fogo de turbo
 // O.p0 da carroceria: x = luz de freio, y = luz de ré, z = faróis, w = pisca-alerta. O.p0.x das rodas = |velocidade angular|.
-// O.p1 = pintura (rgb, metal); O.p2.x = tipo de carroceria (0 = Uno, 1 = Gol).
+// O.p1 = pintura (rgb, metal); O.p2.x = bodyKind (0..4); O.p2.y = fluxF; O.p2.z = paintIdx; O.p2.w = flameF.
 #include mesh_vert
 @group(3) @binding(0) var tAtlas: texture_2d<f32>;
 const PAINT_COL = vec3f(0.168, 0.275, 0.425);   // azul-claro metálico de estúdio: mais escuro e acinzentado (o sol do jogo é forte)
@@ -14,21 +14,33 @@ fn surf(in: V2F, ff: bool) -> Surface {
   let lp = in.ext.xyz;
   s.albedo = in.col.rgb;
   switch (id) {
-    case 1u: {   // pintura azul-claro metálica com verniz
-      // flocos metálicos: ruído 3D no espaço do carro (sem estrias em nenhum painel)
-      // (ruído 2D com mips, projetado pelos três eixos do carro: com a distância ou em ângulo rasante os mips levam à média
-      //  e o floco some sozinho — o ruído 3D sem mips virava uma trama diagonal no capô)
+    case 1u: {   // pintura automotiva / aço inox escovado do DeLorean
+      let isUno = O.p2.x < 0.5;
+      let isGol = abs(O.p2.x - 1.0) < 0.4;
+      let isDeLorean = abs(O.p2.x - 2.0) < 0.4;
       let nO = normalize((vec4f(s.normal, 0.0) * O.model).xyz); let wt = abs(nO) / (abs(nO.x) + abs(nO.y) + abs(nO.z));
       let fl = textureSample(tNoise, sLin, lp.zy * 23.0).a * wt.x + textureSample(tNoise, sLin, lp.xz * 23.0).a * wt.y + textureSample(tNoise, sLin, lp.xy * 23.0).a * wt.z - 0.5;
       let hasP = (O.p1.x + O.p1.y + O.p1.z) > 0.001;
       let paintCol = select(PAINT_COL, O.p1.rgb, hasP);
       let paintMet = select(0.58, O.p1.w, hasP);
-      s.albedo = paintCol * (1.0 + 0.08 * fl); s.metal = paintMet; s.rough = 0.3 + 0.04 * fl; s.coat = 1.0;
+      if (isDeLorean) {
+        let brush = textureSample(tNoise, sLin, vec2f(lp.x * 3.5, (lp.y + lp.z) * 95.0)).g - 0.5;
+        if (O.p2.z < 0.5) {
+          s.albedo = vec3f(0.55, 0.57, 0.60) * (1.0 + 0.12 * brush);
+          s.metal = 0.88; s.rough = 0.24 + 0.04 * abs(brush); s.coat = 0.25;
+        } else {
+          s.albedo = paintCol * (1.0 + 0.11 * brush);
+          s.metal = mix(0.68, 0.88, paintMet); s.rough = 0.25 + 0.04 * abs(brush); s.coat = 0.35;
+        }
+      } else {
+        s.albedo = paintCol * (1.0 + 0.08 * fl); s.metal = paintMet; s.rough = 0.3 + 0.04 * fl; s.coat = 1.0;
+      }
       // abas dos recortes junto ao chão (base das caixas de roda): escuras, para não sobrar lasca clara pendurada
-      { let under = (1.0 - smoothstep(0.31, 0.345, lp.y)) * smoothstep(1.4, 1.5, abs(lp.x)); s.albedo = mix(s.albedo, vec3f(0.01), under); s.coat *= 1.0 - under; s.metal *= 1.0 - under; s.rough = mix(s.rough, 0.95, under); }
-      if (pa > 0.5) { let low = max(1.0 - smoothstep(0.2, 0.26, lp.y), (1.0 - smoothstep(0.54, 0.6, lp.y)) * smoothstep(1.2, 1.3, abs(lp.x))); s.albedo = mix(s.albedo, vec3f(0.012), low); s.coat *= 1.0 - low; s.metal *= 1.0 - low; s.rough = mix(s.rough, 0.9, low); }
+      if (isUno || isGol) {
+        let under = (1.0 - smoothstep(0.31, 0.345, lp.y)) * smoothstep(1.4, 1.5, abs(lp.x)); s.albedo = mix(s.albedo, vec3f(0.01), under); s.coat *= 1.0 - under; s.metal *= 1.0 - under; s.rough = mix(s.rough, 0.95, under);
+        if (pa > 0.5) { let low = max(1.0 - smoothstep(0.2, 0.26, lp.y), (1.0 - smoothstep(0.54, 0.6, lp.y)) * smoothstep(1.2, 1.3, abs(lp.x))); s.albedo = mix(s.albedo, vec3f(0.012), low); s.coat *= 1.0 - low; s.metal *= 1.0 - low; s.rough = mix(s.rough, 0.9, low); }
+      }
       if (pa < 0.5) {
-        let isUno = O.p2.x < 0.5;
         var d = abs(in.uv.x);
         // tampa de combustível (lado esquerdo, exclusiva do Uno)
         if (isUno && lp.z < -0.5) { d = min(d, abs(length(vec2f(lp.x + 1.04, lp.y - 0.715)) - 0.062)); }
@@ -51,9 +63,11 @@ fn surf(in: V2F, ff: bool) -> Surface {
           let sdy = lp.y - 0.607; strip = sat((0.025 - abs(sdy)) / wy + 0.5) * min(1.0, 0.05 / wy) * side * sx;
           { let upS = normalize((O.model * vec4f(0.0, 1.0, 0.0, 0.0)).xyz); let eb = smoothstep(0.014, 0.024, abs(sdy)) * strip; s.normal = normalize(s.normal + upS * sign(sdy) * eb * 0.8); }
         }
-        // soleira: faixa preta fosca sob a porta, entre as caixas de roda
-        let sill = (1.0 - smoothstep(0.222, 0.234, lp.y)) * side;
-        s.albedo = mix(s.albedo, vec3f(0.014), sill * 0.92); s.coat *= 1.0 - sill; s.metal *= 1.0 - sill; s.rough = mix(s.rough, 0.85, sill); s.ao = min(s.ao, 1.0 - 0.3 * sill);
+        // soleira: faixa preta fosca sob a porta (Uno e Gol)
+        if (isUno || isGol) {
+          let sill = (1.0 - smoothstep(0.222, 0.234, lp.y)) * side;
+          s.albedo = mix(s.albedo, vec3f(0.014), sill * 0.92); s.coat *= 1.0 - sill; s.metal *= 1.0 - sill; s.rough = mix(s.rough, 0.85, sill); s.ao = min(s.ao, 1.0 - 0.3 * sill);
+        }
         // vinco horizontal da tampa traseira (na altura do topo das lanternas): dobra a normal numa faixa estreita
         if (isUno && lp.x < -1.5 && in.uv.y > 0.66) {
           let t = (lp.y - 0.836) / 0.007; let upW = normalize((O.model * vec4f(0.0, 1.0, 0.0, 0.0)).xyz);
@@ -95,6 +109,19 @@ fn surf(in: V2F, ff: bool) -> Surface {
           black = max(black, lv);
         }
         s.albedo = mix(s.albedo, vec3f(0.016) * lvShade, black); s.coat *= 1.0 - black; s.rough = mix(s.rough, 0.95, black); s.metal *= 1.0 - black; s.ao = min(s.ao, 1.0 - line * 0.6);
+      }
+      if (isDeLorean && O.p2.y > 0.02) {
+        let flux = sat(O.p2.y);
+        let tt = F.camPos.w * 7.5;
+        let n1 = textureSample(tNoise, sLin, vec2f(lp.x * 0.65 - tt * 0.45, (lp.z + lp.y * 0.7) * 1.35 + sin(lp.x * 3.1 + tt) * 0.18)).r;
+        let n2 = textureSample(tNoise, sLin, vec2f(lp.x * 1.4 + tt * 0.65, (lp.z - lp.y * 0.8) * 2.1 + cos(lp.x * 5.2 - tt * 1.3) * 0.14)).g;
+        let bolt1 = 1.0 - smoothstep(0.0, 0.045, abs(n1 - 0.5));
+        let bolt2 = 1.0 - smoothstep(0.0, 0.032, abs(n2 - 0.5));
+        let pulse = 0.65 + 0.35 * sin(F.camPos.w * 34.0 + lp.x * 4.0);
+        let arc = sat(max(bolt1, bolt2 * 0.85)) * flux * pulse;
+        let core = pow(arc, 2.2);
+        s.albedo = mix(s.albedo, mix(vec3f(0.20, 0.78, 1.0), vec3f(0.85, 0.97, 1.0), core), arc * 0.9);
+        s.emissive += arc * 1.4 + core * 1.1;
       }
     }
     case 2u: {   // plástico preto: granulado finíssimo (quase liso a 3 m), arestas vivas, um pouco de difuso para ler na sombra
@@ -252,6 +279,43 @@ fn surf(in: V2F, ff: bool) -> Surface {
       s.albedo = in.col.rgb * mix(0.1, 1.0, smoothstep(0.25, 0.5, k)); s.rough = 0.92; s.metal = 0.3; s.ao = mix(0.2, 0.7, smoothstep(0.25, 0.5, k));
     }
     case 17u: { s.rough = select(0.42, 0.3, pa > 0.5); s.coat = select(0.3, 0.35, pa > 0.5); }   // capacete (pintura) / viseira escura lisa, sem espelhar zebras
+    case 18u: {   // DeLorean: bobinas de fluxo (pa < 0.5) e arcos de raio 3D (pa > 0.5)
+      let flux = sat(O.p2.y);
+      let t = F.camPos.w;
+      if (pa < 0.5) {
+        let pulse = 0.78 + 0.22 * sin(t * 24.0 + lp.x * 7.5 + abs(lp.z) * 5.0);
+        s.albedo = mix(vec3f(0.08, 0.16, 0.24), vec3f(0.35, 0.85, 1.0), flux * pulse);
+        s.metal = mix(0.55, 0.15, flux); s.rough = mix(0.34, 0.18, flux); s.coat = 0.35;
+        s.emissive = 0.06 + 1.8 * flux * pulse;
+      } else {
+        if (flux < 0.06) { discard; }
+        let n1 = textureSample(tNoise, sLin, vec2f(in.uv.x * 2.2 - t * 3.8, in.uv.y * 0.7 + sin(in.uv.x * 9.0 + t * 18.0) * 0.22)).r;
+        let n2 = textureSample(tNoise, sLin, vec2f(in.uv.x * 3.7 + t * 5.1, in.uv.y * 1.1)).g;
+        let w1 = 1.0 - smoothstep(0.03, 0.14, abs(in.uv.y - 0.5 + (n1 - 0.5) * 0.75));
+        let w2 = (1.0 - smoothstep(0.02, 0.10, abs(in.uv.y - 0.5 + (n2 - 0.5) * 0.85))) * 0.75;
+        let bolt = max(w1, w2) * smoothstep(0.0, 0.08, in.uv.x) * smoothstep(1.0, 0.92, in.uv.x);
+        let flick = 0.65 + 0.35 * sin(t * 42.0 + in.uv.x * 11.0);
+        if (bolt * flux * flick < 0.12) { discard; }
+        s.albedo = mix(vec3f(0.28, 0.82, 1.0), vec3f(0.95, 0.99, 1.0), pow(bolt, 1.6));
+        s.metal = 0.0; s.rough = 0.2; s.ao = 1.0;
+        s.emissive = 2.4 * flux * bolt * flick;
+      }
+    }
+    case 19u: {   // fogo progressivo de escape do turbo (O.p2.w = GS.flameF)
+      let fl = sat(O.p2.w);
+      if (fl < 0.02) { discard; }
+      let t = F.camPos.w * 28.0;
+      let nz = textureSample(tNoise, sLin, vec2f(in.uv.x * 1.4 - t * 0.18, in.uv.y * 2.5 + sin(t * 0.4) * 0.2)).r;
+      let flick = 0.5 + 0.5 * sin(t + in.uv.y * 6.2831853 * 2.0 + nz * 4.5);
+      let reach = fl * (0.76 + 0.24 * flick);
+      if (in.uv.x > reach) { discard; }
+      let u = sat(in.uv.x / max(reach, 0.05));
+      let core = 1.0 - smoothstep(0.05, 0.36, u);
+      let tip = smoothstep(0.55, 1.0, u);
+      s.albedo = mix(mix(vec3f(1.0, 0.68, 0.14), vec3f(0.75, 0.92, 1.0), core), vec3f(1.0, 0.24, 0.03), tip);
+      s.metal = 0.0; s.rough = 0.9; s.ao = 1.0; s.coat = 0.0;
+      s.emissive = (0.9 + 1.8 * (1.0 - u)) * fl;
+    }
     default: {}
   }
   return s;

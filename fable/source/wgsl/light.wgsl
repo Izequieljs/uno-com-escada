@@ -24,7 +24,8 @@ fn worldAt(uv: vec2f, d: f32) -> vec3f { let p = F.invViewProjJ * vec4f(uv.x * 2
 // oclusão analítica do carro sobre o chão: caixa arredondada da carroceria + contato de cada pneu.
 // Escurece a luz ambiente debaixo e em volta do carro (e um pouco a direta, junto aos pneus).
 fn carAO(wp: vec3f, n: vec3f) -> f32 {
-  let lp = (F.carInv * vec4f(wp, 1.0)).xyz;
+  let aoS = clamp(select(1.0, F.car2.w, F.car2.w > 0.1), 0.45, 1.2);
+  let lp = (F.carInv * vec4f(wp, 1.0)).xyz / aoS;
   let ln = (F.carInv * vec4f(n, 0.0)).xyz;
   if (ln.y < 0.3 || lp.y > 0.2 || lp.y < -0.6 || abs(lp.x) > 4.5 || abs(lp.z) > 3.5) { return 1.0; }
   let q = vec2f(abs(lp.x - 0.07) - 1.72, abs(lp.z) - 0.72);
@@ -156,6 +157,36 @@ struct LOut { @location(0) col: vec4f }
   if (coat > 0.0) { envC = mix(vec3f(lum(envC)), envC, 0.6); col += envC * min(fSchlick1(0.08, nv), 0.26) * coat * mix(specOcc, 1.0, 0.5) * 1.4; }
   // emissivo
   col += albedo * (m.z * m.z) * 16.0;
+  // eletrificação do DeLorean (F.car2.z > 0.02): pulso azul-ciano em volta do carro (~14 m)
+  if (F.car2.z > 0.02) {
+    let cpE = (F.carInv * vec4f(wp, 1.0)).xyz;
+    let d2E = dot(cpE.xz, cpE.xz) + cpE.y * cpE.y;
+    if (d2E < 196.0) {
+      let rE = sqrt(d2E);
+      let flickE = 0.72 + 0.28 * sin(F.camPos.w * 46.0 + cpE.x * 1.7 + cpE.z * 2.3);
+      let attE = (1.0 - smoothstep(1.5, 14.0, rE)) / (1.0 + 0.18 * d2E);
+      let lnE = normalize((F.carInv * vec4f(N, 0.0)).xyz);
+      let dvE = vec3f(0.0, 0.65, 0.0) - cpE;
+      let toCarE = dvE / max(length(dvE), 0.05);
+      let faceE = max(sat(dot(lnE, toCarE)), 0.35 * sat(lnE.y));
+      col += vec3f(0.22, 0.72, 1.0) * 14.0 * F.car2.z * flickE * attE * faceE * dif;
+    }
+  }
+  // clarão alaranjado do escape no turbo (F.post.w > 0.02) atrás do para-choque traseiro
+  if (F.post.w > 0.02) {
+    let cp = (F.carInv * vec4f(wp, 1.0)).xyz;
+    if (cp.x < -1.5 && cp.x > -10.0) {
+      let dvF = cp - vec3f(-2.12, 0.30, 0.0);
+      let d2F = dot(dvF, dvF);
+      let rF = sqrt(d2F);
+      let flickF = 0.78 + 0.22 * sin(F.camPos.w * 52.0 + cp.z * 3.1);
+      let attF = (1.0 - smoothstep(0.5, 7.5, rF)) / (1.0 + 0.55 * d2F);
+      let lnF = normalize((F.carInv * vec4f(N, 0.0)).xyz);
+      let toExF = -dvF / max(rF, 0.05);
+      let faceF = max(sat(dot(lnF, toExF)), 0.4 * sat(lnF.y));
+      col += vec3f(1.0, 0.42, 0.07) * 16.0 * F.post.w * flickF * attF * faceF * dif;
+    }
+  }
   // faróis do carro (F.car.w > 0.5): dois cones branco-quentes projetados à frente do para-choque
   if (F.car.w > 0.5) {
     let cp = (F.carInv * vec4f(wp, 1.0)).xyz;

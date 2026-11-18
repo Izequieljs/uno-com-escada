@@ -5,7 +5,7 @@ const CAR = {
   eyePos: [-0.10, 1.175, -0.355],
   slotBody: 0, slotWheel: [0, 0, 0, 0], slotSteer: 0,
   steerMat: m4(), tris: 0, _t: m4(), _t2: m4(), _t3: m4(), set: null, glass: null, atlasBG: null, fam: null, bodyMesh: null, wheelMesh: null,
-  models: [], modelIdx: 0, bodyKind: 0,
+  models: [], modelIdx: 0, bodyKind: 0, aoScale: 1.0, exhausts: null,
   driverItems: [], driverVisible: true,
   setDriverVis(vis) {
     const v = !!vis; CAR.driverVisible = v;
@@ -13,7 +13,7 @@ const CAR = {
   },
   select(idx) {
     if (!CAR.models.length) return;
-    const i = (idx | 0) === 1 && CAR.models[1] ? 1 : 0;
+    const i = clamp(idx | 0, 0, CAR.models.length - 1);
     CAR.modelIdx = i;
     for (let k = 0; k < CAR.models.length; k++) {
       const m = CAR.models[k], on = k === i;
@@ -28,8 +28,11 @@ const CAR = {
     if (M.steerMat) CAR.steerMat.set(M.steerMat);
     CAR.eyePos = M.eyePos;
     CAR.bodyKind = M.bodyKind;
+    CAR.aoScale = M.aoScale || 1.0;
+    CAR.exhausts = M.exhausts || null;
     CAR.driverItems = M.driverItems || [];
     if (M.tris) CAR.tris = M.tris;
+    if (CAR.slotBody) objParams(CAR.slotBody)[8] = CAR.bodyKind;
     CAR.setDriverVis(CAR.driverVisible);
   },
   build() {
@@ -42,6 +45,7 @@ const CAR = {
       m.items = []; m.driverItems = []; m.glassItems = [];
       m.items.push(set.add(m.bodyMesh, CAR.slotBody, 3));
       if (m.glassMesh) m.glassItems.push(glass.add_(m.glassMesh, CAR.slotBody));
+      if (m.flameMesh) m.items.push(set.add(m.flameMesh, CAR.slotBody, 1));
       if (m.driverMesh) { const di = set.add(m.driverMesh, CAR.slotBody, 3); m.items.push(di); m.driverItems.push(di); }
       if (m.wheelMesh) {
         for (let i = 0; i < 4; i++) {
@@ -52,25 +56,30 @@ const CAR = {
       if (m.steerMesh) m.items.push(set.add(m.steerMesh, CAR.slotSteer, 3));
       return m;
     };
-    const mb = new MeshBuilder(1 << 17), gl = new MeshBuilder(1 << 14);
+    const mb = new MeshBuilder(1 << 17), gl = new MeshBuilder(1 << 14), fb = new MeshBuilder(1 << 10);
     carBuildBody(mb, gl);
-    if (typeof carBuildParts === 'function') carBuildParts(mb, gl);
-    let tris0 = mb.ni / 3 + gl.ni / 3;
-    const bm = mb.upload(), gm = gl.upload();
+    if (typeof carBuildParts === 'function') carBuildParts(mb, gl, fb);
+    let tris0 = mb.ni / 3 + gl.ni / 3 + fb.ni / 3;
+    const bm = mb.upload(), gm = gl.upload(), fm = fb.ni ? fb.upload() : null;
     let dm = null, wm = null, wbm = null, sm = null;
     if (typeof carBuildDriver === 'function') { const d = new MeshBuilder(1 << 13); carBuildDriver(d); tris0 += d.ni / 3; dm = d.upload(); }
     if (typeof carBuildWheel === 'function') { const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); wm = w.upload(); wbm = wb.upload(); tris0 += 4 * (w.ni + wb.ni) / 3; }
     if (typeof carBuildSteer === 'function') { const s = new MeshBuilder(1 << 12); carBuildSteer(s); tris0 += s.ni / 3; sm = s.upload(); }
     const m0 = {
       name: 'Uno Mille EP',
-      bodyMesh: bm, driverMesh: dm, glassMesh: gm, wheelMesh: wm, wheelBlurMesh: wbm, steerMesh: sm,
+      bodyMesh: bm, driverMesh: dm, glassMesh: gm, flameMesh: fm, wheelMesh: wm, wheelBlurMesh: wbm, steerMesh: sm,
       steerMat: new Float32Array(CAR.steerMat),
       hubs: [[1.181, 0.281, -0.67], [1.181, 0.281, 0.67], [-1.181, 0.281, -0.65], [-1.181, 0.281, 0.65]],
-      wheelR: 0.281, eyePos: [-0.10, 1.175, -0.355], bodyKind: 0, tris: tris0,
+      wheelR: 0.281, eyePos: [-0.10, 1.175, -0.355], bodyKind: 0, aoScale: 1.0,
+      exhausts: [[-1.83, 0.24, -0.44, -1, 0, 0.85]],
+      tris: tris0,
     };
     CAR.models.length = 0;
     CAR.models.push(attach(m0));
     if (typeof golBuildModel === 'function') CAR.models.push(attach(golBuildModel()));
+    if (typeof deloreanBuildModel === 'function') CAR.models.push(attach(deloreanBuildModel()));
+    if (typeof mkartBuildModel === 'function') CAR.models.push(attach(mkartBuildModel()));
+    if (typeof topgearBuildModel === 'function') CAR.models.push(attach(topgearBuildModel()));
     CAR.select(CAR.modelIdx);
     const tex = typeof carAtlas === 'function' ? carAtlas() : mkTex(4, 4, 'rgba8unorm-srgb');
     // desenhável: liga o atlas (grupo 3) e não entra no mapa de sombras estático do mundo

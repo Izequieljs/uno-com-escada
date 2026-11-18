@@ -339,7 +339,7 @@ function golBuildBody(mb, gl) {
   mb.mirror(v0, i0, 2); gl.mirror(gv0, gi0, 2);
 }
 
-function golBuildParts(mb) {
+function golBuildParts(mb, fb) {
   const v0 = mb.nv, i0 = mb.ni;
   // para-choques envolventes (comprimento total 1.94 - (-1.87) = 3.81 m)
   mb.mat(CM.PLASTIC).color(0.022, 0.022, 0.024);
@@ -489,11 +489,12 @@ function golBuildParts(mb) {
     mb.sweep(pts, [[-0.005, -0.005], [0.005, -0.005], [0.003, 0.005], [-0.003, 0.005]], { closedProfile: true, hard: true });
   }
 
-  // escapamento: silencioso transversal + ponteira dupla cromada à esquerda
+  // escapamento: silencioso transversal + ponteira dupla esportiva cromada chanfrada à esquerda
   mb.mat(CM.STEEL, 1).color(0.03, 0.03, 0.032);
   mb.push(m4translate(m4(), -1.55, 0.275, -0.24)); mb.push(m4rotX(m4(), PI / 2)); mb.cyl(0, 0, 0, 0.058, 0.30, 0.058, 18, true, true); mb.pop(); mb.pop();
   mb.mat(CM.CHROME, 1).color(0.86, 0.88, 0.90);
-  for (const ez of [-0.425, -0.485]) mb.tube([[-1.56, 0.272, ez], [-1.72, 0.270, ez], [-1.865, 0.268, ez]], 0.017, 10);
+  for (const ez of [-0.432, -0.488]) mb.tube([[-1.56, 0.270, ez], [-1.72, 0.260, ez], [-1.89, 0.250, ez]], 0.019, 10);
+  if (typeof carAddExhaustFlame === 'function') carAddExhaustFlame(fb || mb, -1.89, 0.25, -0.46, -1, 0, 0.60, 0.052);
 
   // emblema VW cromado central na grade dianteira (aro 3D + decalque VW nítido à frente do tampão)
   {
@@ -624,10 +625,10 @@ function golBuildSteer(mb) {
 
 function golBuildModel() {
   golShapeInit(); golWindowsInit(); golSeamInit();
-  const mb = new MeshBuilder(1 << 17), gl = new MeshBuilder(1 << 14);
+  const mb = new MeshBuilder(1 << 17), gl = new MeshBuilder(1 << 14), fb = new MeshBuilder(1 << 10);
   golBuildBody(mb, gl);
-  golBuildParts(mb);
-  let tris = mb.ni / 3 + gl.ni / 3;
+  golBuildParts(mb, fb);
+  let tris = mb.ni / 3 + gl.ni / 3 + fb.ni / 3;
   const dm = new MeshBuilder(1 << 13); golBuildDriver(dm); tris += dm.ni / 3;
   const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); golBuildWheel(w, wb); tris += 4 * (w.ni + wb.ni) / 3;
   const s = new MeshBuilder(1 << 12); const steerMat = golBuildSteer(s); tris += s.ni / 3;
@@ -636,6 +637,7 @@ function golBuildModel() {
     bodyMesh: mb.upload(),
     driverMesh: dm.upload(),
     glassMesh: gl.upload(),
+    flameMesh: fb.ni ? fb.upload() : null,
     wheelMesh: w.upload(),
     wheelBlurMesh: wb.upload(),
     steerMesh: s.upload(),
@@ -644,6 +646,8 @@ function golBuildModel() {
     wheelR: GOL.WR,
     eyePos: [-0.12, 1.115, -0.355],
     bodyKind: 1,
+    aoScale: 1.0,
+    exhausts: [[-1.89, 0.25, -0.46, -1, 0, 1.0]],
     tris,
   };
 }

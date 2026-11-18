@@ -11,12 +11,13 @@ function medalOf(cs) {
   return -1;
 }
 
+const GH_PREFIXES = ['uno', 'gol', 'dmc', 'mk', 'tg2'];
 function ghCarIdx(idx) {
-  if (idx !== undefined) return (idx | 0) === 1 ? 1 : 0;
-  return typeof GS !== 'undefined' && GS.carIdx === 1 ? 1 : 0;
+  const raw = idx !== undefined ? (idx | 0) : (typeof GS !== 'undefined' ? (GS.carIdx | 0) : 0);
+  return clamp(raw, 0, GH_PREFIXES.length - 1);
 }
 function ghStoragePrefix(idx) {
-  return (ghCarIdx(idx) === 1 ? 'gol' : 'uno') + (typeof TRK !== 'undefined' && TRK.idx === 1 ? '-il' : '');
+  return GH_PREFIXES[ghCarIdx(idx)] + (typeof TRK !== 'undefined' && TRK.idx === 1 ? '-il' : '');
 }
 function ghMakeSlot() {
   return {
@@ -26,7 +27,7 @@ function ghMakeSlot() {
     bestCp: new Float64Array(2),
   };
 }
-const _ghSlots = [ghMakeSlot(), ghMakeSlot()];
+const _ghSlots = [ghMakeSlot(), ghMakeSlot(), ghMakeSlot(), ghMakeSlot(), ghMakeSlot()];
 
 const GH = {
   on: true, warm: false, hasSplit: false, hasGhost: false, savePending: false,

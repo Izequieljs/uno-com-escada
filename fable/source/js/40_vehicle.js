@@ -23,6 +23,30 @@ const VEH_SPECS = [
     cdA: 0.60, crr: 0.014, brakeF: 0.64, halfW: 0.80, front: 1.94, rear: 1.87,
     t0: 215, tA: 135, tShift: 0.8, tSpan: 5.0, tDrop: 115, tPeak: 5.8,
   },
+  {
+    name: 'DeLorean DMC-12',
+    m: 1230, Izz: 1760, L: 2.41, a: 0.98, b: 1.43, tw: 1.58, h: 0.39, R: 0.295,
+    mu: 1.50, B: 9.6, C: 1.42,
+    gears: [3.36, 2.06, 1.38, 1.04, 0.82], final: 3.75, rev: 3.5, eff: 0.91,
+    cdA: 0.54, crr: 0.014, brakeF: 0.75, halfW: 0.84, front: 2.12, rear: 2.10,
+    t0: 240, tA: 150, tShift: 0.7, tSpan: 5.2, tDrop: 120, tPeak: 6.0,
+  },
+  {
+    name: 'Mini-Bólido MK',
+    m: 470, Izz: 178, L: 1.24, a: 0.50, b: 0.74, tw: 0.92, h: 0.25, R: 0.185,
+    mu: 1.56, B: 9.8, C: 1.40,
+    gears: [3.25, 2.05, 1.42, 1.04, 0.78], final: 3.10, rev: 3.2, eff: 0.92,
+    cdA: 0.44, crr: 0.012, brakeF: 0.74, halfW: 0.52, front: 1.04, rear: 0.98,
+    t0: 105, tA: 68, tShift: 0.8, tSpan: 5.4, tDrop: 75, tPeak: 6.2,
+  },
+  {
+    name: 'Top Gear 2 GT',
+    m: 1180, Izz: 1940, L: 2.58, a: 1.04, b: 1.54, tw: 1.62, h: 0.38, R: 0.315,
+    mu: 1.54, B: 10.0, C: 1.42,
+    gears: [3.22, 1.98, 1.36, 1.02, 0.79], final: 3.45, rev: 3.4, eff: 0.92,
+    cdA: 0.50, crr: 0.013, brakeF: 0.74, halfW: 0.94, front: 2.22, rear: 2.20,
+    t0: 270, tA: 175, tShift: 0.8, tSpan: 5.4, tDrop: 120, tPeak: 6.2,
+  },
 ];
 const VP = {
   spec: 0,
@@ -52,7 +76,7 @@ const _vl = new Float64Array(4), _vp = new Float64Array(5);
 const WLX = [VP.a, VP.a, -VP.b, -VP.b], WLZ = [-VP.tw / 2, VP.tw / 2, -VP.tw / 2, VP.tw / 2];
 
 function vehicleApplySpec(idx) {
-  const i = (idx | 0) === 1 ? 1 : 0, S = VEH_SPECS[i];
+  const i = clamp(idx | 0, 0, VEH_SPECS.length - 1), S = VEH_SPECS[i];
   VP.spec = i;
   VP.m = S.m; VP.Izz = S.Izz; VP.L = S.L; VP.a = S.a; VP.b = S.b; VP.tw = S.tw; VP.h = S.h; VP.R = S.R;
   VP.mu = S.mu; VP.B = S.B; VP.C = S.C;
@@ -149,19 +173,24 @@ function vehicleStep(keys) {
     ratio = P.gears[V.gear - 1] * P.final; rpm = Math.abs(wheelSpd * ratio) * 9.5493;
   }
   const noExt = typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn);
+  const wasBoost = V.boosting;
   const boostOn = !noExt && (keys & K_BOOST) !== 0 && V.boost > (V.boosting ? 0.02 : 0.08) && V.gear > 0 && thr > 0.1;
   if (boostOn) {
+    if (!wasBoost) {
+      V.pitchV -= 0.26 * (0.4 + 0.6 * V.boost);
+      V.heaveV += 0.06;
+    }
     V.boosting = 1;
     V.boost = Math.max(0, V.boost - 0.28 * dt);
   } else {
     V.boosting = 0;
   }
-  const rpmMax = boostOn ? 6950 : 6700, rpmCut = boostOn ? 6750 : 6500;
+  const rpmMax = boostOn ? 7350 : 6700, rpmCut = boostOn ? 7150 : 6500;
   const rpmE = Math.min(rpmMax, Math.max(900, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // embreagem patinando na saída
   V.rpm += (rpmE - V.rpm) * 0.25;
   const ex = rpmE / 1000, ek = (ex - P.tShift) / P.tSpan, eT = P.t0 + P.tA * Math.sin((ek < 0 ? 0 : ek > 1 ? 1 : ek) * PI) - (ex > P.tPeak ? (ex - P.tPeak) * P.tDrop : 0);   // = engineTorque(rpmE), embutido
   let Tdrive = throttle * (eT > 0 ? eT : 0) * ratio * P.eff;                  // torque total nas rodas dianteiras
-  if (boostOn) Tdrive *= 1.38;
+  if (boostOn) Tdrive *= 1.65;
   if (rpm > rpmCut) Tdrive = 0;
   if (reverse && V.vx < -11) Tdrive = 0;
   Tdrive -= (1 - throttle) * 0.012 * rpmE * Math.sign(wheelSpd) * Math.abs(ratio) * 0.1;   // freio-motor
@@ -175,8 +204,10 @@ function vehicleStep(keys) {
   const lw0 = Math.min(1, Math.max(0, (speed - 0.4) / 1.8));
   const lowW = (lw0 * lw0 * (3 - 2 * lw0));
   const gripMul = (!noExt && typeof ENV !== 'undefined') ? ENV.grip : 1;
+  const bGripVal = boostOn ? 1 + 0.18 * (0.35 + 0.65 * V.boost) : 1;
   for (let i = 0; i < 4; i++) {
     const front = i < 2, zone = V.wzone[i], hard = zone === ZONE.ASPHALT || zone === ZONE.KERB || zone === ZONE.PIT, mu = P.mu * ZMU[zone] * (hard ? gripMul : 1), cap = mu * V.fz[i];
+    const bGrip = front ? bGripVal : 1, capL = cap * bGrip;
     // velocidade do ponto de contato no referencial do corpo
     const vxw = V.vx - V.r * WLZ[i], vyw = V.vy + V.r * WLX[i];
     // no referencial da roda
@@ -191,17 +222,17 @@ function vehicleStep(keys) {
     fxd -= (P.crr + ZDRAG[zone]) * V.fz[i] * dirL;
     let fx = fxd, latCap;
     if (locked) { latCap = cap * 0.34; }
-    else if (Math.abs(fxd) > cap * 0.985) {
-      if (front && Math.abs(Tdrive) * 0.5 / P.R > bdem && throttle) { fx = Math.sign(fxd) * cap * 0.9; spinning = true; latCap = cap * 0.42; }   // patina
-      else { fx = Math.sign(fxd) * cap * 0.97; latCap = cap * 0.243; }                                                             // ABS
-    } else latCap = Math.sqrt(cap * cap - fx * fx);
+    else if (Math.abs(fxd) > capL * 0.985) {
+      if (front && Math.abs(Tdrive) * 0.5 / P.R > bdem && throttle) { fx = Math.sign(fxd) * capL * 0.9; spinning = true; latCap = cap * 0.42; }   // patina
+      else { fx = Math.sign(fxd) * capL * 0.97; latCap = cap * 0.243; }                                                             // ABS
+    } else { const r = fx / bGrip; latCap = Math.sqrt(Math.max(0, cap * cap - r * r)); }
     // lateral: Pacejka simplificado; em baixa velocidade mistura com amortecimento viscoso (estável parado)
     const alpha = Math.atan2(vt, Math.max(Math.abs(vl), 1.2));
     let fy = -cap * Math.sin(P.C * Math.atan(P.B * alpha));
     fy = fy * lowW + (1 - lowW) * (-vt * P.m * 0.25 / 0.07);
     fy = Math.min(latCap, Math.max(-latCap, fy));
     // derrapagem para efeitos
-    const sl = Math.max(spinning ? 0.55 + 0.45 * Math.min(1, Math.max(0, 1 - Math.abs(vl) / 14)) : 0, locked ? Math.min(1, Math.max(0, Math.abs(vl) / 4)) : 0, Math.min(1, Math.max(0, (Math.abs(alpha) - 0.13) / 0.16)) * Math.min(1, Math.max(0, speed / 6)), (brake && Math.abs(fxd) > cap * 0.985) ? 0.35 * Math.min(1, Math.max(0, speed / 8)) : 0);
+    const sl = Math.max(spinning ? 0.55 + 0.45 * Math.min(1, Math.max(0, 1 - Math.abs(vl) / 14)) : 0, locked ? Math.min(1, Math.max(0, Math.abs(vl) / 4)) : 0, Math.min(1, Math.max(0, (Math.abs(alpha) - 0.13) / 0.16)) * Math.min(1, Math.max(0, speed / 6)), (brake && Math.abs(fxd) > capL * 0.985) ? 0.35 * Math.min(1, Math.max(0, speed / 8)) : 0);
     V.slip[i] += (((zone === ZONE.ASPHALT || zone === ZONE.KERB || zone === ZONE.PIT) ? sl : sl * 0.6 + Math.min(1, Math.max(0, speed / 10)) * 0.5) - V.slip[i]) * 0.3;
     // rotação visual da roda
     let wT = vl / P.R;
@@ -213,6 +244,7 @@ function vehicleStep(keys) {
     const fbx = front ? fx * cs - fy * sn : fx, fby = front ? fx * sn + fy * cs : fy;
     Fx += fbx; Fy += fby; Mz += WLX[i] * fby - WLZ[i] * fbx;
   }
+  if (boostOn && V.vx > -1) Fx += P.m * 3.1 * (0.30 + 0.70 * V.boost) * throttle;
   if (!V.boosting) {
     let maxSlip = 0;
     for (let i = 0; i < 4; i++) if (V.slip[i] > maxSlip) maxSlip = V.slip[i];
@@ -232,7 +264,9 @@ function vehicleStep(keys) {
   vehicleGround(0.35);
   vehicleCollide();
   // movimento da carroceria sobre a suspensão: rolagem nas curvas, mergulho na freada, agachamento na arrancada
-  const kR = 78, cR = 9.5; const rollT = Math.min(0.062, Math.max(-0.062, V.ay * 0.0058)), pitchT = Math.min(0.03, Math.max(-0.03, -V.ax * (V.ax < 0 ? 0.0034 : 0.003)));
+  const kR = 78, cR = 9.5; const rollT = Math.min(0.062, Math.max(-0.062, V.ay * 0.0058));
+  const pMin = boostOn ? -0.052 : -0.03, pMax = boostOn ? 0.032 : 0.03;
+  const pitchT = Math.min(pMax, Math.max(pMin, -V.ax * (V.ax < 0 ? 0.0034 : 0.003) - (boostOn ? 0.013 * V.boost : 0)));
   V.rollV += ((rollT - V.roll) * kR - V.rollV * cR) * dt; V.roll += V.rollV * dt;
   V.pitchV += ((pitchT - V.pitch) * kR * 1.15 - V.pitchV * cR) * dt; V.pitch += V.pitchV * dt;
   // vibração nas zebras / fora da pista

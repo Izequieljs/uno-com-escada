@@ -239,7 +239,7 @@ function frameUniforms() {
   { const m = c.vp, sx = R.sun[0], sy = R.sun[1], sz = R.sun[2], cw = m[3] * sx + m[7] * sy + m[11] * sz;
     k = o.sunScr; if (cw > 1e-4) { f[k] = (m[0] * sx + m[4] * sy + m[8] * sz) / cw * 0.5 + 0.5; f[k + 1] = 0.5 - (m[1] * sx + m[5] * sy + m[9] * sz) / cw * 0.5; f[k + 2] = 1; } else { f[k] = -5; f[k + 1] = -5; f[k + 2] = 0; } f[k + 3] = 0; }
   const dtc = RT[1] > 1e-4 ? RT[1] : 1e-4;
-  k = o.post; f[k] = (1 / 120) / dtc; f[k + 1] = Math.tan(c.fovy / 2); f[k + 2] = W / H; f[k + 3] = 0;
+  k = o.post; f[k] = (1 / 120) / dtc; f[k + 1] = Math.tan(c.fovy / 2); f[k + 2] = W / H; f[k + 3] = (typeof GS !== 'undefined' && GS.flameF) ? GS.flameF : 0;
 }
 // ---- cascatas de sombra (estáveis: esfera envolvente + encaixe em texel) ----
 const _cs = new Float32Array(3), _sv = new Float64Array(9);

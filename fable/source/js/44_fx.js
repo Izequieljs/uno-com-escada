@@ -74,6 +74,46 @@ function fxStep() {
       }
     }
   }
+  const noExt = typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn);
+  const fluxF = (!noExt && typeof GS !== 'undefined') ? GS.fluxF : 0;
+  const flameF = (!noExt && typeof GS !== 'undefined') ? GS.flameF : 0;
+  if (fluxF > 0.12 || flameF > 0.04) {
+    const ox = -(VP.L * 0.5 - VP.a), mx = V.x + c * ox, my = V.y, mz = V.z + s * ox, K = 1 / 65536;
+    if (fluxF > 0.12) {
+      const spRate = Math.min(0.95, 0.25 + 0.70 * fluxF);
+      for (let rep = 0; rep < 2; rep++) {
+        if (fxRnd() >= spRate * 65536) continue;
+        const q = FX.pNext * 12, p = FX.p; FX.pNext = (FX.pNext + 1) % PT_N;
+        const src = fxRnd() & 7;
+        let px, py, pz;
+        if (src < 4) {
+          const lx = 2.02 + ((fxRnd() * K) - 0.5) * 0.16, ly = 0.44 + (fxRnd() * K) * 0.14, lz = (src & 1 ? 1 : -1) * 0.78;
+          px = mx + c * lx - s * lz; py = my + ly; pz = mz + s * lx + c * lz;
+        } else {
+          const wi = src & 3;
+          px = V.wx[wi] + ((fxRnd() * K) - 0.5) * 0.18; py = V.wy[wi] + 0.24 + (fxRnd() * K) * 0.16; pz = V.wz[wi] + ((fxRnd() * K) - 0.5) * 0.18;
+        }
+        p[q] = px; p[q + 1] = py; p[q + 2] = pz;
+        p[q + 3] = wvx * 0.55 + ((fxRnd() * K) - 0.5) * 4.5; p[q + 4] = 0.4 + (fxRnd() * K) * 2.4; p[q + 5] = wvz * 0.55 + ((fxRnd() * K) - 0.5) * 4.5;
+        p[q + 6] = 0; p[q + 7] = 0.06 + (fxRnd() * K) * 0.09; p[q + 8] = 0.035 + (fxRnd() * K) * 0.045; p[q + 9] = (fxRnd() * K) * 6.28; p[q + 10] = 4; p[q + 11] = (fxRnd() * K);
+      }
+    }
+    const exs = typeof CAR !== 'undefined' ? CAR.exhausts : null;
+    if (flameF > 0.04 && exs) {
+      const fRate = Math.min(0.95, flameF * 0.92);
+      for (let e = 0; e < exs.length; e++) {
+        const ex = exs[e];
+        if (fxRnd() >= fRate * 65536) continue;
+        const q = FX.pNext * 12, p = FX.p; FX.pNext = (FX.pNext + 1) % PT_N;
+        const lx = ex[0], ly = ex[1], lz = ex[2], dx = ex[3], dy = ex[4], sc = ex.length > 5 ? ex[5] : 1.0;
+        const jet = (4.5 + (fxRnd() * K) * 4.5) * (0.45 + 0.55 * flameF) * sc;
+        const jx = c * dx, jy = dy, jz = s * dx;
+        p[q] = mx + c * lx - s * lz + ((fxRnd() * K) - 0.5) * 0.04; p[q + 1] = my + ly + ((fxRnd() * K) - 0.5) * 0.04; p[q + 2] = mz + s * lx + c * lz + ((fxRnd() * K) - 0.5) * 0.04;
+        p[q + 3] = wvx * 0.65 + jx * jet + ((fxRnd() * K) - 0.5) * 0.9; p[q + 4] = jy * jet + 0.35 + (fxRnd() * K) * 0.7; p[q + 5] = wvz * 0.65 + jz * jet + ((fxRnd() * K) - 0.5) * 0.9;
+        p[q + 6] = 0; p[q + 7] = 0.07 + (fxRnd() * K) * 0.08; p[q + 8] = (0.05 + 0.11 * flameF) * sc; p[q + 9] = (fxRnd() * K) * 6.28; p[q + 10] = 5; p[q + 11] = (fxRnd() * K);
+      }
+    }
+  }
 }
 // por quadro: integra as partículas e envia os buffers alterados
 function fxFrame() {
@@ -87,10 +127,22 @@ function fxFrame() {
     p[q + 3] = p[q + 3] * k + R.wind[0] * 0.6 * dt; p[q + 5] = p[q + 5] * k + R.wind[1] * 0.6 * dt; p[q + 4] = p[q + 4] * Math.exp(-dt * 0.9) + 0.25 * dt;
     p[q] += p[q + 3] * dt; p[q + 1] += p[q + 4] * dt; p[q + 2] += p[q + 5] * dt;
     const t = age / life, kind = p[q + 10], w = n * 12;
-    o[w] = p[q]; o[w + 1] = p[q + 1] + p[q + 8] * 0.5; o[w + 2] = p[q + 2]; o[w + 3] = p[q + 8] * (1 + Math.sqrt(t) * (kind === 0 ? 3.4 : kind === 3 ? 2.6 : 3.2));
-    const a = Math.min(1, t * 45) * Math.pow(1 - t, 1.6) * (kind === 0 ? 0.5 : kind === 3 ? 0.34 : 0.42) / (1 + t * 2.2);
-    if (kind === 0) { o[w + 4] = 0.5; o[w + 5] = 0.52; o[w + 6] = 0.55; } else if (kind === 1) { o[w + 4] = 0.55; o[w + 5] = 0.48; o[w + 6] = 0.38; } else if (kind === 3) { o[w + 4] = 0.62; o[w + 5] = 0.67; o[w + 6] = 0.72; } else { o[w + 4] = 0.5; o[w + 5] = 0.44; o[w + 6] = 0.33; }
-    o[w + 7] = a; o[w + 8] = p[q + 9] + t * 0.8; o[w + 9] = p[q + 11]; n++;
+    o[w] = p[q]; o[w + 1] = p[q + 1] + (kind >= 4 ? 0 : p[q + 8] * 0.5); o[w + 2] = p[q + 2];
+    if (kind === 4) {
+      o[w + 3] = p[q + 8] * (1.1 - t * 0.6);
+      o[w + 4] = 0.45; o[w + 5] = 0.92; o[w + 6] = 1.0;
+      o[w + 7] = (1 - t) * (1 - t) * 0.95;
+    } else if (kind === 5) {
+      o[w + 3] = p[q + 8] * (1.0 + t * 0.9);
+      o[w + 4] = 1.0; o[w + 5] = 0.72 - 0.44 * t; o[w + 6] = 0.22 - 0.19 * t;
+      o[w + 7] = Math.min(1, t * 30) * (1 - t) * 0.88;
+    } else {
+      o[w + 3] = p[q + 8] * (1 + Math.sqrt(t) * (kind === 0 ? 3.4 : kind === 3 ? 2.6 : 3.2));
+      const a = Math.min(1, t * 45) * Math.pow(1 - t, 1.6) * (kind === 0 ? 0.5 : kind === 3 ? 0.34 : 0.42) / (1 + t * 2.2);
+      if (kind === 0) { o[w + 4] = 0.5; o[w + 5] = 0.52; o[w + 6] = 0.55; } else if (kind === 1) { o[w + 4] = 0.55; o[w + 5] = 0.48; o[w + 6] = 0.38; } else if (kind === 3) { o[w + 4] = 0.62; o[w + 5] = 0.67; o[w + 6] = 0.72; } else { o[w + 4] = 0.5; o[w + 5] = 0.44; o[w + 6] = 0.33; }
+      o[w + 7] = a;
+    }
+    o[w + 8] = p[q + 9] + t * 0.8; o[w + 9] = p[q + 11]; o[w + 10] = kind; n++;
   }
   FX.pAlive = n;
   if (n) G.dev.queue.writeBuffer(FX.pBuf, 0, o, 0, n * 12);
