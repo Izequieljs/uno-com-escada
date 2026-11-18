@@ -90,6 +90,7 @@ function gameInit() {
   }
   GS.replayOn = Q.has('replay') && !!GS.replay; GS.ai = Q.has('auto');
   // câmeras de TV: as torres do cenário (WORLD.tvCams), ou posições calculadas do lado de fora das curvas
+  GS.tvN = 0;
   if (typeof WORLD !== 'undefined' && WORLD.tvCams && WORLD.tvCams.length) {
     const q = new Float64Array(5);
     for (const c of WORLD.tvCams) {
@@ -97,6 +98,15 @@ function gameInit() {
       // reta de largada: câmera no começo da reta, junto ao muro dos boxes; vê o carro sair da última curva, passar e seguir
       // para o pórtico com o sol pelas costas
       if (GS.tvN === 1) { trackPos(TRK.L - 95, 5.9, q); GS.tvData[o] = TRK.L - 95; GS.tvData[o + 1] = q[0]; GS.tvData[o + 2] = q[1] + 3.4; GS.tvData[o + 3] = q[2]; }
+    }
+  } else if (typeof TRK !== 'undefined' && TRK.idx !== 0 && TRK.tvCamsDef) {
+    const p = new Float64Array(5);
+    trackPos(TRK.L - 95, 5.9, p);
+    GS.tvData[0] = TRK.L - 95; GS.tvData[1] = p[0]; GS.tvData[2] = p[1] + 3.4; GS.tvData[3] = p[2]; GS.tvN = 1;
+    for (const [s, side, off, h] of TRK.tvCamsDef) {
+      const i = Math.round(s / TRK.ds) % TRK.N, bar = side < 0 ? TRK.barL[i] : TRK.barR[i];
+      trackPos(s, side * (bar + off - 1.4), p);
+      const o = GS.tvN++ * 4; GS.tvData[o] = s; GS.tvData[o + 1] = p[0]; GS.tvData[o + 2] = Math.max(hfAt(p[0], p[2]), p[1]) + h + 1.8; GS.tvData[o + 3] = p[2];
     }
   } else {
     const st = [[70, -1, 5.5], [262, -1, 4.5], [330, 1, 4], [430, -1, 4.2], [545, -1, 4.5], [640, 1, 4.5], [745, -1, 4], [860, 1, 4.5], [985, -1, 4.2], [1090, -1, 5], [1200, 1, 4], [1300, -1, 4.2], [1390, -1, 4], [1470, -1, 4.5], [1548, -1, 5.5]];
@@ -184,7 +194,10 @@ function gameStep() {
   if (unoF !== GS._unoForced) { GS._unoForced = unoF; carSyncActive(unoF); }
   if ((GS.sub & 1) === 0) {
     const t = GS.tick60 / 60; let k;
-    if (GS.replayOn && GS.tick60 < GS.replay.length) k = GS.replay[GS.tick60];
+    if (GS.replayOn && typeof TRK !== 'undefined' && TRK.idx !== 0) {
+      k = t < 0.5 ? 0 : aiKeys(t);
+      if (!GS.poseOn && GS.tick60 > 0 && GS.tick60 % 600 === 0) k |= K_C;
+    } else if (GS.replayOn && GS.replay && GS.tick60 < GS.replay.length) k = GS.replay[GS.tick60];
     else if (GS.ai) k = t < 0.5 ? 0 : aiKeys(t);
     else { k = GS.held; if (GS.padKeys) k = padMerge(k); }
     GS.prevKeys = GS.keys; GS.keys = k; GS.tick60++;

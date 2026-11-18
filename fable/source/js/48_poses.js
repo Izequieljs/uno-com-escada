@@ -15,7 +15,8 @@ function poseApply(i) {
   GS.poseOn = true;
   try {
     if (P.tipo === 'carro') {
-      gameRestart(); vehicleReset(P.s, P.d, P.yaw); GS.frozen = true; GS.freeCam = true; GS.alpha = 1; gamePose();
+      const s = TRK.L > 0 ? ((P.s % TRK.L) + TRK.L) % TRK.L : P.s;
+      gameRestart(); vehicleReset(s, P.d, P.yaw); GS.frozen = true; GS.freeCam = true; GS.alpha = 1; gamePose();
       const B = GS.body, o = P.olho, a = P.alvo, q = CAMQ;
       q[0] = B[0] * o[0] + B[4] * o[1] + B[8] * o[2] + B[12]; q[1] = B[1] * o[0] + B[5] * o[1] + B[9] * o[2] + B[13]; q[2] = B[2] * o[0] + B[6] * o[1] + B[10] * o[2] + B[14];
       q[3] = B[0] * a[0] + B[4] * a[1] + B[8] * a[2] + B[12]; q[4] = B[1] * a[0] + B[5] * a[1] + B[9] * a[2] + B[13]; q[5] = B[2] * a[0] + B[6] * a[1] + B[10] * a[2] + B[14];

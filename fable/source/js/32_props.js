@@ -173,8 +173,9 @@ function atlasBuild() {
   const REG = PROPS.regions, reg = (name, x, y, w, h) => { REG[name] = [x / 2048, y / 1024, (x + w) / 2048, (y + h) / 1024]; };
   const centered = (txt, x, y, w, h, th, color, weight, skew) => strokeText(g, txt, x + (w - textW(txt, th)) / 2, y + (h - th) / 2, th, color, weight, skew);
   // nome do circuito
+  const banner = (typeof TRK !== 'undefined' && TRK.idx === 1) ? 'AUTODROMO INTERLAGOS' : 'CIRCUITO SERRA DA MATA';
   g.fillStyle = '#0b2a4a'; g.fillRect(0, 0, 1024, 128); g.fillStyle = '#e8b21c'; g.fillRect(0, 0, 1024, 10); g.fillRect(0, 118, 1024, 10);
-  centered('CIRCUITO SERRA DA MATA', 0, 0, 1024, 128, 50, '#f4f1e6', 1.75, 0.1); reg('name', 0, 0, 1024, 128);
+  centered(banner, 0, 0, 1024, 128, 50, '#f4f1e6', 1.75, 0.1); reg('name', 0, 0, 1024, 128);
   // setas de curva (chevrons)
   g.fillStyle = '#e9e6dc'; g.fillRect(1024, 0, 512, 128); g.fillStyle = '#b3160f';
   for (let i = 0; i < 5; i++) { const x = 1034 + i * 102; g.beginPath(); g.moveTo(x, 8); g.lineTo(x + 48, 8); g.lineTo(x + 92, 64); g.lineTo(x + 48, 120); g.lineTo(x, 120); g.lineTo(x + 44, 64); g.closePath(); g.fill(); }
@@ -222,6 +223,7 @@ function atlasBuild() {
 }
 
 function propsBuild() {
+  if (typeof WORLD !== 'undefined' && WORLD.tvCams) WORLD.tvCams.length = 0;
   const hw = TRK.hw, N = TRK.N, ds = TRK.ds, pit = TRK.pit, REG = PROPS.regions;
   const atlas = atlasBuild();
   const fam = mkFamily('props', { src: 'mat_props' }), famDS = mkFamily('propsDS', { src: 'mat_props', cull: 'none' });
@@ -387,8 +389,9 @@ function propsBuild() {
 
   // ================= construções na reta (coordenadas locais: u = s relativo à linha, y, v = d) =================
   // converte os vértices adicionados desde v0 de (u, y, v) para o mundo, seguindo a inclinação suave da reta
+  const x0Trk = (typeof TRK !== 'undefined' && TRK.x0 !== undefined) ? TRK.x0 : -60;
   const toStraight = (m, v0) => {
-    const f = m.f32; for (let i = v0; i < m.nv; i++) { const u = f[i * 9], v = f[i * 9 + 2]; trackPos(u, 0, o5); f[i * 9] = u - 60; f[i * 9 + 1] += o5[1]; f[i * 9 + 2] = v; }
+    const f = m.f32; for (let i = v0; i < m.nv; i++) { const u = f[i * 9], v = f[i * 9 + 2]; trackPos(u, 0, o5); f[i * 9] = u + x0Trk; f[i * 9 + 1] += o5[1]; f[i * 9 + 2] = v; }
   };
   const Bx = (m, u0, u1, y0, y1, v0, v1) => m.box((u0 + u1) / 2, (y0 + y1) / 2, (v0 + v1) / 2, Math.abs(u1 - u0), Math.abs(y1 - y0), Math.abs(v1 - v0));
   const rng = mkRng(77);
@@ -662,7 +665,7 @@ function propsBuild() {
   // lado de fora de cada curva grande
   const corners = TRK.corners.filter(c => Math.abs(c.ang) >= 60);
   // câmeras de TV (lista usada adiante para as torres): [s, lado, afastamento além da barreira, altura]
-  const TVC = [[262, -1, 6, 5.5], [322, -1, 5, 5.5], [417, 1, 5, 5], [536, -1, 6, 6], [615, 1, 6, 5], [806, 1, 6, 5.5], [905, 1, 6, 5], [1036, -1, 6, 6], [1168, -1, 5, 5], [1300, -1, 6, 5], [1392, -1, 6, 5.5]];
+  const TVC = (typeof TRK !== 'undefined' && TRK.tvCamsDef) ? TRK.tvCamsDef : [[262, -1, 6, 5.5], [322, -1, 5, 5.5], [417, 1, 5, 5], [536, -1, 6, 6], [615, 1, 6, 5], [806, 1, 6, 5.5], [905, 1, 6, 5], [1036, -1, 6, 6], [1168, -1, 5, 5], [1300, -1, 6, 5], [1392, -1, 6, 5.5]];
   // há câmera de TV deste lado cuja tomada passa por s? (a câmera filma de ~110 m antes dela até ~60 m depois)
   const camSees = (s, side) => TVC.some(c => { if (c[1] !== side) return false; let q = c[0] - s; q -= Math.round(q / TRK.L) * TRK.L; return q > -70 && q < 120; });
   // ---- placas de distância (150/100/50) ----
@@ -697,13 +700,14 @@ function propsBuild() {
       row(mid - Math.min(len * 0.32, 30), mid + Math.min(len * 0.32, 30), side, 6.6, 6, 1.5, 1.05, false);
       row(c.s0 - 26, c.s0 - 6, side, 5.2, 5, 1.25, 1.05, true);
     }
-    row(668, 790, -1, 13.2, 6, 1.5, 1.05, false); row(676, 790, 1, 19.8, 6, 1.5, 1.05, false);   // reta oposta
-    row(1135, 1250, -1, 13.2, 6, 1.5, 1.05, false);
+    for (const [a0, a1, sd, stp] of ((typeof TRK !== 'undefined' && TRK.adRows) ? TRK.adRows : [[668, 790, -1, 13.2], [676, 790, 1, 19.8], [1135, 1250, -1, 13.2]])) {
+      row(a0, a1, sd, stp, 6, 1.5, 1.05, false);
+    }
     row(TRK.L - 108, TRK.L - 98, -1, 6.6, 6, 1.5, 1.05, false);
   }
   // ---- segundo pórtico (publicitário) na reta oposta ----
   {
-    const s = 742, v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, i = sI(s), dL = -(TRK.barL[i] - 1.2), dR = TRK.barR[i] - 1.2, yB = 6.0, yT = 7.4;
+    const s = (typeof TRK !== 'undefined' && TRK.gantry2S !== undefined) ? TRK.gantry2S : 742, v0 = mb.nv, i0 = mb.ni, w0 = md.nv, k0 = md.ni, i = sI(s), dL = -(TRK.barL[i] - 1.2), dR = TRK.barR[i] - 1.2, yB = 6.0, yT = 7.4;
     mb.push(frame(s, 0)); md.push(frame(s, 0));
     gantry(0, dL, dR, null, false, true);
     const wd = dR - dL - 1.2, hh = 1.3;
@@ -714,7 +718,8 @@ function propsBuild() {
   // ---- postos de fiscal ----
   {
     const spots = []; for (const c of TRK.corners) { spots.push([c.s0 - 8, c.k > 0 ? 1 : -1]); if (Math.abs(c.ang) > 100) spots.push([(c.s0 + c.s1) / 2, c.k > 0 ? -1 : 1]); }
-    spots.push([700, 1], [1190, -1]); let pn = 0;
+    for (const sp of ((typeof TRK !== 'undefined' && TRK.marshalExtra) ? TRK.marshalExtra : [[700, 1], [1190, -1]])) spots.push(sp);
+    let pn = 0;
     for (const [s, side] of spots) {
       const i = sI(s), sr = srOf(i); if (sr > pit.s0 - 50 && sr < pit.s1 + 50) continue;
       const d = side * ((side < 0 ? TRK.barL[i] : TRK.barR[i]) + 2.2), i0 = mb.ni;

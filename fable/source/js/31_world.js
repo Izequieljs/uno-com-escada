@@ -148,7 +148,8 @@ function ribbonBuild() {
     for (let i = 0; i < N; i++) t[i] = sat((AI.vt[i] - AI.vt[(i + 4) % N]) / (4 * ds) * 3.2);
     for (let i = 0; i < N; i++) { let a = 0; for (let q = -5; q <= 5; q++) a += t[(i + q + N) % N]; brk[i] = a / 11; }
   }
-  const wetAt = s => { let w = 0; for (const z of WORLD.wet) w = Math.max(w, z[2] * Math.min(1, (s - z[0]) / 14, (z[1] - s) / 14)); return Math.max(0, w); };
+  const wet = (typeof TRK !== 'undefined' && TRK.wet) ? TRK.wet : WORLD.wet;
+  const wetAt = s => { let w = 0; for (const z of wet) w = Math.max(w, z[2] * Math.min(1, (s - z[0]) / 14, (z[1] - s) / 14)); return Math.max(0, w); };
   // colunas: [x além da borda (ou d absoluto para o asfalto), dy fixo, tipo]  tipo: 0 asfalto, 1 zebra, 2 acostamento
   const kx = [KERB_W, 1.28, 1.066, 0.8, 0.53, 0.27, 0.03, 0];
   const strips = [];

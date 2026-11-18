@@ -1,6 +1,64 @@
-// Circuito original: traçado, elevação, zonas e altura do terreno (somente CPU; sem GPU).
-// Convenções: X leste, Z sul, Y para cima. Sentido horário. s = distância ao longo do eixo (m), d = afastamento lateral (m, + à direita).
+// Circuitos: traçado, elevação, zonas e altura do terreno (somente CPU; sem GPU).
+// Convenções: X leste, Z sul, Y para cima. s = distância ao longo do eixo (m), d = afastamento lateral (m, + à direita).
+const TRACKS = [
+  {
+    id: 'serra',
+    nome: 'Serra da Mata',
+    sub: 'Circuito da Serra · 1,64 km',
+    x0: -60, z0: 0,
+    cps: [530, 1090],
+    medals: [5350, 5600, 6000, 6600],
+    wet: [[676, 790, 1.0], [985, 1130, 0.9]],
+    tvCamsDef: [[262, -1, 6, 5.5], [322, -1, 5, 5.5], [417, 1, 5, 5], [536, -1, 6, 6], [615, 1, 6, 5], [806, 1, 6, 5.5], [905, 1, 6, 5], [1036, -1, 6, 6], [1168, -1, 5, 5], [1300, -1, 6, 5], [1392, -1, 6, 5.5]],
+    adRows: [[668, 790, -1, 13.2], [676, 790, 1, 19.8], [1135, 1250, -1, 13.2]],
+    gantry2S: 742,
+    marshalExtra: [[700, 1], [1190, -1]],
+    def: [
+      ['S', 210, -0.6], ['A', 55, 90, -2.6, 'T1'], ['S', 40, -2.2],
+      ['A', 80, -33, 1.0, 'S1'], ['A', 62, 66, 5.2, 'S2'], ['A', 80, -33, 9.0, 'S3'], ['S', 20, 10.6],
+      ['A', 27, 180, 12.6, 'Grampo'], ['S', 30, 12.0], ['A', 42, -90, 10.2, 'T5'],
+      ['S', 'Lw', 3.8], ['A', 75, -90, -1.4, 'T6'], ['S', 25, -2.4],
+      ['A', 58, 180, -4.4, 'Curvão'], ['S', 'Ln', -3.0],
+      ['A', 40, -30, -2.0, 'Ch1'], ['A', 40, 60, -1.0, 'Ch2'], ['A', 40, -30, -0.4, 'Ch3'], ['S', 15, -0.2],
+      ['A', 45, 90, 0, 'Final'], ['S', 110, 0],
+    ],
+  },
+  {
+    id: 'interlagos',
+    nome: 'Interlagos',
+    sub: 'Autódromo Brasileiro · 1,66 km',
+    x0: -80, z0: 0,
+    cps: [545, 1230],
+    medals: [5500, 5750, 6150, 6750],
+    wet: [[560, 840, 1.0], [1240, 1350, 0.9]],
+    tvCamsDef: [[235, 1, 6, 5.5], [315, -1, 5.5, 5.5], [440, 1, 6, 5.5], [680, 1, 6, 5.5], [895, 1, 6, 5.5], [1065, -1, 6, 5.5], [1190, 1, 5.5, 5], [1370, 1, 6, 5.5], [1485, 1, 6, 5.5]],
+    adRows: [[560, 820, -1, 13.2], [575, 820, 1, 19.8], [1240, 1345, -1, 13.2]],
+    gantry2S: 705,
+    marshalExtra: [[700, 1], [1290, -1]],
+    def: [
+      ['S', 220, 1.5],
+      ['A', 34, -92, -3.0, 'S do Senna'],
+      ['S', 18, -4.8],
+      ['A', 38, 76, -6.4, 'S do Senna 2'],
+      ['A', 78, -144, -8.2, 'Curva do Sol'],
+      ['S', 'Lw', -6.0],
+      ['A', 54, -105, -9.4, 'Descida do Lago'],
+      ['S', 65, -5.8],
+      ['A', 44, 125, -1.8, 'Ferradura'],
+      ['S', 35, -3.2],
+      ['A', 28, -125, -5.4, 'Pinheirinho'],
+      ['S', 'Ln', -7.8],
+      ['A', 38, -55, -6.0, 'Junção'],
+      ['S', 45, -2.6],
+      ['A', 120, -40, -0.4, 'Subida dos Boxes'],
+      ['S', 140, 0.0],
+    ],
+  },
+];
 const TRK = {
+  idx: 0, id: 'serra', nome: 'Serra da Mata', sub: 'Circuito da Serra · 1,64 km', x0: -60, z0: 0,
+  cps: [530, 1090], medals: [5350, 5600, 6000, 6600],
+  wet: null, tvCamsDef: null, adRows: null, gantry2S: 742, marshalExtra: null, line: null,
   N: 0, L: 0, ds: 1,
   x: null, z: null, y: null, tx: null, tz: null, k: null, bank: null, slope: null,
   hw: 5.5,                 // meia largura do asfalto
@@ -18,20 +76,39 @@ const TRK = {
 const KERB_W = 1.3, APRON = 2.6;
 const ZONE = { ASPHALT: 0, KERB: 1, GRASS: 2, GRAVEL: 3, ROUGH: 4, PIT: 5, CONCRETE: 6 };
 
-function trackBuild() {
+function trackResolveIdx() {
+  if (typeof Q !== 'undefined' && Q.has('track')) {
+    const v = String(Q.get('track') || '').toLowerCase();
+    return (v === '1' || v === 'interlagos') ? 1 : 0;
+  }
+  const tool = typeof Q !== 'undefined' && (Q.has('cap') || Q.has('perf') || Q.has('replay') || Q.has('auto') || Q.has('scene'));
+  if (!tool && typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('uno-prefs-v1');
+      if (raw) {
+        const pr = JSON.parse(raw);
+        if (pr && (pr.trackIdx === 1 || pr.trackIdx === '1')) return 1;
+      }
+    } catch (e) { /* ignora preferências indisponíveis */ }
+  }
+  return 0;
+}
+
+function trackBuild(forceIdx) {
+  TRK.idx = forceIdx !== undefined ? (forceIdx ? 1 : 0) : trackResolveIdx();
+  const spec = TRACKS[TRK.idx];
+  TRK.id = spec.id; TRK.nome = spec.nome; TRK.sub = spec.sub;
+  TRK.x0 = spec.x0; TRK.z0 = spec.z0;
+  TRK.cps = spec.cps; TRK.medals = spec.medals;
+  TRK.wet = spec.wet; TRK.tvCamsDef = spec.tvCamsDef;
+  TRK.adRows = spec.adRows; TRK.gantry2S = spec.gantry2S; TRK.marshalExtra = spec.marshalExtra;
+  TRK.line = null;
+  TRK.segs.length = 0; TRK.corners.length = 0;
   // Segmentos: ['S', comprimento] ou ['A', raio, ângulo° (+ direita)]. Lw e Ln resolvidos para fechar o laço.
-  const def = [
-    ['S', 210, -0.6], ['A', 55, 90, -2.6, 'T1'], ['S', 40, -2.2],
-    ['A', 80, -33, 1.0, 'S1'], ['A', 62, 66, 5.2, 'S2'], ['A', 80, -33, 9.0, 'S3'], ['S', 20, 10.6],
-    ['A', 27, 180, 12.6, 'Grampo'], ['S', 30, 12.0], ['A', 42, -90, 10.2, 'T5'],
-    ['S', 'Lw', 3.8], ['A', 75, -90, -1.4, 'T6'], ['S', 25, -2.4],
-    ['A', 58, 180, -4.4, 'Curvão'], ['S', 'Ln', -3.0],
-    ['A', 40, -30, -2.0, 'Ch1'], ['A', 40, 60, -1.0, 'Ch2'], ['A', 40, -30, -0.4, 'Ch3'], ['S', 15, -0.2],
-    ['A', 45, 90, 0, 'Final'], ['S', 110, 0],
-  ];
+  const def = spec.def;
   // resolve Lw, Ln: posição final é linear neles
   const walk = (Lw, Ln, emit) => {
-    let x = -60, z = 0, th = 0, s = 0;
+    let x = spec.x0, z = spec.z0, th = 0, s = 0;
     for (const sg of def) {
       const s0 = s;
       if (sg[0] === 'S') {
@@ -49,7 +126,7 @@ function trackBuild() {
   };
   const p0 = walk(0, 0), pw = walk(1, 0), pn = walk(0, 1);
   // [pw-p0, pn-p0] * [Lw,Ln] = target - p0
-  const a = pw[0] - p0[0], b = pn[0] - p0[0], c = pw[1] - p0[1], d = pn[1] - p0[1], ex = -60 - p0[0], ez = 0 - p0[1], det = a * d - b * c;
+  const a = pw[0] - p0[0], b = pn[0] - p0[0], c = pw[1] - p0[1], d = pn[1] - p0[1], ex = spec.x0 - p0[0], ez = spec.z0 - p0[1], det = a * d - b * c;
   const Lw = (ex * d - b * ez) / det, Ln = (a * ez - c * ex) / det;
   // amostragem bruta a cada 0.5 m
   const raw = []; const elevKeys = [];

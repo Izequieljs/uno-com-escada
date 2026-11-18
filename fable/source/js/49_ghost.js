@@ -6,7 +6,8 @@ const ghWrapSpin = a => { a = (a + GH_SPIN_HALF) % GH_SPIN_PER; if (a < 0) a += 
 
 function medalOf(cs) {
   if (!(cs > 0)) return -1;
-  for (let i = 0; i < MEDALS.length; i++) if (cs <= MEDALS[i]) return i;
+  const M = (typeof TRK !== 'undefined' && TRK.medals) ? TRK.medals : MEDALS;
+  for (let i = 0; i < M.length; i++) if (cs <= M[i]) return i;
   return -1;
 }
 
@@ -15,13 +16,14 @@ function ghCarIdx(idx) {
   return typeof GS !== 'undefined' && GS.carIdx === 1 ? 1 : 0;
 }
 function ghStoragePrefix(idx) {
-  return ghCarIdx(idx) === 1 ? 'gol' : 'uno';
+  return (ghCarIdx(idx) === 1 ? 'gol' : 'uno') + (typeof TRK !== 'undefined' && TRK.idx === 1 ? '-il' : '');
 }
 function ghMakeSlot() {
   return {
     hasSplit: false, hasGhost: false, savePending: false, bestLen: 0, bestTime: 0,
     bestSplit: new Float32Array(2048).fill(-1),
     bestFrames: new Float32Array(10800 * 8),
+    bestCp: new Float64Array(2),
   };
 }
 const _ghSlots = [ghMakeSlot(), ghMakeSlot()];
@@ -29,6 +31,8 @@ const _ghSlots = [ghMakeSlot(), ghMakeSlot()];
 const GH = {
   on: true, warm: false, hasSplit: false, hasGhost: false, savePending: false,
   deltaCs: GH_NONE, vis: false, drawOn: false, qMask: 0, curLen: 0, bestLen: 0, bestTime: 0,
+  cpMask: 0, cpPrevS: 0, cpFlashIdx: 0, cpFlashTimeCs: 0, cpFlashDeltaCs: GH_NONE, cpFlashTicks: 0,
+  raceCp: new Float64Array(2), trkIdx: -1,
   slotIdx: 0, slots: _ghSlots,
   curSplit: new Float32Array(2048).fill(-1), bestSplit: _ghSlots[0].bestSplit,
   curFrames: new Float32Array(10800 * 8), bestFrames: _ghSlots[0].bestFrames,
@@ -61,11 +65,14 @@ function ghSyncSlot(idx) {
   if (i === GH.slotIdx) return i;
   ghFlushSlot();
   ghLoadSlot(i);
+  GH.raceCp.fill(0);
   return i;
 }
 
 function ghInit() {
   GH.warm = false;
+  GH.trkIdx = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+  GH.raceCp.fill(0);
   for (let i = 0; i < GH.slots.length; i++) {
     const S = GH.slots[i];
     S.hasSplit = false;
@@ -74,6 +81,7 @@ function ghInit() {
     S.bestLen = 0;
     S.bestTime = 0;
     S.bestSplit.fill(-1);
+    S.bestCp.fill(0);
   }
   ghLoadSlot(ghCarIdx());
   ghRestart();
@@ -81,12 +89,24 @@ function ghInit() {
 
 function ghRestart() {
   ghSyncSlot();
+  const curTrk = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+  if (GH.trkIdx !== curTrk) {
+    GH.trkIdx = curTrk;
+    GH.raceCp.fill(0);
+    for (let i = 0; i < GH.slots.length; i++) GH.slots[i].bestCp.fill(0);
+  }
   GH.curSplit.fill(-1);
   GH.curLen = 0;
   GH.qMask = 0;
   GH.deltaCs = GH_NONE;
   GH.vis = false;
   GH.drawOn = false;
+  GH.cpMask = 0;
+  GH.cpPrevS = typeof VEH !== 'undefined' ? VEH.s : 0;
+  GH.cpFlashIdx = 0;
+  GH.cpFlashTimeCs = 0;
+  GH.cpFlashDeltaCs = GH_NONE;
+  GH.cpFlashTicks = 0;
 }
 
 function ghToggle() {
@@ -99,11 +119,39 @@ function ghToggle() {
 function ghStep() {
   if ((GS.sub & 1) !== 1) return;
   ghSyncSlot();
-  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || GS.raceMode || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
-  const N = TRK.N, ds = TRK.ds;
+  if (GH.warm || GS.frozen || GS.replayOn || GS.ai || LAP[3] !== 1) {
+    GH.deltaCs = GH_NONE;
+    GH.cpFlashTicks = 0;
+    return;
+  }
+  if (GH.cpFlashTicks > 0) GH.cpFlashTicks--;
+  const N = TRK.N, ds = TRK.ds, tLap = VEH.time - LAP[0];
+  const prevS = GH.cpPrevS, curS = VEH.s;
+  GH.cpPrevS = curS;
+  const cps = typeof TRK !== 'undefined' ? TRK.cps : null;
+  if (cps && curS >= prevS && (curS - prevS) < TRK.L * 0.25) {
+    const S = GH.slots[GH.slotIdx];
+    for (let c = 0; c < 2; c++) {
+      const cpS = cps[c];
+      if (!(GH.cpMask & (1 << c)) && prevS < cpS && curS >= cpS) {
+        GH.cpMask |= 1 << c;
+        const ref = S.bestCp[c] > 0 ? S.bestCp[c] : (GS.raceMode && GH.raceCp[c] > 0 ? GH.raceCp[c] : 0);
+        GH.cpFlashIdx = c + 1;
+        GH.cpFlashTimeCs = Math.round(tLap * 100);
+        GH.cpFlashDeltaCs = ref > 0 ? clamp(Math.round((tLap - ref) * 100), -9999, 9999) : GH_NONE;
+        if (!GS.raceMode) {
+          if (S.bestCp[c] <= 0 || tLap < S.bestCp[c]) S.bestCp[c] = tLap;
+        } else if (S.bestCp[c] <= 0 && (GH.raceCp[c] <= 0 || tLap < GH.raceCp[c])) {
+          GH.raceCp[c] = tLap;
+        }
+        GH.cpFlashTicks = 210;
+      }
+    }
+  }
+  if (GS.raceMode) { GH.deltaCs = GH_NONE; return; }
   const q = ((VEH.s / TRK.L) * 4) | 0;
   GH.qMask |= 1 << (q & 3);
-  const tLap = VEH.time - LAP[0], u = VEH.s / ds, iu = Math.floor(u), si = ((iu % N) + N) % N;
+  const u = VEH.s / ds, iu = Math.floor(u), si = ((iu % N) + N) % N;
   if (GH.curSplit[si] < 0) GH.curSplit[si] = tLap;
   if (GH.hasSplit && tLap >= 0.25) {
     const s0 = GH.bestSplit[si];
@@ -142,11 +190,23 @@ function ghFillSplits(arr, n, lt) {
   }
 }
 
+function ghSyncBestCp() {
+  const cps = typeof TRK !== 'undefined' ? TRK.cps : null;
+  if (!cps || TRK.N <= 0) return;
+  const S = GH.slots[GH.slotIdx];
+  for (let c = 0; c < 2; c++) {
+    const idx = clamp(Math.round(cps[c] / TRK.ds), 0, TRK.N - 1);
+    const v = GH.bestSplit[idx];
+    if (v > 0) S.bestCp[c] = v;
+  }
+}
+
 function ghLapCross(lt, isRecord) {
   ghSyncSlot();
   if (!GH.warm && !GS.replayOn && !GS.ai && !GS.raceMode && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (GH.bestTime === 0 || lt <= GH.bestTime + 1e-6)) {
     GH.bestSplit.set(GH.curSplit);
     ghFillSplits(GH.bestSplit, TRK.N, lt);
+    ghSyncBestCp();
     GH.hasSplit = true;
     const n = GH.curLen;
     if (n > 0) GH.bestFrames.set(GH.curFrames.subarray(0, n * 8));
@@ -160,6 +220,8 @@ function ghLapCross(lt, isRecord) {
   GH.curLen = 0;
   GH.qMask = 1;
   GH.deltaCs = GH_NONE;
+  GH.cpMask = 0;
+  GH.cpPrevS = typeof VEH !== 'undefined' ? VEH.s : 0;
 }
 
 // Interpola a pose do fantasma para o instante atual da volta e atualiza matrizes + fade de proximidade. Sem alocações.
@@ -338,6 +400,7 @@ function ghLoadData(str, expectedBestSec, carIdx) {
   GH.hasSplit = true;
   GH.hasGhost = bestLen > 30;
   GH.savePending = false;
+  ghSyncBestCp();
   ghFlushSlot();
   restore();
   return true;
