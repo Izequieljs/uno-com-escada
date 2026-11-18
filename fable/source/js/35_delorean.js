@@ -283,7 +283,7 @@ function deloreanBuildBody(mb, gl) {
   {
     const { z0, z1, y0, y1 } = DT_DMC;
     mb.mat(CM.PLASTIC).color(0.016, 0.016, 0.018);
-    mb.box(-2.012, (y0 + y1) * 0.5, (z0 + z1) * 0.5, 0.044, y1 - y0 + 0.022, z1 - z0 + 0.024);
+    mb.box(-2.002, (y0 + y1) * 0.5, (z0 + z1) * 0.5, 0.036, y1 - y0 + 0.022, z1 - z0 + 0.024);
     mb.patch((u, v, o) => {
       const z = lerp(z0 - 0.012, z1 + 0.012, u), y = lerp(y0 - 0.011, y1 + 0.011, v);
       o[0] = dmcTopX(z, y, true) - 0.004; o[1] = y; o[2] = z;
@@ -529,7 +529,6 @@ function deloreanBuildParts(mb, fb) {
     const xbP = dmcTopX(0, yb, true) - 0.008, xtP = dmcTopX(0, yt, true) - 0.008;
     mb.mat(CM.PLASTIC).color(0.016, 0.016, 0.018);
     mb.quad(xbP + 0.002, yb - 0.008, -0.198, xbP + 0.002, yb - 0.008, 0.198, xtP + 0.002, yt + 0.008, 0.198, xtP + 0.002, yt + 0.008, -0.198);
-    mb.box(-2.032, (yb + yt) * 0.5, 0, 0.044, yt - yb + 0.014, 0.396);
     mb.mat(CM.DECAL).color(1, 1, 1);
     const reg = CAT.outatime;
     mb.quad(xbP, yb, -0.19, xbP, yb, 0.19, xtP, yt, 0.19, xtP, yt, -0.19, reg[0], reg[3], reg[2], reg[1]);
