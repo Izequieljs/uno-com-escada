@@ -128,14 +128,14 @@ function mkartBuildBody(mb, gl) {
 
   // Moldura preta e grade da tomada de ar dianteira do pod (x = 0.24, normal +X)
   mb.mat(CM.PLASTIC).color(0.02, 0.02, 0.024);
-  mb.quad(0.242, 0.135, 0.245, 0.242, 0.135, 0.395, 0.242, 0.335, 0.380, 0.242, 0.335, 0.245);
+  mb.quad(0.242, 0.135, 0.395, 0.242, 0.135, 0.245, 0.242, 0.335, 0.245, 0.242, 0.335, 0.380);
   mb.mat(CM.GRILLE, 1).color(0.012, 0.012, 0.014);
-  mb.quad(0.245, 0.155, 0.262, 0.245, 0.155, 0.378, 0.245, 0.315, 0.365, 0.245, 0.315, 0.262);
+  mb.quad(0.245, 0.155, 0.378, 0.245, 0.155, 0.262, 0.245, 0.315, 0.262, 0.245, 0.315, 0.365);
   // Extrator traseiro do pod (x = -0.36, normal -X)
   mb.mat(CM.PLASTIC).color(0.02, 0.02, 0.024);
-  mb.quad(-0.362, 0.132, 0.385, -0.362, 0.132, 0.235, -0.362, 0.320, 0.235, -0.362, 0.320, 0.375);
+  mb.quad(-0.362, 0.132, 0.235, -0.362, 0.132, 0.385, -0.362, 0.320, 0.375, -0.362, 0.320, 0.235);
   mb.mat(CM.GRILLE, 1).color(0.012, 0.012, 0.014);
-  mb.quad(-0.365, 0.152, 0.368, -0.365, 0.152, 0.252, -0.365, 0.302, 0.252, -0.365, 0.302, 0.358);
+  mb.quad(-0.365, 0.152, 0.252, -0.365, 0.152, 0.368, -0.365, 0.302, 0.358, -0.365, 0.302, 0.252);
 
   // ---------------- 3. Carenagem traseira e ombros do cockpit ----------------
   mb.mat(CM.PAINT).color(1, 1, 1);
@@ -154,8 +154,8 @@ function mkartBuildBody(mb, gl) {
     }
     o[0] = x;
   }, 0, 1, 0, 1, { nu: 20, nv: 14, flip: false, uv: () => { _muv[0] = 1; _muv[1] = 0.5; return _muv; } });
-  // Fechamento traseiro da carenagem lateral
-  mb.quad(-0.82, 0.135, 0.215, -0.82, 0.135, 0.175, -0.82, 0.285, 0.175, -0.82, 0.250, 0.240);
+  // Fechamento traseiro da carenagem lateral (normal -X)
+  mb.quad(-0.82, 0.135, 0.175, -0.82, 0.135, 0.215, -0.82, 0.250, 0.240, -0.82, 0.285, 0.175);
 
   // ---------------- 4. Splitter dianteiro + winglets + assoalho plano ----------------
   mb.mat(CM.PLASTIC).color(0.022, 0.022, 0.025);
@@ -164,19 +164,19 @@ function mkartBuildBody(mb, gl) {
     const xLead = 1.04 - 0.08 * Math.pow(u, 1.8);
     const x = lerp(xLead, 0.87, v);
     o[0] = x; o[1] = 0.106; o[2] = z;
-  }, 0, 1, 0, 1, { nu: 14, nv: 4, flip: false });
+  }, 0, 1, 0, 1, { nu: 14, nv: 4, flip: true });
   mb.patch((u, v, o) => {
     const z = u * 0.375;
     const xLead = 1.04 - 0.08 * Math.pow(u, 1.8);
     const x = lerp(xLead, 0.87, v);
     o[0] = x; o[1] = 0.086; o[2] = z;
-  }, 0, 1, 0, 1, { nu: 14, nv: 4, flip: true });
+  }, 0, 1, 0, 1, { nu: 14, nv: 4, flip: false });
   // Borda dianteira arredondada da asa/splitter
   mb.patch((u, v, o) => {
     const z = u * 0.375;
     const xLead = 1.04 - 0.08 * Math.pow(u, 1.8);
     o[0] = xLead; o[1] = lerp(0.086, 0.106, v); o[2] = z;
-  }, 0, 1, 0, 1, { nu: 14, nv: 2, flip: false });
+  }, 0, 1, 0, 1, { nu: 14, nv: 2, flip: true });
   // Endplates laterais da asa dianteira + pilares de sustentação do bico
   mb.rbox(0.925, 0.132, 0.375, 0.135, 0.095, 0.014, 0.004, 1);
   mb.box(0.955, 0.125, 0.085, 0.080, 0.045, 0.014);
@@ -255,8 +255,8 @@ function mkartBuildBody(mb, gl) {
     gl.mat(0).color(0.75, 0.80, 0.82);
     gl.patch((u, v, o) => {
       const z = u * 0.165 * (1 - 0.14 * v);
-      const x = 0.27 - 0.095 * u * u - 0.085 * v;
-      const y = 0.525 - 0.045 * u * u + 0.098 * v;
+      const x = 0.365 - 0.075 * u * u - 0.075 * v;
+      const y = 0.530 - 0.055 * u * u + 0.098 * v;
       o[0] = x; o[1] = y; o[2] = z;
     }, 0, 1, 0, 1, { nu: 12, nv: 6, flip: true });
     gl.mirror(gv0, gi0, 2);
@@ -265,8 +265,8 @@ function mkartBuildBody(mb, gl) {
   mb.mat(CM.RUBBER).color(0.02, 0.02, 0.022);
   mb.patch((u, v, o) => {
     const z = u * 0.168;
-    const x = 0.275 - 0.095 * u * u - 0.015 * v;
-    const y = 0.522 - 0.045 * u * u + 0.016 * v;
+    const x = 0.370 - 0.075 * u * u - 0.015 * v;
+    const y = 0.528 - 0.055 * u * u + 0.016 * v;
     o[0] = x; o[1] = y; o[2] = z;
   }, 0, 1, 0, 1, { nu: 12, nv: 2, flip: true });
 
@@ -276,7 +276,8 @@ function mkartBuildBody(mb, gl) {
 
   // ---------------- 9. Cockpit aberto: assoalho interno, pedais, banco concha e coluna de direção ----------------
   mb.mat(CM.INTERIOR).color(0.038, 0.040, 0.045);
-  mb.box(0.05, 0.112, 0, 0.68, 0.016, 0.42);
+  mb.box(-0.025, 0.112, 0, 0.53, 0.016, 0.42);
+  mb.box(0.31, 0.112, 0, 0.16, 0.016, 0.24); // assoalho estreito da pedaleira dentro da cintura do bico
   mb.mat(CM.ALU, 1).color(0.70, 0.72, 0.76);
   mb.box(0.32, 0.165, 0.075, 0.014, 0.075, 0.048); // pedal acelerador
   mb.box(0.30, 0.170, -0.075, 0.014, 0.068, 0.056); // pedal freio
@@ -327,11 +328,11 @@ function mkartBuildBody(mb, gl) {
   mb.rbox(-0.84, 0.135, 0, 0.14, 0.075, 0.38, 0.008, 1);
   for (const dz of [-0.14, -0.05, 0.05, 0.14]) mb.box(-0.87, 0.115, dz, 0.12, 0.045, 0.010);
 
-  // Lanterna traseira central de chuva / freio em LED (uv dentro da zona rubi pura de mat 9)
+  // Lanterna traseira central de chuva / freio em LED (uv dentro da zona rubi pura de mat 9, normal -X)
   mb.mat(CM.PLASTIC).color(0.018, 0.018, 0.020);
   mb.rbox(-0.905, 0.245, 0, 0.052, 0.078, 0.098, 0.008, 2);
   mb.mat(CM.LENS, 1).color(0.82, 0.03, 0.02);
-  mb.quad(-0.933, 0.214, 0.040, -0.933, 0.214, -0.040, -0.933, 0.276, -0.040, -0.933, 0.276, 0.040, 0.48, 0.28, 0.92, 0.56);
+  mb.quad(-0.933, 0.214, -0.040, -0.933, 0.214, 0.040, -0.933, 0.276, 0.040, -0.933, 0.276, -0.040, 0.48, 0.28, 0.92, 0.56);
 
   // ---------------- 11. Emblema circular 'M' no bico e numerais '1' nas laterais ----------------
   {
@@ -342,7 +343,7 @@ function mkartBuildBody(mb, gl) {
     const B = m4basis(m4(), 0, 0, -1, nx, ny, 0, -ux, -uy, 0, x0 + nx * 0.003, y0 + ny * 0.003, 0);
     mb.push(B);
     mb.mat(CM.CHROME, 2).color(0.84, 0.86, 0.90);
-    mb.cyl(0, -0.008, 0, 0.078, 0.003, 0.076, 24, true, true);
+    mb.cyl(0, -0.022, 0, 0.078, 0.003, 0.076, 24, true, true);
     mb.pop();
     // decalque CAT.mk (normal = +nx, +ny)
     const cx = x0 + nx * 0.007, cy = y0 + ny * 0.007, hw = 0.074, hh = 0.074, r = CAT.mk;
@@ -437,7 +438,7 @@ function mkartBuildWheel(mb, mbBlur) {
     mb.rbox(0, 0, 0, 0.016, 0.068, 0.020, 0.004, 1);
     mb.pop(); mb.pop();
     mb.mat(CM.CHROME, 2).color(0.86, 0.88, 0.92);
-    mb.rbox(0.058, Math.cos(a) * 0.022, Math.sin(a) * 0.022, 0.010, 0.007, 0.007, 0.002, 1);
+    mb.rbox(0.058, 0.022, 0, 0.010, 0.007, 0.007, 0.002, 1);
     mb.mat(CM.ALU, 1).color(0.84, 0.78, 0.56);
     mb.pop();
   }
