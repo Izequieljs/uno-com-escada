@@ -5,31 +5,73 @@ const CAR = {
   eyePos: [-0.10, 1.175, -0.355],
   slotBody: 0, slotWheel: [0, 0, 0, 0], slotSteer: 0,
   steerMat: m4(), tris: 0, _t: m4(), _t2: m4(), _t3: m4(), set: null, glass: null, atlasBG: null, fam: null, bodyMesh: null, wheelMesh: null,
+  models: [], modelIdx: 0, bodyKind: 0,
   driverItems: [], driverVisible: true,
   setDriverVis(vis) {
     const v = !!vis; CAR.driverVisible = v;
-    for (let i = 0; i < CAR.driverItems.length; i++) CAR.driverItems[i].on = v;
+    for (let i = 0; i < CAR.driverItems.length; i++) if (CAR.driverItems[i]) CAR.driverItems[i].on = v;
+  },
+  select(idx) {
+    if (!CAR.models.length) return;
+    const i = (idx | 0) === 1 && CAR.models[1] ? 1 : 0;
+    CAR.modelIdx = i;
+    for (let k = 0; k < CAR.models.length; k++) {
+      const m = CAR.models[k], on = k === i;
+      if (m.items) for (let j = 0; j < m.items.length; j++) if (m.items[j]) m.items[j].on = on;
+      if (m.glassItems) for (let j = 0; j < m.glassItems.length; j++) if (m.glassItems[j]) m.glassItems[j].on = on;
+    }
+    const M = CAR.models[i];
+    CAR.bodyMesh = M.bodyMesh;
+    CAR.wheelMesh = M.wheelMesh;
+    CAR.hubs = M.hubs;
+    CAR.wheelR = M.wheelR;
+    if (M.steerMat) CAR.steerMat.set(M.steerMat);
+    CAR.eyePos = M.eyePos;
+    CAR.bodyKind = M.bodyKind;
+    CAR.driverItems = M.driverItems || [];
+    if (M.tris) CAR.tris = M.tris;
+    CAR.setDriverVis(CAR.driverVisible);
   },
   build() {
     carShapeInit(); carWindowsInit(); carSeamInit();
     const fam = CAR.fam = mkFamily('car', { src: 'mat_car', noCube: true });
     CAR.slotBody = objSlot(); for (let i = 0; i < 4; i++) CAR.slotWheel[i] = objSlot(); CAR.slotSteer = objSlot();
     const set = CAR.set = new MeshSet(fam), glass = CAR.glass = new GlassSet();
-    CAR.driverItems.length = 0; CAR.driverVisible = true;
+    CAR.driverItems = []; CAR.driverVisible = true;
+    const attach = m => {
+      m.items = []; m.driverItems = []; m.glassItems = [];
+      m.items.push(set.add(m.bodyMesh, CAR.slotBody, 3));
+      if (m.glassMesh) m.glassItems.push(glass.add_(m.glassMesh, CAR.slotBody));
+      if (m.driverMesh) { const di = set.add(m.driverMesh, CAR.slotBody, 3); m.items.push(di); m.driverItems.push(di); }
+      if (m.wheelMesh) {
+        for (let i = 0; i < 4; i++) {
+          m.items.push(set.add(m.wheelMesh, CAR.slotWheel[i], 3));
+          if (m.wheelBlurMesh) m.items.push(set.add(m.wheelBlurMesh, CAR.slotWheel[i], 1));
+        }
+      }
+      if (m.steerMesh) m.items.push(set.add(m.steerMesh, CAR.slotSteer, 3));
+      return m;
+    };
     const mb = new MeshBuilder(1 << 17), gl = new MeshBuilder(1 << 14);
     carBuildBody(mb, gl);
     if (typeof carBuildParts === 'function') carBuildParts(mb, gl);
-    CAR.tris = mb.ni / 3 + gl.ni / 3;
-    const bm = CAR.bodyMesh = mb.upload(); set.add(bm, CAR.slotBody, 3); glass.add_(gl.upload(), CAR.slotBody);
-    if (typeof carBuildDriver === 'function') {
-      const dm = new MeshBuilder(1 << 13); carBuildDriver(dm); CAR.tris += dm.ni / 3;
-      CAR.driverItems.push(set.add(dm.upload(), CAR.slotBody, 3));
-    }
-    if (typeof carBuildWheel === 'function') {
-      const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); const wm = CAR.wheelMesh = w.upload(), wbm = wb.upload(); CAR.tris += 4 * (w.ni + wb.ni) / 3;
-      for (let i = 0; i < 4; i++) { set.add(wm, CAR.slotWheel[i], 3); set.add(wbm, CAR.slotWheel[i], 1); }   // disco de borrão: só no passe principal
-    }
-    if (typeof carBuildSteer === 'function') { const s = new MeshBuilder(1 << 12); carBuildSteer(s); CAR.tris += s.ni / 3; set.add(s.upload(), CAR.slotSteer, 3); }
+    let tris0 = mb.ni / 3 + gl.ni / 3;
+    const bm = mb.upload(), gm = gl.upload();
+    let dm = null, wm = null, wbm = null, sm = null;
+    if (typeof carBuildDriver === 'function') { const d = new MeshBuilder(1 << 13); carBuildDriver(d); tris0 += d.ni / 3; dm = d.upload(); }
+    if (typeof carBuildWheel === 'function') { const w = new MeshBuilder(1 << 15), wb = new MeshBuilder(1 << 11); carBuildWheel(w, wb); wm = w.upload(); wbm = wb.upload(); tris0 += 4 * (w.ni + wb.ni) / 3; }
+    if (typeof carBuildSteer === 'function') { const s = new MeshBuilder(1 << 12); carBuildSteer(s); tris0 += s.ni / 3; sm = s.upload(); }
+    const m0 = {
+      name: 'Uno Mille EP',
+      bodyMesh: bm, driverMesh: dm, glassMesh: gm, wheelMesh: wm, wheelBlurMesh: wbm, steerMesh: sm,
+      steerMat: new Float32Array(CAR.steerMat),
+      hubs: [[1.181, 0.281, -0.67], [1.181, 0.281, 0.67], [-1.181, 0.281, -0.65], [-1.181, 0.281, 0.65]],
+      wheelR: 0.281, eyePos: [-0.10, 1.175, -0.355], bodyKind: 0, tris: tris0,
+    };
+    CAR.models.length = 0;
+    CAR.models.push(attach(m0));
+    if (typeof golBuildModel === 'function') CAR.models.push(attach(golBuildModel()));
+    CAR.select(CAR.modelIdx);
     const tex = typeof carAtlas === 'function' ? carAtlas() : mkTex(4, 4, 'rgba8unorm-srgb');
     // desenhável: liga o atlas (grupo 3) e não entra no mapa de sombras estático do mundo
     R.drawables.push({ draw(pass, ctx) {

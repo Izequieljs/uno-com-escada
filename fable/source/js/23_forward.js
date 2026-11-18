@@ -27,14 +27,14 @@ class GlassSet {
     this.add = mkFwdFamily('glassAdd', { src: 'glass', defs: { GLASS_ADD: '' }, blend: { color: { srcFactor: 'one', dstFactor: 'one' }, alpha: { srcFactor: 'zero', dstFactor: 'one' } } });
     this.items = []; this.bg = null;
   }
-  add_(mesh, slot) { this.items.push({ vb: mesh.vb, ib: mesh.ib, count: mesh.count, slot: slot || 0 }); }
+  add_(mesh, slot) { const it = { vb: mesh.vb, ib: mesh.ib, count: mesh.count, slot: slot || 0, on: true }; this.items.push(it); return it; }
   draw(pass) {
     if (!this.mul.pipe || !this.add.pipe) return;
     if (!this.bg) this.bg = fwdBindGroup(this.mul);
     pass.setBindGroup(3, this.bg);
     for (let k = 0; k < 2; k++) {
       pass.setPipeline(k ? this.add.pipe : this.mul.pipe);
-      for (let i = 0; i < this.items.length; i++) { const it = this.items[i]; R.dyn2[0] = it.slot * 256; pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1); pass.setVertexBuffer(0, it.vb); pass.setIndexBuffer(it.ib, 'uint32'); pass.drawIndexed(it.count); }
+      for (let i = 0; i < this.items.length; i++) { const it = this.items[i]; if (it.on === false) continue; R.dyn2[0] = it.slot * 256; pass.setBindGroup(2, R.objBG, R.dyn2, 0, 1); pass.setVertexBuffer(0, it.vb); pass.setIndexBuffer(it.ib, 'uint32'); pass.drawIndexed(it.count); }
     }
   }
 }

@@ -20,8 +20,14 @@ const GS = {
   tvData: new Float32Array(64 * 4), tvN: 0, tvCur: -1, tvAim: new Float32Array(3), tvFov: 0.3, pl: new Float64Array(2),
   v3: new Float32Array(6), fxOn: true, frozen: false, freeCam: false,
   padKeys: 0, lapSeen: 0, lapMax: 0, lapNew: false,
-  paintIdx: 0, lightsOn: false, hazardOn: false,
+  paintIdx: 0, carIdx: 0, poseOn: false, _unoForced: false, lightsOn: false, hazardOn: false,
 };
+function carSyncActive(forceUno) {
+  const ci = forceUno ? 0 : (GS.carIdx ? 1 : 0), C = carObj();
+  if (C.select) C.select(ci);
+  if (typeof vehicleApplySpec === 'function') vehicleApplySpec(ci);
+  return ci;
+}
 // Cronômetro: LAP[0] instante (s de simulação) em que a volta atual começou, [1] última volta, [2] melhor volta, [3] 1 = cronômetro correndo
 const LAP = new Float64Array(4);
 // Controle (Gamepad API): PADV[0] gatilho direito, [1] gatilho esquerdo, [2] analógico esquerdo já com zona morta e curva. Preenchido por padPoll.
@@ -100,7 +106,8 @@ function gameInit() {
 // três câmeras, ré, freio de mão, fora da pista, reposição — para o V8 otimizar o laço com informação de tipos completa.
 // Sem isso, a primeira troca de câmera ou a primeira ré desotimizaria funções do laço e geraria lixo temporário.
 function gameWarmup() {
-  const fx = GS.fxOn, rp = GS.replayOn; GS.replayOn = false; GS.ai = false; RT[2] = 1 / 120;
+  const fx = GS.fxOn, rp = GS.replayOn; GS.replayOn = false; GS.ai = false; GS._unoForced = false; RT[2] = 1 / 120;
+  carSyncActive(true);
   if (typeof GH !== 'undefined') GH.warm = true;
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0);
   for (let i = 0; i < 9000; i++) {
@@ -146,6 +153,9 @@ async function gamePrewarm() {
   GS.frozen = false; gameRestart(); return worst;
 }
 function gameRestart() {
+  const unoF = GS.replayOn || GS.poseOn;
+  GS._unoForced = unoF;
+  carSyncActive(unoF);
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
   const qCam = +(Q.get('cam') || 0);
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.lightsOn = false; GS.hazardOn = false;
@@ -157,6 +167,8 @@ function gameRestart() {
 }
 // um passo de física; a cada 2 passos (1/60 s) lê as teclas (gravadas, piloto automático ou teclado)
 function gameStep() {
+  const unoF = GS.replayOn || GS.poseOn;
+  if (unoF !== GS._unoForced) { GS._unoForced = unoF; carSyncActive(unoF); }
   if ((GS.sub & 1) === 0) {
     const t = GS.tick60 / 60; let k;
     if (GS.replayOn && GS.tick60 < GS.replay.length) k = GS.replay[GS.tick60];
@@ -219,6 +231,8 @@ function gameTick(fixed) {
 }
 // pose interpolada do carro → matrizes dos objetos
 function gamePose() {
+  const unoF = GS.replayOn || GS.poseOn;
+  if (unoF !== GS._unoForced) { GS._unoForced = unoF; carSyncActive(unoF); }
   const V = VEH, C = carObj(), P = VP, al = GS.alpha;
   const x = V.px + (V.x - V.px) * al, z = V.pz + (V.z - V.pz) * al, y = V.py + (V.y - V.py) * al;
   let dy = V.yaw - V.pyaw; if (dy > PI) dy -= TAU; else if (dy < -PI) dy += TAU; const yaw = V.pyaw + dy * al;
@@ -246,7 +260,7 @@ function gamePose() {
   bp[1] = V.gear === 0 ? 1 : 0;
   bp[2] = GS.lightsOn ? 1 : 0;
   bp[3] = GS.hazardOn ? (((RT[0] * 3.2) | 0) & 1) : 0;
-  carApplyPaint(C.slotBody, GS.paintIdx, GS.carIdx !== undefined ? GS.carIdx : 0);
+  carApplyPaint(C.slotBody, unoF ? 0 : GS.paintIdx, unoF ? 0 : (C.bodyKind !== undefined ? C.bodyKind : (GS.carIdx ? 1 : 0)));
   for (let i = 0; i < 4; i++) { const w = V.omega[i]; objParams(C.slotWheel[i])[0] = w < 0 ? -w : w; }
   FR.data.set(B, FO.carMat); m4inv(T, B); FR.data.set(T, FO.carInv);
   // rodas: a matriz anterior passa a ser a roda atual levada pelo deslocamento rígido da carroceria (anterior × atual⁻¹).

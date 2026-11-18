@@ -6,11 +6,31 @@ const K_W = 1, K_S = 2, K_A = 4, K_D = 8, K_SPACE = 16, K_C = 32, K_R = 64, K_V 
 // Entrada analógica do controle: VIN[0] acelerador 0..1, VIN[1] freio 0..1 (valem quando as teclas trazem K_PAD), VIN[2] direção -1..1 (K_PADS).
 // As teclas gravadas da volta roteirizada nunca trazem esses bits: a via digital fica exatamente como era.
 const VIN = new Float64Array(3);
+const VEH_SPECS = [
+  {
+    name: 'Uno Mille EP',
+    m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
+    mu: 1.42, B: 9.5, C: 1.42,
+    gears: [3.91, 2.16, 1.48, 1.12, 0.9], final: 4.07, rev: 3.9, eff: 0.9,
+    cdA: 0.62, crr: 0.014, brakeF: 0.64, halfW: 0.78, front: 1.92, rear: 1.72,
+    t0: 180, tA: 118, tShift: 0.6, tSpan: 5.4, tDrop: 110, tPeak: 6.0,
+  },
+  {
+    name: 'Gol Quadrado AP 1.8',
+    m: 940, Izz: 1290, L: 2.358, a: 0.95, b: 1.408, tw: 1.37, h: 0.46, R: 0.281,
+    mu: 1.44, B: 9.8, C: 1.42,
+    gears: [3.45, 1.94, 1.37, 1.03, 0.83], final: 4.11, rev: 3.6, eff: 0.9,
+    cdA: 0.60, crr: 0.014, brakeF: 0.64, halfW: 0.80, front: 1.94, rear: 1.87,
+    t0: 215, tA: 135, tShift: 0.8, tSpan: 5.0, tDrop: 115, tPeak: 5.8,
+  },
+];
 const VP = {
+  spec: 0,
   m: 900, Izz: 1250, L: 2.362, a: 0.96, b: 1.402, tw: 1.33, h: 0.5, R: 0.281,
   mu: 1.42, B: 9.5, C: 1.42,
   gears: [3.91, 2.16, 1.48, 1.12, 0.9], final: 4.07, rev: 3.9, eff: 0.9,
   cdA: 0.62, crr: 0.014, brakeF: 0.64, halfW: 0.78, front: 1.92, rear: 1.72,
+  t0: 180, tA: 118, tShift: 0.6, tSpan: 5.4, tDrop: 110, tPeak: 6.0,
 };
 const VEH = {
   x: 0, z: 0, yaw: 0, vx: 0, vy: 0, r: 0,                  // posição do CG no plano, direção, velocidades no corpo (frente, direita), guinada
@@ -30,8 +50,23 @@ const _vl = new Float64Array(4), _vp = new Float64Array(5);
 // posições locais das rodas (x frente, z direita): FL, FR, RL, RR
 const WLX = [VP.a, VP.a, -VP.b, -VP.b], WLZ = [-VP.tw / 2, VP.tw / 2, -VP.tw / 2, VP.tw / 2];
 
-function engineTorque(rpm) { // curva de torque (N·m): um Mille bem mais disposto que o de fábrica
-  const x = rpm / 1000; const t = 180 + 118 * Math.sin(clamp((x - 0.6) / 5.4, 0, 1) * PI) - Math.max(0, x - 6.0) * 110;
+function vehicleApplySpec(idx) {
+  const i = (idx | 0) === 1 ? 1 : 0, S = VEH_SPECS[i];
+  VP.spec = i;
+  VP.m = S.m; VP.Izz = S.Izz; VP.L = S.L; VP.a = S.a; VP.b = S.b; VP.tw = S.tw; VP.h = S.h; VP.R = S.R;
+  VP.mu = S.mu; VP.B = S.B; VP.C = S.C;
+  for (let k = 0; k < 5; k++) VP.gears[k] = S.gears[k];
+  VP.final = S.final; VP.rev = S.rev; VP.eff = S.eff;
+  VP.cdA = S.cdA; VP.crr = S.crr; VP.brakeF = S.brakeF; VP.halfW = S.halfW; VP.front = S.front; VP.rear = S.rear;
+  VP.t0 = S.t0; VP.tA = S.tA; VP.tShift = S.tShift; VP.tSpan = S.tSpan; VP.tDrop = S.tDrop; VP.tPeak = S.tPeak;
+  WLX[0] = WLX[1] = S.a; WLX[2] = WLX[3] = -S.b;
+  WLZ[0] = WLZ[2] = -S.tw * 0.5; WLZ[1] = WLZ[3] = S.tw * 0.5;
+  return i;
+}
+
+function engineTorque(rpm) { // curva de torque (N·m) conforme especificação ativa (Uno Mille / Gol AP 1.8)
+  const P = VP, x = rpm / 1000;
+  const t = P.t0 + P.tA * Math.sin(clamp((x - P.tShift) / P.tSpan, 0, 1) * PI) - Math.max(0, x - P.tPeak) * P.tDrop;
   return Math.max(0, t);
 }
 // consulta do chão sem números por argumento/retorno: entrada _gq[0]=x, _gq[1]=z; saída _gq[8]=altura; devolve a zona (inteiro).
@@ -114,7 +149,7 @@ function vehicleStep(keys) {
   }
   const rpmE = Math.min(6700, Math.max(900, Math.max(rpm, 1100 + throttle * 1900 * Math.min(1, Math.max(0, 1 - speed / 6)))));   // embreagem patinando na saída
   V.rpm += (rpmE - V.rpm) * 0.25;
-  const ex = rpmE / 1000, ek = (ex - 0.6) / 5.4, eT = 180 + 118 * Math.sin((ek < 0 ? 0 : ek > 1 ? 1 : ek) * PI) - (ex > 6 ? (ex - 6) * 110 : 0);   // = engineTorque(rpmE), embutido
+  const ex = rpmE / 1000, ek = (ex - P.tShift) / P.tSpan, eT = P.t0 + P.tA * Math.sin((ek < 0 ? 0 : ek > 1 ? 1 : ek) * PI) - (ex > P.tPeak ? (ex - P.tPeak) * P.tDrop : 0);   // = engineTorque(rpmE), embutido
   let Tdrive = throttle * (eT > 0 ? eT : 0) * ratio * P.eff;                  // torque total nas rodas dianteiras
   if (rpm > 6500) Tdrive = 0;
   if (reverse && V.vx < -11) Tdrive = 0;

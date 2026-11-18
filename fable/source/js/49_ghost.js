@@ -10,28 +10,77 @@ function medalOf(cs) {
   return -1;
 }
 
+function ghCarIdx(idx) {
+  if (idx !== undefined) return (idx | 0) === 1 ? 1 : 0;
+  return typeof GS !== 'undefined' && GS.carIdx === 1 ? 1 : 0;
+}
+function ghStoragePrefix(idx) {
+  return ghCarIdx(idx) === 1 ? 'gol' : 'uno';
+}
+function ghMakeSlot() {
+  return {
+    hasSplit: false, hasGhost: false, savePending: false, bestLen: 0, bestTime: 0,
+    bestSplit: new Float32Array(2048).fill(-1),
+    bestFrames: new Float32Array(10800 * 8),
+  };
+}
+const _ghSlots = [ghMakeSlot(), ghMakeSlot()];
+
 const GH = {
   on: true, warm: false, hasSplit: false, hasGhost: false, savePending: false,
   deltaCs: GH_NONE, vis: false, drawOn: false, qMask: 0, curLen: 0, bestLen: 0, bestTime: 0,
-  curSplit: new Float32Array(2048).fill(-1), bestSplit: new Float32Array(2048).fill(-1),
-  curFrames: new Float32Array(10800 * 8), bestFrames: new Float32Array(10800 * 8),
+  slotIdx: 0, slots: _ghSlots,
+  curSplit: new Float32Array(2048).fill(-1), bestSplit: _ghSlots[0].bestSplit,
+  curFrames: new Float32Array(10800 * 8), bestFrames: _ghSlots[0].bestFrames,
   gx: 0, gy: 0, gz: 0, gyaw: 0, gpitch: 0, groll: 0, gsteer: 0, gspin: 0,
   slotBody: 0, slotWheel: [0, 0, 0, 0], fam: null, bg: null,
   _b: m4(), _t: m4(), _w: m4(),
 };
 
+function ghFlushSlot() {
+  const S = GH.slots[GH.slotIdx];
+  S.hasSplit = GH.hasSplit;
+  S.hasGhost = GH.hasGhost;
+  S.savePending = GH.savePending;
+  S.bestLen = GH.bestLen;
+  S.bestTime = GH.bestTime;
+}
+function ghLoadSlot(i) {
+  const S = GH.slots[i];
+  GH.slotIdx = i;
+  GH.hasSplit = S.hasSplit;
+  GH.hasGhost = S.hasGhost;
+  GH.savePending = S.savePending;
+  GH.bestLen = S.bestLen;
+  GH.bestTime = S.bestTime;
+  GH.bestSplit = S.bestSplit;
+  GH.bestFrames = S.bestFrames;
+}
+function ghSyncSlot(idx) {
+  const i = ghCarIdx(idx);
+  if (i === GH.slotIdx) return i;
+  ghFlushSlot();
+  ghLoadSlot(i);
+  return i;
+}
+
 function ghInit() {
   GH.warm = false;
-  GH.hasSplit = false;
-  GH.hasGhost = false;
-  GH.savePending = false;
-  GH.bestLen = 0;
-  GH.bestTime = 0;
-  GH.bestSplit.fill(-1);
+  for (let i = 0; i < GH.slots.length; i++) {
+    const S = GH.slots[i];
+    S.hasSplit = false;
+    S.hasGhost = false;
+    S.savePending = false;
+    S.bestLen = 0;
+    S.bestTime = 0;
+    S.bestSplit.fill(-1);
+  }
+  ghLoadSlot(ghCarIdx());
   ghRestart();
 }
 
 function ghRestart() {
+  ghSyncSlot();
   GH.curSplit.fill(-1);
   GH.curLen = 0;
   GH.qMask = 0;
@@ -49,6 +98,7 @@ function ghToggle() {
 // Registra splits e pose a 60 Hz (após vehicleStep + lapCross, no passo ímpar de 120 Hz). Sem alocações.
 function ghStep() {
   if ((GS.sub & 1) !== 1) return;
+  ghSyncSlot();
   if (GH.warm || GS.frozen || GS.replayOn || GS.ai || LAP[3] !== 1) { GH.deltaCs = GH_NONE; return; }
   const N = TRK.N, ds = TRK.ds;
   const q = ((VEH.s / TRK.L) * 4) | 0;
@@ -93,6 +143,7 @@ function ghFillSplits(arr, n, lt) {
 }
 
 function ghLapCross(lt, isRecord) {
+  ghSyncSlot();
   if (!GH.warm && !GS.replayOn && !GS.ai && GH.qMask === 15 && (isRecord || !GH.hasSplit) && (LAP[2] === 0 || lt <= LAP[2] + 1e-6)) {
     GH.bestSplit.set(GH.curSplit);
     ghFillSplits(GH.bestSplit, TRK.N, lt);
@@ -103,6 +154,7 @@ function ghLapCross(lt, isRecord) {
     GH.hasGhost = n > 30;
     GH.bestTime = lt;
     GH.savePending = true;
+    ghFlushSlot();
   }
   GH.curSplit.fill(-1);
   GH.curLen = 0;
@@ -112,6 +164,7 @@ function ghLapCross(lt, isRecord) {
 
 // Interpola a pose do fantasma para o instante atual da volta e atualiza matrizes + fade de proximidade. Sem alocações.
 function ghPose() {
+  ghSyncSlot();
   let vis = GH.on && GH.hasGhost && LAP[3] === 1 && !GS.replayOn && !GS.ai && !GS.frozen;
   if (vis) {
     const f = (VEH.time - LAP[0]) * 60;
@@ -179,61 +232,70 @@ function ghB64Dec(str) {
   return u8;
 }
 
-function ghSaveData() {
-  if (!GH.hasSplit || !GH.hasGhost || TRK.N <= 0) return '';
-  const N = TRK.N, sn = Math.ceil(N / 2), sp = new Uint16Array(sn);
-  for (let k = 0; k < sn; k++) {
-    const v = GH.bestSplit[k * 2];
-    sp[k] = v >= 0 ? clamp(Math.round(v * 100), 0, 65535) : 0;
+function ghSaveData(carIdx) {
+  const prev = GH.slotIdx, target = carIdx === undefined ? ghCarIdx() : ghCarIdx(carIdx);
+  if (target !== GH.slotIdx) { ghFlushSlot(); ghLoadSlot(target); }
+  let out = '';
+  if (GH.hasSplit && GH.hasGhost && TRK.N > 0) {
+    const N = TRK.N, sn = Math.ceil(N / 2), sp = new Uint16Array(sn);
+    for (let k = 0; k < sn; k++) {
+      const v = GH.bestSplit[k * 2];
+      sp[k] = v >= 0 ? clamp(Math.round(v * 100), 0, 65535) : 0;
+    }
+    const len = GH.bestLen, needLast = len > 1 && (len - 1) % 3 !== 0;
+    const fn = Math.ceil(len / 3) + (needLast ? 1 : 0);
+    const fr = new Int16Array(fn * 8), B = GH.bestFrames;
+    for (let k = 0; k < fn; k++) {
+      const srcIdx = k * 3 < len ? k * 3 : len - 1, so = srcIdx * 8, doff = k * 8;
+      fr[doff]     = clamp(Math.round(B[so]     * 20), -32767, 32767);
+      fr[doff + 1] = clamp(Math.round(B[so + 1] * 20), -32767, 32767);
+      fr[doff + 2] = clamp(Math.round(B[so + 2] * 20), -32767, 32767);
+      fr[doff + 3] = clamp(Math.round(wrapPi(B[so + 3]) * 5000), -32767, 32767);
+      fr[doff + 4] = clamp(Math.round(B[so + 4] * 5000), -32767, 32767);
+      fr[doff + 5] = clamp(Math.round(B[so + 5] * 5000), -32767, 32767);
+      fr[doff + 6] = clamp(Math.round(B[so + 6] * 5000), -32767, 32767);
+      fr[doff + 7] = clamp(Math.round(ghWrapSpin(B[so + 7]) * 500), -32767, 32767);
+    }
+    out = JSON.stringify({
+      v: 1,
+      t: GH.bestTime,
+      n: N,
+      l: len,
+      sp: ghB64Enc(sp),
+      fr: ghB64Enc(fr),
+    });
   }
-  const len = GH.bestLen, needLast = len > 1 && (len - 1) % 3 !== 0;
-  const fn = Math.ceil(len / 3) + (needLast ? 1 : 0);
-  const fr = new Int16Array(fn * 8), B = GH.bestFrames;
-  for (let k = 0; k < fn; k++) {
-    const srcIdx = k * 3 < len ? k * 3 : len - 1, so = srcIdx * 8, doff = k * 8;
-    fr[doff]     = clamp(Math.round(B[so]     * 20), -32767, 32767);
-    fr[doff + 1] = clamp(Math.round(B[so + 1] * 20), -32767, 32767);
-    fr[doff + 2] = clamp(Math.round(B[so + 2] * 20), -32767, 32767);
-    fr[doff + 3] = clamp(Math.round(wrapPi(B[so + 3]) * 5000), -32767, 32767);
-    fr[doff + 4] = clamp(Math.round(B[so + 4] * 5000), -32767, 32767);
-    fr[doff + 5] = clamp(Math.round(B[so + 5] * 5000), -32767, 32767);
-    fr[doff + 6] = clamp(Math.round(B[so + 6] * 5000), -32767, 32767);
-    fr[doff + 7] = clamp(Math.round(ghWrapSpin(B[so + 7]) * 500), -32767, 32767);
-  }
-  return JSON.stringify({
-    v: 1,
-    t: GH.bestTime,
-    n: N,
-    l: len,
-    sp: ghB64Enc(sp),
-    fr: ghB64Enc(fr),
-  });
+  if (carIdx !== undefined && prev !== GH.slotIdx) { ghFlushSlot(); ghLoadSlot(prev); }
+  return out;
 }
 
-function ghLoadData(str, expectedBestSec) {
-  if (!str || typeof str !== 'string') return false;
+function ghLoadData(str, expectedBestSec, carIdx) {
+  const prev = GH.slotIdx, target = carIdx === undefined ? ghCarIdx() : ghCarIdx(carIdx);
+  if (target !== GH.slotIdx) { ghFlushSlot(); ghLoadSlot(target); }
+  const restore = () => { if (carIdx !== undefined && prev !== GH.slotIdx) { ghFlushSlot(); ghLoadSlot(prev); } };
+  if (!str || typeof str !== 'string') { restore(); return false; }
   let obj;
-  try { obj = JSON.parse(str); } catch (e) { return false; }
-  if (!obj || typeof obj !== 'object') return false;
-  if (typeof obj.t !== 'number' || !Number.isFinite(obj.t) || obj.t <= 0) return false;
-  if (typeof expectedBestSec !== 'number' || !Number.isFinite(expectedBestSec) || expectedBestSec <= 0) return false;
-  if (Math.abs(obj.t - expectedBestSec) > 0.05 || obj.n !== TRK.N) return false;
-  if (typeof obj.sp !== 'string' || typeof obj.fr !== 'string') return false;
+  try { obj = JSON.parse(str); } catch (e) { restore(); return false; }
+  if (!obj || typeof obj !== 'object') { restore(); return false; }
+  if (typeof obj.t !== 'number' || !Number.isFinite(obj.t) || obj.t <= 0) { restore(); return false; }
+  if (typeof expectedBestSec !== 'number' || !Number.isFinite(expectedBestSec) || expectedBestSec <= 0) { restore(); return false; }
+  if (Math.abs(obj.t - expectedBestSec) > 0.05 || obj.n !== TRK.N) { restore(); return false; }
+  if (typeof obj.sp !== 'string' || typeof obj.fr !== 'string') { restore(); return false; }
 
   let spU8, frU8;
-  try { spU8 = ghB64Dec(obj.sp); frU8 = ghB64Dec(obj.fr); } catch (e) { return false; }
+  try { spU8 = ghB64Dec(obj.sp); frU8 = ghB64Dec(obj.fr); } catch (e) { restore(); return false; }
   const N = TRK.N, sn = Math.ceil(N / 2);
-  if (N <= 0 || N > GH.bestSplit.length) return false;
-  if (spU8.byteLength !== sn * 2) return false;
-  if (frU8.byteLength < 32 || (frU8.byteLength & 15) !== 0) return false;
-  if (obj.l !== undefined && (!Number.isInteger(obj.l) || obj.l < 2 || obj.l > 10800)) return false;
+  if (N <= 0 || N > GH.bestSplit.length) { restore(); return false; }
+  if (spU8.byteLength !== sn * 2) { restore(); return false; }
+  if (frU8.byteLength < 32 || (frU8.byteLength & 15) !== 0) { restore(); return false; }
+  if (obj.l !== undefined && (!Number.isInteger(obj.l) || obj.l < 2 || obj.l > 10800)) { restore(); return false; }
 
   const sp = new Uint16Array(spU8.buffer), fr = new Int16Array(frU8.buffer), fn = fr.length / 8;
   const bestLen = typeof obj.l === 'number' ? obj.l : Math.min(10800, (fn - 1) * 3 + 1);
-  if (bestLen < 2 || bestLen > 10800) return false;
+  if (bestLen < 2 || bestLen > 10800) { restore(); return false; }
   const hasTrailing = bestLen > 1 && (bestLen - 1) % 3 !== 0;
   const expectedFn = Math.ceil(bestLen / 3) + (hasTrailing ? 1 : 0);
-  if (typeof obj.l === 'number' && fn !== expectedFn) return false;
+  if (typeof obj.l === 'number' && fn !== expectedFn) { restore(); return false; }
 
   GH.bestSplit.fill(-1);
   for (let k = 0; k < sn; k++) {
@@ -276,6 +338,8 @@ function ghLoadData(str, expectedBestSec) {
   GH.hasSplit = true;
   GH.hasGhost = bestLen > 30;
   GH.savePending = false;
+  ghFlushSlot();
+  restore();
   return true;
 }
 
@@ -298,6 +362,7 @@ function ghRenderInit() {
       if (!GH.drawOn || !GH.fam || !GH.fam.pipe) return;
       if (!GH.bg) GH.bg = fwdBindGroup(GH.fam);
       const bm = CAR.bodyMesh, wm = CAR.wheelMesh;
+      if (!bm) return;
       pass.setPipeline(GH.fam.pipe);
       pass.setBindGroup(3, GH.bg);
       R.dyn2[0] = GH.slotBody * 256;
