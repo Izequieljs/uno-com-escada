@@ -227,7 +227,7 @@ function uiSet(st) {
   if (menu) UI.b0.focus(); else UI.b0.blur();
   _lastT = 0;
 }
-function uiPause() { if (UI.st === ST.BENCH) benchStop(); UI.back = UI.st === ST.FITA ? ST.FITA : ST.JOGO; uiSet(ST.PAUSA); }
+function uiPause() { if (UI.st === ST.BENCH) { benchStop(); gameRestart(); } UI.back = UI.st === ST.FITA ? ST.FITA : ST.JOGO; uiSet(ST.PAUSA); }
 function uiResume() {
   if (UI.st === ST.RESULT || UI.st === ST.POSE) uiDrive(); else if (UI.st === ST.PAUSA) uiSet(UI.back);
 }
@@ -348,7 +348,7 @@ function uiAfter() {
   const st = UI.st;
   if (st === ST.BENCH) { if (GS.tick60 >= 3600) benchEnd(); }
   else {
-    if (st === ST.FITA && GS.tick60 >= GS.replay.length) { GS.replayOn = false; uiSet(ST.JOGO); }
+    if (st === ST.FITA && GS.tick60 >= GS.replay.length) uiDrive();
     if (HUD.vis) hudFrame();
     if (GS.lapNew) {
       GS.lapNew = false;

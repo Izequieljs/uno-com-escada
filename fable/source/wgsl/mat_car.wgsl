@@ -196,7 +196,8 @@ fn surf(in: V2F, ff: bool) -> Surface {
         // piscas: lente âmbar translúcida (mais escura e saturada) com o brilho do refletor por trás e verniz
 // (uv.x = x + z: coordenada ao longo da frente/lateral) — frisos verticais finos e um degradê de refletor por trás
         let fl2 = 0.5 + 0.5 * sin(in.uv.x * 6.2831853 / 0.0075); let fadeP = sat(1.0 - fwidth(in.uv.x) / 0.0075 * 2.0);
-        let gy = sat(1.0 - 0.45 * abs((lp.y - 0.693) / 0.062));
+        let clY = select(0.693, 0.626, O.p2.x > 0.5);
+        let gy = sat(1.0 - 0.45 * abs((lp.y - clY) / 0.062));
         let baseA = in.col.rgb * vec3f(0.9, 0.62, 0.3) * mix(1.0, 0.74 + 0.4 * fl2, fadeP) * gy * (0.9 + 0.1 * rib);
         s.albedo = mix(baseA, vec3f(1.0, 0.36, 0.02), hz * 0.85); s.rough = 0.3; s.coat = 0.7; s.emissive = mix(0.03, 0.9, hz);   // lente lisa translúcida, só com frisos horizontais finos
       }
