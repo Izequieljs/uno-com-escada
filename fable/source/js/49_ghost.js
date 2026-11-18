@@ -1,6 +1,8 @@
 // Telemetria da volta (splits/delta), medalhas e gravação/reprodução/persistência do carro fantasma.
 const GH_NONE = -999999;
 const MEDALS = [5350, 5600, 6000, 6600]; // 0 = Firma <= 53,50s, 1 = Ouro <= 56,00s, 2 = Prata <= 60,00s, 3 = Bronze <= 66,00s
+const GH_SPIN_HALF = 16 * PI, GH_SPIN_PER = 32 * PI;
+const ghWrapSpin = a => { a = (a + GH_SPIN_HALF) % GH_SPIN_PER; if (a < 0) a += GH_SPIN_PER; return a - GH_SPIN_HALF; };
 
 function medalOf(cs) {
   if (!(cs > 0)) return -1;
@@ -196,7 +198,7 @@ function ghSaveData() {
     fr[doff + 4] = clamp(Math.round(B[so + 4] * 5000), -32767, 32767);
     fr[doff + 5] = clamp(Math.round(B[so + 5] * 5000), -32767, 32767);
     fr[doff + 6] = clamp(Math.round(B[so + 6] * 5000), -32767, 32767);
-    fr[doff + 7] = clamp(Math.round(wrapPi(B[so + 7]) * 20), -32767, 32767);
+    fr[doff + 7] = clamp(Math.round(ghWrapSpin(B[so + 7]) * 500), -32767, 32767);
   }
   return JSON.stringify({
     v: 1,
@@ -243,14 +245,14 @@ function ghLoadData(str, expectedBestSec) {
     }
   }
 
-  const B = GH.bestFrames, invPos = 1 / 20, invAng = 1 / 5000, invSpin = 1 / 20;
+  const B = GH.bestFrames, invPos = 1 / 20, invAng = 1 / 5000, invSpin = 1 / 500;
   let accSpin = fr[7] * invSpin, prevK0 = 0, prevRawS = accSpin;
   for (let f = 0; f < bestLen; f++) {
     let k0 = (f / 3) | 0;
     if (k0 >= fn - 1) k0 = fn - 1;
     if (k0 !== prevK0) {
       const rawS = fr[k0 * 8 + 7] * invSpin;
-      accSpin += wrapPi(rawS - prevRawS);
+      accSpin += ghWrapSpin(rawS - prevRawS);
       prevRawS = rawS;
       prevK0 = k0;
     }
@@ -266,7 +268,7 @@ function ghLoadData(str, expectedBestSec) {
     B[bo + 5] = (fr[o0 + 5] + (fr[o1 + 5] - fr[o0 + 5]) * u) * invAng;
     B[bo + 6] = (fr[o0 + 6] + (fr[o1 + 6] - fr[o0 + 6]) * u) * invAng;
     const s0 = fr[o0 + 7] * invSpin, s1 = fr[o1 + 7] * invSpin;
-    B[bo + 7] = accSpin + wrapPi(s1 - s0) * u;
+    B[bo + 7] = accSpin + ghWrapSpin(s1 - s0) * u;
   }
 
   GH.bestTime = obj.t;
