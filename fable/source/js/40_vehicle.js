@@ -149,7 +149,7 @@ function vehicleStep(keys) {
     ratio = P.gears[V.gear - 1] * P.final; rpm = Math.abs(wheelSpd * ratio) * 9.5493;
   }
   const noExt = typeof GS !== 'undefined' && (GS.replayOn || GS.poseOn);
-  const boostOn = !noExt && (keys & K_BOOST) !== 0 && V.boost > 0.02 && V.gear > 0 && thr > 0.1;
+  const boostOn = !noExt && (keys & K_BOOST) !== 0 && V.boost > (V.boosting ? 0.02 : 0.08) && V.gear > 0 && thr > 0.1;
   if (boostOn) {
     V.boosting = 1;
     V.boost = Math.max(0, V.boost - 0.28 * dt);

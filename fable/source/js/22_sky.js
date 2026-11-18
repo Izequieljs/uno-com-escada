@@ -11,6 +11,7 @@ const ENV = {
   ],
 };
 let SKY_PIPE = null, SKY_UB = null, SKY_BG = null;
+let _envBusy = null, _envNext = null;
 const _skyU = new Float32Array(8);
 function atmSunColor(dirY) {
   // mesma atmosfera do shader (atmos.wgsl): transmitância do sol até o chão
@@ -63,16 +64,35 @@ async function skyInit(progress) {
   SKY_BG = bgOf(SKY_PIPE, 0, [SKY_UB, V.noise3, V.noise, R.sLin]);
   await skyBake(progress);
 }
+async function envDrain() {
+  let last = ENV.idx;
+  try {
+    while (_envNext !== null) {
+      const i = _envNext;
+      _envNext = null;
+      last = i;
+      _skyU[0] = R.sun[0]; _skyU[1] = R.sun[1]; _skyU[2] = R.sun[2]; _skyU[3] = 0;
+      _skyU[4] = ENV.presets[i].turb; _skyU[5] = 0; _skyU[6] = 0; _skyU[7] = 0;
+      G.dev.queue.writeBuffer(SKY_UB, 0, _skyU);
+      await skyBake();
+      if (_envNext !== null) continue;
+      if (typeof renderStaticShadow === 'function') renderStaticShadow();
+      if (typeof renderFrame === 'function') for (let k = 0; k < 3; k++) renderFrame();
+      if (typeof computeSH === 'function') await computeSH();
+      if (_envNext !== null) continue;
+      if (typeof renderFrame === 'function') for (let k = 0; k < 3; k++) renderFrame();
+    }
+  } finally {
+    _envBusy = null;
+  }
+  return last;
+}
 async function envApply(idx, opts) {
   const i = envSyncCpu(idx, opts);
   if (typeof G !== 'undefined' && G.dev && SKY_PIPE && SKY_UB && SKY_BG) {
-    _skyU[0] = R.sun[0]; _skyU[1] = R.sun[1]; _skyU[2] = R.sun[2]; _skyU[3] = 0;
-    _skyU[4] = ENV.presets[i].turb; _skyU[5] = 0; _skyU[6] = 0; _skyU[7] = 0;
-    G.dev.queue.writeBuffer(SKY_UB, 0, _skyU);
-    await skyBake();
-    if (typeof renderStaticShadow === 'function') renderStaticShadow();
-    if (typeof renderFrame === 'function') for (let k = 0; k < 6; k++) renderFrame();
-    if (typeof computeSH === 'function') await computeSH();
+    _envNext = i;
+    if (!_envBusy) _envBusy = envDrain();
+    return _envBusy;
   }
   return i;
 }
