@@ -7239,7 +7239,7 @@ async function gamePrewarm() {
   RT[2] = 1 / 60; GS.frozen = true; let worst = 0;
   for (let i = 0; i < 36; i++) {
     vehicleReset(i * TRK.L / 36, (i % 3) - 1, 0); VEH.slip.fill(1); VEH.vx = 25; for (let k = 0; k < 6; k++) fxStep(); VEH.slip.fill(0); VEH.vx = 0;   // com velocidade: emite fumaça (estreia o pipeline de partículas)
-    GS.cam = i % 3; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true; gameTick(true); renderFrame(); gameTick(true); renderFrame();
+    GS.cam = i % 4; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true; gameTick(true); renderFrame(); gameTick(true); renderFrame();
     if (i >= 6) {   // as primeiras vistas ainda pagam compilação de pipelines: não entram na medida
       await G.dev.queue.onSubmittedWorkDone(); const t0 = performance.now();
       for (let k = 0; k < 4; k++) { gameTick(true); renderFrame(); }
@@ -7250,7 +7250,8 @@ async function gamePrewarm() {
 }
 function gameRestart() {
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
-  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
+  const qCam = +(Q.get('cam') || 0);
+  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
   GS.alpha = 1; gamePose(); gameCamera();
@@ -7265,7 +7266,7 @@ function gameStep() {
     GS.prevKeys = GS.keys; GS.keys = k; GS.tick60++;
     const edge = k & ~GS.prevKeys;
     if ((k ^ GS.prevKeys) & K_V) { GS.cut = true; GS.chaseInit = false; }   // olhar para trás é um corte de câmera
-    if (edge & K_C) { GS.cam = (GS.cam + 1) % 3; GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
+    if (edge & K_C) { GS.cam = GS.replayOn ? (GS.cam + 1) % 3 : (GS.cam === 0 ? 3 : GS.cam === 3 ? 1 : GS.cam === 1 ? 2 : 0); GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
     if (edge & K_R) { // devolve o carro à pista: no eixo, alinhado, parado
       const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0); GS.cut = true; GS.chaseInit = false;
     }
@@ -7348,18 +7349,21 @@ function rotXQ(o) { const a = ROTQ[0], c = Math.cos(a), s = Math.sin(a); o.fill(
 function camCut() { GS.cut = true; }
 function gameCamera() {
   const V = VEH, c = Math.cos(GS.yaw), s = Math.sin(GS.yaw), dt = RT[1], q = CAMQ, lb = (GS.keys & K_V) ? -1 : 1;   // lb = -1: olhando para trás
-  if (GS.cam === 0) {
-    // perseguição: segue a direção do movimento com atraso
+  if (GS.cam === 0 || GS.cam === 3) {
+    // perseguição (0 baixa, 3 alta): segue a direção do movimento com atraso
+    const hi = GS.cam === 3;
     let tgt = GS.yaw; if (GS.speed > 4) { let sa = Math.atan2(V.vy, V.vx > 1 ? V.vx : 1); sa = sa < -0.5 ? -0.5 : sa > 0.5 ? 0.5 : sa; tgt = GS.yaw + sa * 0.55; }
     if (!GS.chaseInit) { GS.chaseYaw = tgt; GS.chaseY = GS.cy; GS.chaseInit = true; }
     let dy = tgt - GS.chaseYaw; while (dy > PI) dy -= TAU; while (dy < -PI) dy += TAU;
     GS.chaseYaw += dy * (1 - Math.exp(-dt * 5.5)); GS.chaseY += (GS.cy - GS.chaseY) * (1 - Math.exp(-dt * 7));
-    // (os fatores lb abaixo valem 1 olhando para a frente: a conta fica bit a bit a de antes)
-    const dist = 5.3 + GS.speed * 0.022, cc = Math.cos(GS.chaseYaw), ss = Math.sin(GS.chaseYaw);
-    const ex = GS.cx + c * 0.2 * lb - cc * dist * lb, ez = GS.cz + s * 0.2 * lb - ss * dist * lb; let ey = GS.chaseY + 1.62 - V.gPitch * dist * 0.6;
+    // (os fatores lb abaixo valem 1 olhando para a frente: na câmera 0 a conta fica bit a bit a de antes)
+    const dist = (hi ? 6.8 : 5.3) + GS.speed * (hi ? 0.025 : 0.022), cc = Math.cos(GS.chaseYaw), ss = Math.sin(GS.chaseYaw);
+    const pitchLb = hi ? lb : 1, aim = hi ? 3.2 : 1.6;
+    const ex = GS.cx + c * 0.2 * lb - cc * dist * lb, ez = GS.cz + s * 0.2 * lb - ss * dist * lb;
+    let ey = GS.chaseY + (hi ? 2.65 : 1.62) - V.gPitch * dist * 0.6 * pitchLb;
     _gq[0] = ex; _gq[1] = ez; hfAtQ(_gq); if (ey < _gq[6] + 0.55) ey = _gq[6] + 0.55;
     let rl = -V.ay * 0.004; rl = rl < -0.05 ? -0.05 : rl > 0.05 ? 0.05 : rl;
-    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * 1.6 * lb; q[4] = GS.cy + 0.95 + V.gPitch * 1.6; q[5] = GS.cz + s * 1.6 * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042; q[7] = rl;
+    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * aim * lb; q[4] = GS.cy + (hi ? 1.15 : 0.95) + V.gPitch * aim * pitchLb; q[5] = GS.cz + s * aim * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042; q[7] = rl;
   } else if (GS.cam === 1) {
     // capô: presa à carroceria
     const B = GS.body;
@@ -7537,7 +7541,7 @@ function sndCore(sr) {
   const L2 = mk(), R2 = mk(), L4 = mk(), R4 = mk(), L5 = mk(), R5 = mk();   // barramentos estéreo: vento, ambiente, público
   const CG = new Float64Array([1, 0.8, 0.92, 0.74]);  // cilindros desiguais: dão as meias-ordens (o "ronco" de quatro cilindros)
   // ganhos dos ressonadores do motor por câmera: [direto, 105, 235, 470, 980, 2100 Hz, admissão, tuchos]
-  const VG = new Float64Array([0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.4, 0.55, 0.7, 0.85, 0.7, 0.42, 0.7, 0.3, 0.45, 0.8, 0.8, 0.7, 0.55, 0.32, 0.4, 0.1]);
+  const VG = new Float64Array([0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06, 0.4, 0.55, 0.7, 0.85, 0.7, 0.42, 0.7, 0.3, 0.45, 0.8, 0.8, 0.7, 0.55, 0.32, 0.4, 0.1, 0.45, 1.0, 0.85, 0.6, 0.46, 0.26, 0.34, 0.06]);
   const kc = t => 1 - Math.exp(-NC / (sr * t)), K8 = kc(0.008), K20 = kc(0.02), K50 = kc(0.05), K200 = kc(0.2), K30 = kc(0.03);
   const fset = (k, hz, Q, g) => { F[3 * k] = 2 * Math.sin(PI * Math.min(hz, sr * 0.16) / sr); F[3 * k + 1] = 1 / Q; F[3 * k + 2] = g; };
   // filtros fixos
@@ -7745,7 +7749,7 @@ function sndStart() {
   if (!ctx.audioWorklet) { fallback(); return; }
   // (o construtor do processador roda ~4 s de áudio com controles variados e zera o estado: o V8 otimiza o sintetizador
   // antes do primeiro bloco de verdade, em vez de passar o primeiro segundo no interpretador, alocando)
-  const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;for(let i=0;i<1600;i++){c[0]=1|(i>>8)%3<<2;c[1]=900+i*37%5600;c[2]=i*13%1001;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
+  const code = 'const mk=' + sndCore.toString() + ';const N=[];for(let i=0;i<16;i++)N.push("p"+i);registerProcessor("uno",class extends AudioWorkletProcessor{static get parameterDescriptors(){return N.map(n=>({name:n,defaultValue:0,automationRate:"k-rate"}))}constructor(){super();const s=this.s=mk(sampleRate),a=new Float32Array(128),b=new Float32Array(128),c=s.ctl;for(let i=0;i<1600;i++){c[0]=1|((i>>8)&3)<<2;c[1]=900+i*37%5600;c[2]=i*13%1001;c[3]=(i>>6)%6;c[4]=i*29%5000;c[5]=i&256?i*7%1000:0;c[6]=i&512?i*11%1000:0;c[7]=i&128?500:0;c[8]=i&64?500:0;c[9]=i*3%900;c[10]=9000+i*17%2000;c[11]=i*29%5000;c[12]=i*5%1000;c[13]=i*19%2000-1000;c[14]=i>>5;s.render(a,b,0,128)}s.reset()}process(i,o,p){const s=this.s,c=s.ctl,q=o[0];for(let k=0;k<16;k++)c[k]=p[N[k]][0];s.render(q[0],q[1],0,q[0].length);return true}})';
   // O módulo vai por URL data: — aberto como arquivo (file://) a página tem origem opaca e o Chrome recusa módulo por URL blob:.
   // Se o navegador recusar data:, tenta blob:; se não houver worklet de jeito nenhum, cai no ScriptProcessor.
   const mod = u => ctx.audioWorklet.addModule(u);

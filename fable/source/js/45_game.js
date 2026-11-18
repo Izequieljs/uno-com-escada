@@ -111,7 +111,7 @@ async function gamePrewarm() {
   RT[2] = 1 / 60; GS.frozen = true; let worst = 0;
   for (let i = 0; i < 36; i++) {
     vehicleReset(i * TRK.L / 36, (i % 3) - 1, 0); VEH.slip.fill(1); VEH.vx = 25; for (let k = 0; k < 6; k++) fxStep(); VEH.slip.fill(0); VEH.vx = 0;   // com velocidade: emite fumaça (estreia o pipeline de partículas)
-    GS.cam = i % 3; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true; gameTick(true); renderFrame(); gameTick(true); renderFrame();
+    GS.cam = i % 4; GS.chaseInit = false; GS.tvCur = -1; GS.cut = true; gameTick(true); renderFrame(); gameTick(true); renderFrame();
     if (i >= 6) {   // as primeiras vistas ainda pagam compilação de pipelines: não entram na medida
       await G.dev.queue.onSubmittedWorkDone(); const t0 = performance.now();
       for (let k = 0; k < 4; k++) { gameTick(true); renderFrame(); }
@@ -122,7 +122,8 @@ async function gamePrewarm() {
 }
 function gameRestart() {
   const V = VEH; V.lapS = 0; V.offCount = 0; V.hits = 0; V.laps = 0; V.time = 0; V.steps = 0; V.spin.fill(0); V.susp.fill(0);
-  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = +(Q.get('cam') || 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
+  const qCam = +(Q.get('cam') || 0);
+  vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
   GS.alpha = 1; gamePose(); gameCamera();
@@ -137,7 +138,7 @@ function gameStep() {
     GS.prevKeys = GS.keys; GS.keys = k; GS.tick60++;
     const edge = k & ~GS.prevKeys;
     if ((k ^ GS.prevKeys) & K_V) { GS.cut = true; GS.chaseInit = false; }   // olhar para trás é um corte de câmera
-    if (edge & K_C) { GS.cam = (GS.cam + 1) % 3; GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
+    if (edge & K_C) { GS.cam = GS.replayOn ? (GS.cam + 1) % 3 : (GS.cam === 0 ? 3 : GS.cam === 3 ? 1 : GS.cam === 1 ? 2 : 0); GS.cut = true; GS.chaseInit = false; GS.tvCur = -1; }
     if (edge & K_R) { // devolve o carro à pista: no eixo, alinhado, parado
       const s = VEH.s; vehicleReset(s, clamp(VEH.d, -2, 2), 0); GS.cut = true; GS.chaseInit = false;
     }
@@ -220,18 +221,21 @@ function rotXQ(o) { const a = ROTQ[0], c = Math.cos(a), s = Math.sin(a); o.fill(
 function camCut() { GS.cut = true; }
 function gameCamera() {
   const V = VEH, c = Math.cos(GS.yaw), s = Math.sin(GS.yaw), dt = RT[1], q = CAMQ, lb = (GS.keys & K_V) ? -1 : 1;   // lb = -1: olhando para trás
-  if (GS.cam === 0) {
-    // perseguição: segue a direção do movimento com atraso
+  if (GS.cam === 0 || GS.cam === 3) {
+    // perseguição (0 baixa, 3 alta): segue a direção do movimento com atraso
+    const hi = GS.cam === 3;
     let tgt = GS.yaw; if (GS.speed > 4) { let sa = Math.atan2(V.vy, V.vx > 1 ? V.vx : 1); sa = sa < -0.5 ? -0.5 : sa > 0.5 ? 0.5 : sa; tgt = GS.yaw + sa * 0.55; }
     if (!GS.chaseInit) { GS.chaseYaw = tgt; GS.chaseY = GS.cy; GS.chaseInit = true; }
     let dy = tgt - GS.chaseYaw; while (dy > PI) dy -= TAU; while (dy < -PI) dy += TAU;
     GS.chaseYaw += dy * (1 - Math.exp(-dt * 5.5)); GS.chaseY += (GS.cy - GS.chaseY) * (1 - Math.exp(-dt * 7));
-    // (os fatores lb abaixo valem 1 olhando para a frente: a conta fica bit a bit a de antes)
-    const dist = 5.3 + GS.speed * 0.022, cc = Math.cos(GS.chaseYaw), ss = Math.sin(GS.chaseYaw);
-    const ex = GS.cx + c * 0.2 * lb - cc * dist * lb, ez = GS.cz + s * 0.2 * lb - ss * dist * lb; let ey = GS.chaseY + 1.62 - V.gPitch * dist * 0.6;
+    // (os fatores lb abaixo valem 1 olhando para a frente: na câmera 0 a conta fica bit a bit a de antes)
+    const dist = (hi ? 6.8 : 5.3) + GS.speed * (hi ? 0.025 : 0.022), cc = Math.cos(GS.chaseYaw), ss = Math.sin(GS.chaseYaw);
+    const pitchLb = hi ? lb : 1, aim = hi ? 3.2 : 1.6;
+    const ex = GS.cx + c * 0.2 * lb - cc * dist * lb, ez = GS.cz + s * 0.2 * lb - ss * dist * lb;
+    let ey = GS.chaseY + (hi ? 2.65 : 1.62) - V.gPitch * dist * 0.6 * pitchLb;
     _gq[0] = ex; _gq[1] = ez; hfAtQ(_gq); if (ey < _gq[6] + 0.55) ey = _gq[6] + 0.55;
     let rl = -V.ay * 0.004; rl = rl < -0.05 ? -0.05 : rl > 0.05 ? 0.05 : rl;
-    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * 1.6 * lb; q[4] = GS.cy + 0.95 + V.gPitch * 1.6; q[5] = GS.cz + s * 1.6 * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042; q[7] = rl;
+    q[0] = ex; q[1] = ey; q[2] = ez; q[3] = GS.cx + c * aim * lb; q[4] = GS.cy + (hi ? 1.15 : 0.95) + V.gPitch * aim * pitchLb; q[5] = GS.cz + s * aim * lb; q[6] = 0.93 + (GS.speed < 50 ? GS.speed : 50) * 0.0042; q[7] = rl;
   } else if (GS.cam === 1) {
     // capô: presa à carroceria
     const B = GS.body;
