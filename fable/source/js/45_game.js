@@ -71,6 +71,7 @@ function gameInit() {
   // colisão: usa o afastamento real do guard-rail do cenário quando existe (contorna a pit lane)
   if (typeof PROPS !== 'undefined' && PROPS.railD) for (let i = 0; i < TRK.N; i++) { const l = PROPS.railD(-1, i), r = PROPS.railD(1, i); if (l === l) TRK.barL[i] = Math.abs(l); if (r === r) TRK.barR[i] = Math.abs(r); }
   sndInit();
+  if (typeof ghInit === 'function') ghInit();
   gameWarmup();
   gameRestart();
 }
@@ -79,6 +80,7 @@ function gameInit() {
 // Sem isso, a primeira troca de câmera ou a primeira ré desotimizaria funções do laço e geraria lixo temporário.
 function gameWarmup() {
   const fx = GS.fxOn, rp = GS.replayOn; GS.replayOn = false; GS.ai = false; RT[2] = 1 / 120;
+  if (typeof GH !== 'undefined') GH.warm = true;
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0);
   for (let i = 0; i < 9000; i++) {
     const ph = (i / 300) | 0, t = i / 120; let k = aiKeys(t);
@@ -101,6 +103,7 @@ function gameWarmup() {
       cs.focusOn = false; setCamera(x, y, z, x + ux, y + uy, z + uz, 0.9); cascadeSetup(k % 3);
     }
   }
+  if (typeof GH !== 'undefined') GH.warm = false;
   GS.held = 0; GS.padKeys = 0; LAP[2] = 0; GS.fxOn = fx; GS.replayOn = rp; GS.ai = Q.has('auto'); RT[0] = 0; RT[2] = 1 / 60;
 }
 // Aquece a GPU antes do jogo começar: renderiza quadros de vários pontos do circuito nas três câmeras (com fumaça e marcas),
@@ -126,6 +129,7 @@ function gameRestart() {
   vehicleReset(TRK.L + TRK.startS, TRK.startD, 0); GS.held = 0; GS.tick60 = 0; GS.acc = 0; GS.sub = 0; GS.keys = GS.prevKeys = 0; GS.cam = GS.replayOn ? 0 : (qCam === 1 || qCam === 2 || qCam === 3 ? qCam : 0); GS.chaseInit = false; GS.tvCur = -1; GS.cut = true;
   if (typeof fxReset === 'function') fxReset();
   GS.lapSeen = GS.lapMax = 0; LAP[0] = LAP[1] = LAP[3] = 0;
+  if (typeof ghRestart === 'function') ghRestart();
   GS.alpha = 1; gamePose(); gameCamera();
 }
 // um passo de física; a cada 2 passos (1/60 s) lê as teclas (gravadas, piloto automático ou teclado)
@@ -146,6 +150,7 @@ function gameStep() {
   GS.sub++;
   vehicleStep(GS.keys);
   if (VEH.laps !== GS.lapSeen) lapCross();
+  if (typeof ghStep === 'function') ghStep();
   if (GS.fxOn && typeof fxStep === 'function') fxStep();
 }
 // junta o controle ao teclado: gatilhos e alavanca valem como entrada analógica (VIN); A/D do teclado têm prioridade na direção
@@ -161,7 +166,15 @@ function lapCross() {
   const V = VEH;
   if (V.laps > GS.lapMax) {
     const st = V.vx * PHYS_DT, fr = st > 1e-6 ? V.s / st : 0, t = V.time - (fr < 0 ? 0 : fr > 1 ? 1 : fr) * PHYS_DT;
-    if (LAP[3] === 1) { const lt = t - LAP[0]; LAP[1] = lt; if (!GS.replayOn && (LAP[2] === 0 || lt < LAP[2])) { LAP[2] = lt; GS.lapNew = true; } }
+    if (LAP[3] === 1) {
+      const lt = t - LAP[0], rec = !GS.replayOn && (LAP[2] === 0 || lt < LAP[2]);
+      LAP[1] = lt;
+      if (rec) { LAP[2] = lt; GS.lapNew = true; }
+      if (typeof ghLapCross === 'function') ghLapCross(lt, rec);
+    } else if (typeof ghRestart === 'function') {
+      ghRestart();
+      if (typeof GH !== 'undefined') GH.qMask = 1;
+    }
     LAP[0] = t; LAP[3] = 1; GS.lapMax = V.laps;
   }
   GS.lapSeen = V.laps;
@@ -213,6 +226,7 @@ function gamePose() {
   const f = FR.data, o = FO.car; f[o] = bp[0]; f[o + 1] = GS.speed; f[o + 2] = GS.steer; f[o + 3] = 0;
   f[FO.car2] = (GS.tick60 < 30 && GS.speed < 0.5) ? 1 : 0;   // luzes de largada: acesas só enquanto o carro espera no grid
   R.cube.pos[0] = B[4] * 1.15 + B[12]; R.cube.pos[1] = B[5] * 1.15 + B[13]; R.cube.pos[2] = B[6] * 1.15 + B[14];
+  if (typeof ghPose === 'function') ghPose();
 }
 // rotações lendo o ângulo do registrador ROTQ[0] (sem números por argumento)
 const ROTQ = new Float64Array(1);
