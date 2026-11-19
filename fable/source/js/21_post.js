@@ -4,6 +4,7 @@ function postInit() {
   const dev = G.dev, T = R.tex, V = R.view, W = G.W, H = G.H, D = R.pd, P = R.post = {};
   const HDR = 'rgba16float';
   P.half = mkPost('half', {}, [HDR]); P.halfBG = bgOf(P.half, 0, [R.frameBuf, V.depth, V.gB, V.shadow, V.shadowS, R.sCmp]);
+  P.halfFast = mkPost('half', { LEVE: '' }, [HDR]); P.halfFastBG = bgOf(P.halfFast, 0, [R.frameBuf, V.depth, V.gB, V.shadow, V.shadowS, R.sCmp]);   // Leve: menos amostras de AO/névoa
   P.blurH = mkPost('bilat', { DIR: '1,0' }, [HDR]); P.blurV = mkPost('bilat', { DIR: '0,1' }, [HDR]);
   P.blurHBG = bgOf(P.blurH, 0, [V.half[0]]); P.blurVBG = bgOf(P.blurV, 0, [V.half[1]]);
   D.half = mkPassDesc(1, null, false, 'half'); D.half.colorAttachments[0].view = V.half[0];
@@ -12,7 +13,7 @@ function postInit() {
   P.light = mkPost('light', { SSR: '' }, [HDR]);
   P.lightBG = [0, 1].map(i => bgOf(P.light, 0, [R.frameBuf, V.gA, V.gB, V.gC, V.depth, V.shadow, V.shadowS, R.sCmp, V.half[2], V.env, V.sky, R.sClamp, R.sSky, V.hist[i]]));
   // caminho Leve: iluminação sem SSR lendo a névoa/AO meia-resolução direto (sem desfoque bilateral)
-  P.lightFast = mkPost('light', {}, [HDR]);
+  P.lightFast = mkPost('light', { LEVE: '' }, [HDR]);
   P.lightFastBG = [0, 1].map(i => bgOf(P.lightFast, 0, [R.frameBuf, V.gA, V.gB, V.gC, V.depth, V.shadow, V.shadowS, R.sCmp, V.half[0], V.env, V.sky, R.sClamp, R.sSky, V.hist[i]]));
   P.taa = mkPost('taa', {}, [HDR, 'rg16float']);
   P.taaBG = [0, 1].map(i => bgOf(P.taa, 0, [R.frameBuf, V.hdr, V.hist[i], V.gV, V.depth, R.sClamp]));
@@ -87,7 +88,7 @@ function postFrame(enc) {
   // decalques (marcas de pneu) sobre o G-buffer
   if (R.decals.length) { const p = apiPass(enc, D.decal); p.setBindGroup(0, R.globBG); R.dyn1[0] = 0; p.setBindGroup(1, R.passBG, R.dyn1, 0, 1); for (let i = 0; i < R.decals.length; i++) R.decals[i].draw(p); p.end(); }
   const leve = QUAL.idx === 1;
-  fsPass(enc, D.half, P.half, P.halfBG);
+  fsPass(enc, D.half, leve ? P.halfFast : P.half, leve ? P.halfFastBG : P.halfBG);
   if (leve) fsPass(enc, D.light, P.lightFast, P.lightFastBG[prev]);
   else { fsPass(enc, D.blurH, P.blurH, P.blurHBG); fsPass(enc, D.blurV, P.blurV, P.blurVBG); fsPass(enc, D.light, P.light, P.lightBG[prev]); }
   if (R.transparents.length) {

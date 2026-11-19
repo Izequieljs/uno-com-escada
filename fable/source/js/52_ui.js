@@ -58,6 +58,13 @@ function uiSavePrefs(overrideTrackIdx) {
     }));
   } catch (e) { /* sem armazenamento local */ }
 }
+// URL atual com um parâmetro trocado (base + query + hash), para recarregar a página
+function uiUrlWith(key, val) {
+  const p = new URLSearchParams(typeof location !== 'undefined' && location.search ? location.search : '');
+  p.set(key, String(val));
+  const base = typeof location !== 'undefined' ? (location.href ? location.href.split(/[?#]/)[0] : (location.pathname || '')) : '';
+  return base + '?' + p.toString() + (typeof location !== 'undefined' && location.hash ? location.hash : '');
+}
 function uiSelectTrack(idx) {
   const next = (idx | 0) === 1 ? 1 : 0;
   const cur = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
@@ -66,12 +73,7 @@ function uiSelectTrack(idx) {
     uiSyncCfg();
     return false;
   }
-  const p = new URLSearchParams(typeof location !== 'undefined' && location.search ? location.search : '');
-  p.set('track', String(next));
-  const qs = '?' + p.toString();
-  const base = typeof location !== 'undefined' ? (location.href ? location.href.split(/[?#]/)[0] : (location.pathname || '')) : '';
-  const hash = typeof location !== 'undefined' && location.hash ? location.hash : '';
-  const targetUrl = base + qs + hash;
+  const targetUrl = uiUrlWith('track', next);
   UI.lastNavUrl = targetUrl;
   if (typeof UI.navTrack === 'function') UI.navTrack(targetUrl, next);
   return true;
@@ -190,7 +192,20 @@ function uiBindCfg() {
       }
       const dq = b.getAttribute ? b.getAttribute('data-qual') : null;
       if (dq !== null) {
-        b.onclick = () => { if (typeof qualApply === 'function') qualApply(+dq | 0); uiSavePrefs(); uiSyncCfg(); uiPreview(); };
+        b.onclick = () => {
+          const n = (+dq | 0) === 1 ? 1 : 0;
+          // a resolução interna do Leve (75%) é alocada no boot: trocar de modo só recarrega se ela realmente mudar
+          const reload = typeof qualNeedsReload === 'function' && qualNeedsReload(n);
+          if (typeof qualApply === 'function') qualApply(n);
+          uiSavePrefs(); uiSyncCfg();
+          if (reload) {
+            const ti = typeof TRK !== 'undefined' ? (TRK.idx | 0) : 0;
+            UI.lastNavUrl = typeof Q !== 'undefined' && Q.has('qual') ? uiUrlWith('qual', n) : uiUrlWith('track', ti);   // ?qual explícito venceria as prefs ao recarregar
+            if (typeof UI.navTrack === 'function') UI.navTrack(UI.lastNavUrl, ti);
+            return;
+          }
+          uiPreview();
+        };
         continue;
       }
       const dp = b.getAttribute ? b.getAttribute('data-paint') : null;

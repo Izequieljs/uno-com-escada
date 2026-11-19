@@ -1,10 +1,15 @@
 // Amostragem de sombras: 3 cascatas dinâmicas + mapa estático do mundo. Requer tShadow, tShadowS, sCmp e F.
-const VOGEL_N = 8;
+// LEVE (pipelines de luz do modo Leve): 8 / 4 / 3 amostras em vez de 16 / 8 / 5 (cascata 0 / cascatas 1-2 / mapa estático)
+#ifdef LEVE
+const VOGEL_N = 4; const SH_N0 = 8; const SH_NS = 3;
+#else
+const VOGEL_N = 8; const SH_N0 = 16; const SH_NS = 5;
+#endif
 fn vogel(i: i32, n: i32, phi: f32) -> vec2f { let r = sqrt((f32(i) + 0.5) / f32(n)); let a = f32(i) * 2.39996323 + phi; return vec2f(cos(a), sin(a)) * r; }
 fn shadowTap(c: i32, uv: vec2f, z: f32, rad: f32, phi: f32) -> f32 {
   var s = 0.0;
   // cascata próxima com mais amostras (penumbras grandes sobre o carro não mostram a trama do ruído)
-  let n = select(VOGEL_N, 16, c == 0);
+  let n = select(VOGEL_N, SH_N0, c == 0);
   for (var i = 0; i < n; i++) { s += textureSampleCompareLevel(tShadow, sCmp, uv + vogel(i, n, phi) * rad, c, z); }
   return s / f32(n);
 }
@@ -14,8 +19,8 @@ fn shadowStatic(wp: vec3f, n: vec3f, phi: f32, soft: f32) -> f32 {
   let uv = lp.xy * vec2f(0.5, -0.5) + 0.5;
   if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0 || lp.z > 1.0) { return 1.0; }
   var s = 0.0; let rad = soft / 4096.0;
-  for (var i = 0; i < 5; i++) { s += textureSampleCompareLevel(tShadowS, sCmp, uv + vogel(i, 5, phi) * rad, lp.z - 0.0012); }
-  return s / 5.0;
+  for (var i = 0; i < SH_NS; i++) { s += textureSampleCompareLevel(tShadowS, sCmp, uv + vogel(i, SH_NS, phi) * rad, lp.z - 0.0012); }
+  return s / f32(SH_NS);
 }
 // visibilidade do sol em wp (normal n, pixel px para o ruído). nl = N·L para o viés.
 fn sunShadow(wp: vec3f, n: vec3f, px: vec2f, nl: f32) -> f32 { return sunShadowK(wp, n, px, nl, 1.0); }
